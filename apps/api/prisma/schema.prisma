@@ -1,0 +1,713 @@
+// Schéma de la base BaraBite.
+//
+// Deux règles structurent ce fichier :
+//   1. Tout montant est un entier de francs CFA (ADR 003) — jamais un Decimal, jamais un Float.
+//   2. Toute table métier porte un restaurantId dès la V1 (ADR 004), pour que le multi-restaurant
+//      ne demande aucune migration de données le jour venu.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Énumérations — reflètent packages/shared/src/enums.ts
+// ---------------------------------------------------------------------------
+
+enum Role {
+  CLIENT
+  KITCHEN
+  CASHIER
+  DELIVERY
+  MANAGER
+  ADMIN
+}
+
+enum OrderType {
+  DELIVERY
+  PICKUP
+  DINE_IN
+}
+
+/// Origine de la commande. Sans ce champ, le chiffre d'affaires ignorerait le comptoir (ADR 005).
+enum OrderChannel {
+  APP
+  COUNTER
+  PHONE
+  QR_TABLE
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  ASSIGNED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  PICKED_UP
+  SERVED
+  COMPLETED
+  REJECTED
+  CANCELLED
+  PAYMENT_FAILED
+  EXPIRED
+}
+
+enum PaymentMethod {
+  CASH
+  ORANGE_MONEY
+  MOOV_MONEY
+  MTN_MONEY
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  CONFIRMED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum TableStatus {
+  FREE
+  OCCUPIED
+  PREPARING
+  TO_SERVE
+  SERVED
+}
+
+enum RejectionReason {
+  OUT_OF_STOCK
+  TOO_BUSY
+  CLOSED
+  OUT_OF_DELIVERY_AREA
+  INVALID_ORDER
+  CUSTOMER_REQUEST
+  OTHER
+}
+
+enum DiscountType {
+  PERCENTAGE
+  AMOUNT
+}
+
+enum NotificationType {
+  ORDER_STATUS
+  PAYMENT
+  LOYALTY
+  PROMOTION
+  SYSTEM
+}
+
+// ---------------------------------------------------------------------------
+// Restaurant et identité de marque
+// ---------------------------------------------------------------------------
+
+/// La marque est une donnée, pas du code (ADR 004) : le restaurant modifie son nom, ses couleurs et
+/// son logo sans redéploiement, et un second établissement n'exige aucune ligne de code.
+model Restaurant {
+  id       String  @id @default(cuid())
+  slug     String  @unique
+  name     String
+  tagline  String?
+  logoUrl  String?
+
+  primaryColor    String @default("#F2B705")
+  backgroundColor String @default("#0B1F17")
+
+  phone     String?
+  whatsapp  String?
+  address   String?
+  city      String  @default("Ouahigouya")
+  country   String  @default("Burkina Faso")
+
+  /// Le Burkina Faso est à UTC+0 toute l'année.
+  timezoneOffsetMinutes Int @default(0)
+  currencySymbol        String @default("F")
+
+  /// Interrupteur du gérant : ferme la prise de commande quels que soient les horaires.
+  manuallyClosed   Boolean @default(false)
+  /// Interrupteur indépendant : la livraison peut être suspendue sans fermer le restaurant.
+  deliveryEnabled  Boolean @default(true)
+  pickupEnabled    Boolean @default(true)
+  dineInEnabled    Boolean @default(true)
+
+  /// Politiques de paiement par mode (§ 9.2 du cahier des charges).
+  cashOnDelivery   Boolean @default(true)
+  cashOnPickup     Boolean @default(true)
+  cashOnDineIn     Boolean @default(true)
+  onlinePayment    Boolean @default(true)
+
+  /// Délai de préparation annoncé au client, en minutes.
+  preparationMinutes Int @default(20)
+
+  /// Fidélité (§ 2.4). Valeurs par défaut alignées sur packages/shared/src/loyalty.ts.
+  loyaltyEnabled            Boolean @default(true)
+  loyaltyAmountPerPoint     Int     @default(100)
+  loyaltyPointValue         Int     @default(1)
+  loyaltyMinimumPoints      Int     @default(500)
+  loyaltyMaxRedemptionPct   Int     @default(50)
+
+  /// Étapes de l'assistant de configuration initiale déjà validées (§ 2.8).
+  setupCompletedSteps String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users               User[]
+  categories          Category[]
+  products            Product[]
+  orders              Order[]
+  tables              RestaurantTable[]
+  deliveryZones       DeliveryZone[]
+  promotions          Promotion[]
+  openingHours        OpeningHour[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  orderCounters       OrderCounter[]
+  loyaltyTransactions LoyaltyTransaction[]
+  addresses           Address[]
+
+  @@map("restaurants")
+}
+
+// ---------------------------------------------------------------------------
+// Utilisateurs
+// ---------------------------------------------------------------------------
+
+/// Identité fondée sur le téléphone : c'est l'identifiant réel des personnes au Burkina Faso.
+/// Le mot de passe est optionnel — commander ne doit pas exiger d'en créer un (§ 2.2).
+model User {
+  id           String  @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  /// Forme canonique E.164 : deux écritures du même numéro ne créent jamais deux comptes.
+  phone        String
+  name         String
+  email        String?
+  passwordHash String?
+  role         Role    @default(CLIENT)
+  isActive     Boolean @default(true)
+  phoneVerified Boolean @default(false)
+
+  /// Consentement distinct et révocable pour les messages promotionnels (§ 15.4).
+  marketingConsent Boolean @default(false)
+
+  loyaltyPoints Int @default(0)
+
+  lastSeenAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  orders              Order[]
+  addresses           Address[]
+  refreshTokens       RefreshToken[]
+  notifications       Notification[]
+  loyaltyTransactions LoyaltyTransaction[]
+  auditLogs           AuditLog[]
+  deliveredOrders     Order[]   @relation("OrderCourier")
+
+  @@unique([restaurantId, phone])
+  @@index([restaurantId, role])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Seul le haché est stocké : une fuite de base ne donne aucune session utilisable.
+  tokenHash String   @unique
+  device    String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Catalogue — saisi par le restaurant lui-même (§ 2.8)
+// ---------------------------------------------------------------------------
+
+model Category {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name        String
+  slug        String
+  description String?
+  imageUrl    String?
+  position    Int     @default(0)
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+
+  @@unique([restaurantId, slug])
+  @@index([restaurantId, position])
+  @@map("categories")
+}
+
+model Product {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  categoryId   String
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  name        String
+  slug        String
+  description String?
+  /// Prix en francs CFA, entier (ADR 003).
+  price       Int
+  imageUrl    String?
+
+  isAvailable Boolean @default(true)
+  /// null = pas de suivi de stock. 0 = rupture, le produit bascule en indisponible (§ 2.6).
+  stock       Int?
+  isFeatured  Boolean @default(false)
+  position    Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  optionGroups OptionGroup[]
+  orderItems   OrderItem[]
+
+  @@unique([restaurantId, slug])
+  @@index([restaurantId, categoryId, position])
+  @@map("products")
+}
+
+model OptionGroup {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  name       String
+  minChoices Int    @default(0)
+  maxChoices Int    @default(1)
+  position   Int    @default(0)
+
+  items OptionItem[]
+
+  @@index([productId, position])
+  @@map("option_groups")
+}
+
+model OptionItem {
+  id      String      @id @default(cuid())
+  groupId String
+  group   OptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  name        String
+  /// Supplément en FCFA. Zéro pour un choix gratuit, comme une sauce incluse.
+  priceDelta  Int     @default(0)
+  isAvailable Boolean @default(true)
+  position    Int     @default(0)
+
+  orderItemOptions OrderItemOption[]
+
+  @@index([groupId, position])
+  @@map("option_items")
+}
+
+// ---------------------------------------------------------------------------
+// Commandes
+// ---------------------------------------------------------------------------
+
+model Order {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  /// Numéro court, remis à zéro chaque jour : lu à voix haute au comptoir.
+  dailyNumber Int
+  orderDate   DateTime @db.Date
+
+  customerId String?
+  customer   User?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  /// Renseignés pour une commande au comptoir ou par téléphone, sans compte client.
+  customerName  String?
+  customerPhone String?
+
+  channel OrderChannel @default(APP)
+  type    OrderType
+  status  OrderStatus  @default(PENDING)
+
+  /// Montants en FCFA, entiers. Figés à la validation : changer un prix ne réécrit pas l'historique.
+  subtotal        Int
+  deliveryFee     Int @default(0)
+  discount        Int @default(0)
+  loyaltyDiscount Int @default(0)
+  total           Int
+
+  note String?
+
+  /// Retrait : code dicté au comptoir, sans caractères ambigus.
+  pickupCode String?
+  scheduledFor DateTime?
+
+  /// Sur place.
+  tableId String?
+  table   RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
+
+  /// Livraison — l'adresse est copiée, pas seulement référencée : si le client la supprime ou la
+  /// modifie plus tard, la commande passée doit conserver celle qui a servi à livrer.
+  addressId        String?
+  address          Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  deliverySector   String?
+  deliveryDistrict String?
+  deliveryLandmark String?
+  deliveryDetails  String?
+  deliveryZoneId   String?
+  deliveryZone     DeliveryZone? @relation(fields: [deliveryZoneId], references: [id], onDelete: SetNull)
+  courierId        String?
+  courier          User?    @relation("OrderCourier", fields: [courierId], references: [id], onDelete: SetNull)
+
+  promotionId String?
+  promotion   Promotion? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+
+  rejectionReason  RejectionReason?
+  rejectionComment String?
+  cancelReason     String?
+
+  acceptedAt  DateTime?
+  readyAt     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items               OrderItem[]
+  events              OrderEvent[]
+  payments            Payment[]
+  loyaltyTransactions LoyaltyTransaction[]
+
+  @@unique([restaurantId, orderDate, dailyNumber])
+  @@index([restaurantId, status, createdAt])
+  @@index([restaurantId, orderDate])
+  @@index([customerId, createdAt])
+  @@index([pickupCode])
+  @@map("orders")
+}
+
+/// Compteur de numérotation quotidienne, par restaurant. Incrémenté dans la transaction de création
+/// pour que deux commandes simultanées ne portent jamais le même numéro.
+model OrderCounter {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderDate    DateTime   @db.Date
+  lastNumber   Int        @default(0)
+
+  @@unique([restaurantId, orderDate])
+  @@map("order_counters")
+}
+
+/// Le nom et le prix sont recopiés : une commande d'il y a six mois doit rester lisible même si le
+/// produit a changé de nom, de prix, ou a été supprimé du menu.
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName String
+  unitPrice   Int
+  quantity    Int
+  lineTotal   Int
+  note        String?
+
+  options OrderItemOption[]
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model OrderItemOption {
+  id          String    @id @default(cuid())
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  optionItemId String?
+  optionItem   OptionItem? @relation(fields: [optionItemId], references: [id], onDelete: SetNull)
+  name         String
+  priceDelta   Int     @default(0)
+
+  @@index([orderItemId])
+  @@map("order_item_options")
+}
+
+/// Journal des transitions : qui a changé quoi, quand, et pourquoi. Sans cela, une commande refusée
+/// devient une conversation invérifiable entre le client et le restaurant.
+model OrderEvent {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  status    OrderStatus
+  actorId   String?
+  actorRole String?
+  reason    String?
+  createdAt DateTime @default(now())
+
+  @@index([orderId, createdAt])
+  @@map("order_events")
+}
+
+// ---------------------------------------------------------------------------
+// Paiements
+// ---------------------------------------------------------------------------
+
+model Payment {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  amount   Int
+  method   PaymentMethod
+  status   PaymentStatus @default(PENDING)
+  provider String        @default("cash")
+
+  /// Référence unique du fournisseur. Contrainte d'unicité : un webhook rejoué ne crée pas un
+  /// second encaissement.
+  providerReference String? @unique
+  payerPhone        String?
+  failureReason     String?
+  rawPayload        Json?
+
+  confirmedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  refunds Refund[]
+
+  @@index([orderId])
+  @@map("payments")
+}
+
+model Refund {
+  id        String  @id @default(cuid())
+  paymentId String
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  amount    Int
+  reason    String
+  actorId   String?
+  createdAt DateTime @default(now())
+
+  @@index([paymentId])
+  @@map("refunds")
+}
+
+// ---------------------------------------------------------------------------
+// Livraison
+// ---------------------------------------------------------------------------
+
+/// Ouahigouya n'a pas d'adressage postal exploitable : on se repère par secteur et point de repère.
+model Address {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  label     String?
+  sector    String
+  district  String?
+  landmark  String
+  details   String?
+  latitude  Float?
+  longitude Float?
+  isDefault Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+/// Frais forfaitaires par zone : sans adressage fiable, un calcul kilométrique produirait des frais
+/// faux (§ 10).
+model DeliveryZone {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name             String
+  fee              Int
+  minimumOrder     Int     @default(0)
+  estimatedMinutes Int     @default(30)
+  isActive         Boolean @default(true)
+  position         Int     @default(0)
+
+  orders Order[]
+
+  @@unique([restaurantId, name])
+  @@map("delivery_zones")
+}
+
+// ---------------------------------------------------------------------------
+// Tables et QR Codes
+// ---------------------------------------------------------------------------
+
+model RestaurantTable {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  number   String
+  capacity Int         @default(4)
+  status   TableStatus @default(FREE)
+  /// Jeton opaque, jamais dérivé du numéro de table (§ 8). Régénérable : invalide le QR imprimé.
+  qrToken  String      @unique
+  isActive Boolean     @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders   Order[]
+  sessions TableSession[]
+
+  @@unique([restaurantId, number])
+  @@map("tables")
+}
+
+/// Session ouverte par le scan d'un QR Code, à durée limitée : sans expiration, un jeton photographié
+/// permettrait de commander sur cette table depuis n'importe où, indéfiniment.
+model TableSession {
+  id      String          @id @default(cuid())
+  tableId String
+  table   RestaurantTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  deviceId  String
+  expiresAt DateTime
+  closedAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([tableId, expiresAt])
+  @@map("table_sessions")
+}
+
+// ---------------------------------------------------------------------------
+// Promotions, fidélité, horaires
+// ---------------------------------------------------------------------------
+
+model Promotion {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  code         String
+  label        String
+  discountType DiscountType
+  value        Int
+  minimumOrder Int      @default(0)
+  startsAt     DateTime?
+  endsAt       DateTime?
+  maxUses      Int?
+  usedCount    Int      @default(0)
+  isActive     Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@unique([restaurantId, code])
+  @@map("promotions")
+}
+
+model LoyaltyTransaction {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId      String?
+  order        Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  /// Positif à l'acquisition, négatif à l'utilisation.
+  points    Int
+  reason    String
+  balance   Int
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("loyalty_transactions")
+}
+
+model OpeningHour {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  /// 0 = dimanche, 6 = samedi.
+  weekday  Int
+  /// Minutes depuis minuit. closesAt inférieur à opensAt signifie « le lendemain ».
+  opensAt  Int
+  closesAt Int
+  closed   Boolean @default(false)
+
+  @@unique([restaurantId, weekday])
+  @@map("opening_hours")
+}
+
+// ---------------------------------------------------------------------------
+// Notifications et journal
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      NotificationType @default(ORDER_STATUS)
+  title     String
+  body      String
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+/// Journal des opérations sensibles : paiements, remboursements, changements de prix et de rôles,
+/// régénération de QR Codes (§ 15.3).
+model AuditLog {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  actorId      String?
+  actor        User?      @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  action     String
+  targetType String?
+  targetId   String?
+  data       Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([restaurantId, createdAt])
+  @@map("audit_logs")
+}

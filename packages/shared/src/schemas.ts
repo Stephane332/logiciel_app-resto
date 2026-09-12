@@ -117,6 +117,7 @@ export const createOrderSchema = z
     note: z.string().trim().max(300).optional(),
     address: deliveryAddressSchema.optional(),
     addressId: z.string().optional(),
+    deliveryZoneId: z.string().optional(),
     tableToken: z.string().min(10).max(64).optional(),
     scheduledFor: z.string().datetime().optional(),
     loyaltyPointsToUse: z.number().int().min(0).optional(),
