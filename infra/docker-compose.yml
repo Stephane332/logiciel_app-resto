@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: barabite-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: barabite
+      POSTGRES_PASSWORD: barabite
+      POSTGRES_DB: barabite
+    ports:
+      - '5432:5432'
+    volumes:
+      - barabite-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U barabite -d barabite']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  barabite-db-data:

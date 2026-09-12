@@ -1,0 +1,33 @@
+{
+  "name": "barabite",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Plateforme de commande et de gestion pour la restauration rapide — Innova Group, Ouahigouya",
+  "author": "Ange Stephane Sawadogo",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "db:up": "docker compose -f infra/docker-compose.yml up -d",
+    "db:down": "docker compose -f infra/docker-compose.yml down",
+    "db:migrate": "npm run db:migrate --workspace @barabite/api",
+    "db:seed": "npm run db:seed --workspace @barabite/api",
+    "db:studio": "npm run db:studio --workspace @barabite/api",
+    "dev": "npm run dev --workspace @barabite/api",
+    "dev:client": "npm run dev --workspace @barabite/client",
+    "dev:restaurant": "npm run dev --workspace @barabite/restaurant"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "prettier": "^3.4.2"
+  }
+}
