@@ -99,6 +99,8 @@ export async function statsRoutes(app: FastifyInstance): Promise<void> {
       fulfilledCount: fulfilled.length,
       revenue,
       averageBasket: fulfilled.length > 0 ? Math.round(revenue / fulfilled.length) : 0,
+      rejected: orders.filter((order) => order.status === 'REJECTED').length,
+      cancelled: orders.filter((order) => order.status === 'CANCELLED').length,
       daily: [...daily.values()],
       hourly,
       byChannel: countBy(orders, 'channel'),

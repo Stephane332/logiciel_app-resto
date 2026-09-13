@@ -13,7 +13,7 @@ import { categoryInputSchema, productInputSchema } from '@barabite/shared';
 import { prisma } from '../../db.js';
 import { currentRestaurantId } from '../../lib/context.js';
 import { badRequest, notFound } from '../../lib/errors.js';
-import { requireAbility } from '../../lib/guards.js';
+import { requireAbility, requireStaff } from '../../lib/guards.js';
 import { audit } from '../../lib/audit.js';
 import { emitToRestaurant } from '../../lib/realtime.js';
 
@@ -88,7 +88,12 @@ export async function menuRoutes(app: FastifyInstance): Promise<void> {
 
   // --- Gestion du catalogue -------------------------------------------------
 
-  app.get('/menu/manage', { preHandler: requireAbility('menu:read') }, async (_request, reply) => {
+  /**
+   * Vue de gestion : stock réel, produits désactivés, catégories inactives.
+   * `menu:read` seul ne suffit pas — les clients l'ont aussi, puisqu'ils consultent la carte.
+   * L'accès est donc réservé au personnel.
+   */
+  app.get('/menu/manage', { preHandler: [requireStaff, requireAbility('menu:read')] }, async (_request, reply) => {
     const restaurantId = await currentRestaurantId();
     const categories = await prisma.category.findMany({
       where: { restaurantId },

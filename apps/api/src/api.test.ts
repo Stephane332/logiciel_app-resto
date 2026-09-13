@@ -431,6 +431,26 @@ describe('cycle de vie et permissions', () => {
     expect(response.statusCode).toBe(403);
   });
 
+  it('interdit à un client d\'accéder à la vue de gestion du menu', async () => {
+    // `menu:read` est aussi accordé aux clients, qui consultent la carte : la vue de gestion, qui
+    // expose le stock réel et les produits désactivés, doit exiger davantage.
+    const client = await asClient();
+    const manage = await app.inject({ method: 'GET', url: api('/menu/manage'), headers: auth(client) });
+    const zones = await app.inject({
+      method: 'GET',
+      url: api('/restaurant/delivery-zones'),
+      headers: auth(client),
+    });
+    expect(manage.statusCode).toBe(403);
+    expect(zones.statusCode).toBe(403);
+  });
+
+  it('laisse le personnel accéder à la vue de gestion', async () => {
+    const kitchen = await asKitchen();
+    const response = await app.inject({ method: 'GET', url: api('/menu/manage'), headers: auth(kitchen) });
+    expect(response.statusCode).toBe(200);
+  });
+
   it('interdit à la cuisine de modifier un prix (critère A9)', async () => {
     const kitchen = await asKitchen();
     const response = await app.inject({

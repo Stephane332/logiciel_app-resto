@@ -16,7 +16,7 @@ import {
 import { prisma } from '../../db.js';
 import { currentRestaurantId } from '../../lib/context.js';
 import { notFound } from '../../lib/errors.js';
-import { requireAbility } from '../../lib/guards.js';
+import { requireAbility, requireStaff } from '../../lib/guards.js';
 import { audit } from '../../lib/audit.js';
 
 /** Étapes de l'assistant de configuration initiale (§ 2.8). */
@@ -163,7 +163,9 @@ export async function restaurantRoutes(app: FastifyInstance): Promise<void> {
 
   // --- Zones de livraison ---------------------------------------------------
 
-  app.get('/restaurant/delivery-zones', { preHandler: requireAbility('menu:read') }, async (_request, reply) => {
+  // Vue complète, zones inactives comprises : réservée au personnel. Les clients reçoivent les
+  // zones actives par la route publique /restaurant.
+  app.get('/restaurant/delivery-zones', { preHandler: [requireStaff, requireAbility('menu:read')] }, async (_request, reply) => {
     const restaurantId = await currentRestaurantId();
     const zones = await prisma.deliveryZone.findMany({ where: { restaurantId }, orderBy: { position: 'asc' } });
     return reply.send({ zones });
