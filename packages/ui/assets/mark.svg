@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="BaraBite">
+  <title>BaraBite</title>
+  <!-- Badge : vert nuit, coins arrondis, lisible à 16 px comme à 512 px. -->
+  <rect width="64" height="64" rx="16" fill="#0E2019"/>
+  <!-- Pain supérieur : un dôme qui se lit aussi comme un soleil levant. -->
+  <path d="M12 32a20 20 0 0 1 40 0Z" fill="#F2B705"/>
+  <!-- Grains de sésame -->
+  <circle cx="24" cy="24.5" r="1.9" fill="#0E2019" opacity="0.75"/>
+  <circle cx="32" cy="21" r="1.9" fill="#0E2019" opacity="0.75"/>
+  <circle cx="40" cy="24.5" r="1.9" fill="#0E2019" opacity="0.75"/>
+  <!-- Garniture verte : la couleur d'Innova, et le seul contrepoint à l'or. -->
+  <rect x="12" y="35" width="40" height="6.5" rx="3.25" fill="#35C877"/>
+  <!-- Pain inférieur -->
+  <path d="M12 44h40v4a5 5 0 0 1-5 5H17a5 5 0 0 1-5-5Z" fill="#F2B705"/>
+</svg>

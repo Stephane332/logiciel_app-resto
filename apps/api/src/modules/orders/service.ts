@@ -5,7 +5,8 @@
  * requête, les totaux sont recalculés côté serveur, et chaque transition passe par la machine à
  * états partagée. Une commande qui sort d'ici est une commande dont on peut répondre.
  */
-import type { OrderStatus, OrderType, Prisma, Role } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import type { OrderStatus, OrderType, Role } from '@prisma/client';
 import {
   assertTransition,
   computeCart,
@@ -162,18 +163,29 @@ export async function createOrder(
   const resolvedCustomerId = await resolveCustomer(context, input);
 
   const order = await prisma.$transaction(async (tx) => {
-    // Le compteur est incrémenté dans la transaction : deux commandes simultanées ne peuvent pas
-    // recevoir le même numéro.
-    const counter = await tx.orderCounter.upsert({
-      where: { restaurantId_orderDate: { restaurantId: context.restaurantId, orderDate } },
-      create: { restaurantId: context.restaurantId, orderDate, lastNumber: 1 },
-      update: { lastNumber: { increment: 1 } },
-    });
+    // Numérotation quotidienne, atomique.
+    //
+    // Un upsert applicatif ne suffit pas : deux commandes passées à la même seconde constatent
+    // toutes deux l'absence du compteur, tentent toutes deux de l'insérer, et l'une échoue sur la
+    // contrainte d'unicité. En plein coup de feu, cela se traduit par une commande refusée sans
+    // raison compréhensible.
+    //
+    // `INSERT … ON CONFLICT DO UPDATE` confie l'arbitrage à PostgreSQL : la seconde transaction
+    // attend le verrou de ligne, puis incrémente. Aucun numéro perdu, aucun numéro en double.
+    const counterRows = await tx.$queryRaw<{ lastNumber: number }[]>`
+      INSERT INTO order_counters ("id", "restaurantId", "orderDate", "lastNumber")
+      VALUES (gen_random_uuid()::text, ${context.restaurantId}, ${orderDate}::date, 1)
+      ON CONFLICT ("restaurantId", "orderDate")
+      DO UPDATE SET "lastNumber" = order_counters."lastNumber" + 1
+      RETURNING "lastNumber"
+    `;
+    const counter = counterRows[0];
+    if (!counter) throw new Error('Numérotation de commande indisponible.');
 
     const created = await tx.order.create({
       data: {
         restaurantId: context.restaurantId,
-        dailyNumber: counter.lastNumber,
+        dailyNumber: Number(counter.lastNumber),
         orderDate,
         customerId: resolvedCustomerId,
         customerName: input.customerName ?? null,
@@ -490,15 +502,29 @@ async function resolveCustomer(
   });
   if (existing) return existing.id;
 
-  const created = await prisma.user.create({
-    data: {
-      restaurantId: context.restaurantId,
-      phone: parsed.e164,
-      name: input.customerName ?? 'Client',
-      role: 'CLIENT',
-    },
-  });
-  return created.id;
+  // « Vérifier puis créer » n'est pas sûr ici : deux commandes lancées à la même seconde depuis le
+  // même numéro — un client qui tape deux fois sur « Valider », par exemple — constatent toutes deux
+  // l'absence du compte et tentent toutes deux de le créer. On tente donc la création, et si la
+  // contrainte d'unicité nous dit qu'un autre est passé avant, on récupère son compte.
+  try {
+    const created = await prisma.user.create({
+      data: {
+        restaurantId: context.restaurantId,
+        phone: parsed.e164,
+        name: input.customerName ?? 'Client',
+        role: 'CLIENT',
+      },
+    });
+    return created.id;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      const concurrent = await prisma.user.findUnique({
+        where: { restaurantId_phone: { restaurantId: context.restaurantId, phone: parsed.e164 } },
+      });
+      if (concurrent) return concurrent.id;
+    }
+    throw error;
+  }
 }
 
 // ---------------------------------------------------------------------------

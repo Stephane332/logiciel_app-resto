@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 72" width="320" height="72" role="img" aria-label="BaraBite — Bon goût. Sans attente.">
+  <title>BaraBite</title>
+  <rect width="320" height="72" rx="14" fill="#07130F"/>
+  <g transform="translate(12 4)">
+    <rect width="64" height="64" rx="16" fill="#0E2019"/>
+    <path d="M12 32a20 20 0 0 1 40 0Z" fill="#F2B705"/>
+    <circle cx="24" cy="24.5" r="1.9" fill="#0E2019" opacity="0.75"/>
+    <circle cx="32" cy="21" r="1.9" fill="#0E2019" opacity="0.75"/>
+    <circle cx="40" cy="24.5" r="1.9" fill="#0E2019" opacity="0.75"/>
+    <rect x="12" y="35" width="40" height="6.5" rx="3.25" fill="#35C877"/>
+    <path d="M12 44h40v4a5 5 0 0 1-5 5H17a5 5 0 0 1-5-5Z" fill="#F2B705"/>
+  </g>
+  <text x="92" y="36" xml:space="preserve" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="26" font-weight="700" letter-spacing="0.5" fill="#F4F7F4">Bara<tspan fill="#F2B705">Bite</tspan></text>
+  <text x="93" y="54" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="500" letter-spacing="1.6" fill="#A6BCB0">BON GOÛT. SANS ATTENTE.</text>
+</svg>

@@ -124,6 +124,11 @@ describe('création de commande', () => {
       createPickupOrder(),
       createPickupOrder(),
     ]);
+    // On vérifie d'abord que les cinq ont abouti : sans cela, un échec de concurrence se
+    // présenterait comme un « undefined » illisible plutôt que comme le défaut qu'il est.
+    for (const response of responses) {
+      expect(response.statusCode, response.body).toBe(201);
+    }
     const numbers = responses.map((response) => response.json().order.dailyNumber);
     expect(new Set(numbers).size).toBe(5);
   });

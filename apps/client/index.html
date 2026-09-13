@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#07130f" />
+    <meta name="description" content="Commandez chez votre fast-food : livraison, retrait ou sur place. Suivez votre commande en temps réel." />
+
+    <title>BaraBite — Commander</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- Aperçu riche : un lien de menu partagé sur WhatsApp, Facebook ou TikTok doit montrer
+         quelque chose d'appétissant, pas une URL nue. C'est le canal d'acquisition n° 1. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Commandez en ligne" />
+    <meta property="og:description" content="Livraison, retrait ou sur place. Votre commande prête quand vous arrivez." />
+    <meta property="og:image" content="/icon-512.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Police chargée sans bloquer l'affichage : sur une connexion lente, le texte doit apparaître
+         immédiatement dans la police système plutôt que d'attendre. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="padding: 24px; color: #f4f7f4; font-family: system-ui, sans-serif">
+        Cette application a besoin de JavaScript pour fonctionner. Activez-le dans votre navigateur,
+        ou appelez directement le restaurant pour commander.
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

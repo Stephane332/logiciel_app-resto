@@ -1,0 +1,82 @@
+/**
+ * Jetons de design BaraBite.
+ *
+ * L'univers visuel est celui de la maquette validée : fond vert nuit, accents or, grandes cartes
+ * produits. Il est affiné pour l'usage réel — contraste relevé pour la lecture en plein soleil,
+ * cibles tactiles généreuses, échelle typographique régulière.
+ *
+ * Les couleurs de marque (--brand-primary, --brand-bg) sont surchargées à l'exécution par les
+ * valeurs enregistrées en base : la marque est une donnée, pas du code (ADR 004).
+ */
+:root {
+  /* --- Fonds : du plus profond au plus clair --- */
+  --bg: #07130f;
+  --surface: #0e2019;
+  --surface-2: #143026;
+  --surface-3: #1c4133;
+  --overlay: rgba(3, 10, 8, 0.72);
+
+  /* --- Marque --- */
+  --brand-primary: #f2b705;
+  --brand-primary-soft: #ffd34d;
+  --brand-primary-dark: #c79400;
+  --brand-bg: #07130f;
+  /* Le texte posé sur l'or : toujours sombre, jamais blanc — le contraste serait insuffisant. */
+  --on-brand: #1a1205;
+
+  /* --- Texte --- */
+  --text: #f4f7f4;
+  --text-muted: #a6bcb0;
+  --text-faint: #6f877c;
+
+  /* --- États --- */
+  --success: #35c877;
+  --success-bg: rgba(53, 200, 119, 0.14);
+  --warning: #f5a524;
+  --warning-bg: rgba(245, 165, 36, 0.14);
+  --danger: #f4544d;
+  --danger-bg: rgba(244, 84, 77, 0.14);
+  --info: #4aa8e0;
+  --info-bg: rgba(74, 168, 224, 0.14);
+
+  /* --- Traits --- */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  /* --- Rayons --- */
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 999px;
+
+  /* --- Espacements --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* --- Typographie --- */
+  --font: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+
+  /* --- Ombres --- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.45);
+
+  /* --- Dimensions --- */
+  --tap-target: 48px;
+  --bottom-nav-height: 64px;
+  --header-height: 60px;
+  --max-width: 560px;
+}
