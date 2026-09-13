@@ -10,9 +10,15 @@ coverage/
 .vite/
 .turbo/
 apps/client/dev-dist/
-apps/*/android/
+# Le projet Android de Capacitor est versionné : l'intégration continue en a besoin pour
+# construire l'APK, et il contient des réglages faits à la main (icônes, liens profonds).
+# Seuls les artefacts de construction sont exclus.
+apps/*/android/build/
+apps/*/android/app/build/
+apps/*/android/.gradle/
+apps/*/android/local.properties
+apps/*/android/capacitor-cordova-android-plugins/
 apps/*/ios/
-!apps/client/android/app/src/main/res/
 *.keystore
 *.jks
 prisma/*.db

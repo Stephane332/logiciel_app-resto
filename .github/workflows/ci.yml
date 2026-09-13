@@ -1,0 +1,70 @@
+name: Tests
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  test:
+    name: Règles métier et API
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: barabite
+          POSTGRES_PASSWORD: barabite
+          POSTGRES_DB: barabite_test
+        ports:
+          - 5432:5432
+        # Sans ce contrôle de santé, les tests démarrent avant que la base accepte les connexions.
+        options: >-
+          --health-cmd "pg_isready -U barabite"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://barabite:barabite@localhost:5432/barabite_test
+      TEST_DATABASE_URL: postgresql://barabite:barabite@localhost:5432/barabite_test
+      JWT_SECRET: secret-de-test-uniquement-pour-integration-continue
+      PAYMENT_WEBHOOK_SECRET: test-webhook-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Générer le client Prisma
+        run: npm run db:generate --workspace @barabite/api
+
+      - name: Appliquer les migrations
+        run: npm run db:deploy --workspace @barabite/api
+
+      - name: Vérification des types
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+  build:
+    name: Construction des interfaces
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Générer le client Prisma
+        run: npm run db:generate --workspace @barabite/api
+      - name: Construire
+        run: npm run build

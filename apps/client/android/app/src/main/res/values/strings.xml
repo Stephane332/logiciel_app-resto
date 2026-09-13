@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BaraBite</string>
+    <string name="title_activity_main">BaraBite</string>
+    <string name="package_name">bf.barabite.client</string>
+    <string name="custom_url_scheme">bf.barabite.client</string>
+    <!-- Domaine de mise en production. À remplacer par le domaine réel avant publication. -->
+    <string name="deep_link_host">app.barabite.bf</string>
+</resources>

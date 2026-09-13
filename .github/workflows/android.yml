@@ -1,0 +1,90 @@
+name: APK Android
+
+# Construit l'APK dans l'intégration continue : aucun outil à installer sur le poste du concepteur,
+# ni Android Studio, ni SDK, ni JDK (ADR 001).
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: "URL de l'API (ex. https://api.exemple.bf/api/v1)"
+        required: false
+        default: ''
+  push:
+    tags: ['v*']
+
+jobs:
+  apk:
+    name: Construire l'APK
+    runs-on: ubuntu-latest
+
+    env:
+      # Les conditions d'étape lisent une variable d'environnement plutôt qu'un secret directement :
+      # plus lisible, et le comportement ne dépend pas du contexte d'évaluation.
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Préparer le SDK Android
+        uses: android-actions/setup-android@v3
+
+      - run: npm ci
+
+      - name: Construire l'application web
+        # L'APK n'a pas de « même domaine » : l'URL de l'API doit être absolue, sinon l'application
+        # installée ne trouvera jamais le serveur.
+        env:
+          VITE_API_URL: ${{ inputs.api_url || vars.API_URL }}
+          VITE_REALTIME_URL: ${{ vars.REALTIME_URL }}
+        run: npm run build --workspace @barabite/client
+
+      - name: Synchroniser Capacitor
+        working-directory: apps/client
+        run: npx cap sync android
+
+      - name: Construire l'APK de débogage
+        working-directory: apps/client/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Publier l'APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: barabite-apk
+          path: apps/client/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      # --- Version signée, uniquement si le magasin de clés est configuré ---
+
+      - name: Restaurer le magasin de clés
+        if: env.HAS_KEYSTORE == 'true'
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > apps/client/android/app/release.keystore
+
+      - name: Construire l'APK signé
+        if: env.HAS_KEYSTORE == 'true'
+        working-directory: apps/client/android
+        env:
+          KEYSTORE_PATH: release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Publier l'APK signé
+        if: env.HAS_KEYSTORE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: barabite-apk-signe
+          path: apps/client/android/app/build/outputs/apk/release/*.apk
+          retention-days: 90
