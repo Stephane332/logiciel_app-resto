@@ -1,0 +1,60 @@
+# API BaraBite.
+#
+# Construction en deux temps : les dépendances complètes servent à compiler, puis seul le nécessaire
+# passe dans l'image finale. Sur un VPS modeste — le cas attendu — chaque centaine de mégaoctets
+# économisée se ressent au déploiement comme au redémarrage.
+
+FROM node:22-alpine AS builder
+WORKDIR /app
+
+# Les manifestes d'abord : tant qu'ils ne changent pas, Docker réutilise la couche d'installation.
+COPY package.json package-lock.json ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/api-client/package.json ./packages/api-client/
+COPY apps/api/package.json ./apps/api/
+
+RUN npm ci --workspace @barabite/api --include-workspace-root
+
+COPY packages/shared ./packages/shared
+COPY packages/api-client ./packages/api-client
+COPY apps/api ./apps/api
+
+RUN npx prisma generate --schema apps/api/prisma/schema.prisma \
+ && npm run build --workspace @barabite/api
+
+# ---------------------------------------------------------------------------
+
+FROM node:22-alpine AS runtime
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Prisma a besoin d'OpenSSL pour se connecter à PostgreSQL.
+RUN apk add --no-cache openssl tini
+
+COPY package.json package-lock.json ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/api-client/package.json ./packages/api-client/
+COPY apps/api/package.json ./apps/api/
+
+RUN npm ci --omit=dev --workspace @barabite/api --include-workspace-root \
+ && npm cache clean --force
+
+COPY packages/shared ./packages/shared
+COPY packages/api-client ./packages/api-client
+COPY apps/api/prisma ./apps/api/prisma
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+# L'application ne tourne pas en root : une faille dans une dépendance ne doit pas donner la machine.
+USER node
+
+EXPOSE 4000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
+# tini récolte les processus orphelins et transmet correctement SIGTERM.
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["node", "apps/api/dist/server.js"]

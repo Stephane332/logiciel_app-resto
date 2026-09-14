@@ -1,0 +1,106 @@
+# Plan de tests et rapport de recette
+
+Le cahier des charges (§ 21) énonce dix-sept critères d'acceptation. Chacun est ici **un test
+automatisé**, exécuté à chaque modification — pas une intention, pas une case cochée à la main.
+
+```bash
+npm test
+```
+
+> **125 tests, tous au vert** au dernier passage. L'intégration continue les rejoue sur chaque
+> poussée, avec une base PostgreSQL réelle.
+
+---
+
+## Couverture des critères d'acceptation
+
+| # | Critère | Où il est vérifié |
+|---|---|---|
+| A1 | Une commande apparaît dans le logiciel restaurant en moins de 2 s | `realtime.test.ts` — mesuré à ~400 ms |
+| A2 | Le restaurant peut accepter, préparer et terminer une commande | `order-status.test.ts`, `api.test.ts` |
+| A3 | Le client reçoit chaque changement de statut | `realtime.test.ts` |
+| A4 | Le total serveur est identique au total client, options comprises | `pricing.test.ts`, `api.test.ts` |
+| A5 | Le numéro de table est conservé de bout en bout | `api.test.ts` |
+| A6 | Une commande de retrait est identifiable par numéro et par code | `codes.test.ts`, `api.test.ts` |
+| A7 | Un produit indisponible ou en rupture ne peut pas être commandé | `api.test.ts` |
+| A8 | Une transition de statut interdite est rejetée | `order-status.test.ts`, `api.test.ts` |
+| A9 | Un rôle `KITCHEN` ne peut pas modifier un prix | `permissions.test.ts`, `api.test.ts` |
+| A10 | Un paiement n'est confirmé que par le serveur | `api.test.ts` (écart de total refusé) |
+| A11 | Un jeton de table invalide ou expiré est refusé | `codes.test.ts`, `api.test.ts` |
+| A12 | Hors horaires, la création de commande est refusée | `hours.test.ts`, `api.test.ts` |
+| A13 | Aucun montant n'est représenté en flottant | `money.test.ts` |
+| A14 | Le menu reste consultable sans réseau | vérifié au navigateur (voir plus bas) |
+| A15 | Une commande de caisse compte dans le chiffre d'affaires du jour | `api.test.ts` |
+| A16 | Les points de fidélité créditent le bon client au bon montant | `loyalty.test.ts`, `api.test.ts` |
+| A17 | Un gérant crée une catégorie, un produit et une option sans intervention technique | `api.test.ts` |
+
+---
+
+## Au-delà des critères
+
+Ces cas ne figuraient pas au cahier des charges. Ils ont été ajoutés parce qu'ils se produiront.
+
+| Cas | Pourquoi | Test |
+|---|---|---|
+| Cinq commandes simultanées | Deux clients peuvent commander à la même seconde. Sans numérotation atomique, l'une échoue. | `api.test.ts` |
+| Même numéro de téléphone, deux commandes simultanées | Un client qui tape deux fois sur « Valider ». | `api.test.ts` |
+| Stock restitué après un refus | Sans cela, chaque refus fait disparaître des produits de l'inventaire. | `api.test.ts` |
+| Prix figé à la commande | Changer un prix ne doit pas réécrire l'historique des ventes. | `api.test.ts` |
+| Un client n'entre pas dans le flux du restaurant | Ce flux transporte les commandes de tous les clients. | `realtime.test.ts` |
+| Un client n'accède pas à la vue de gestion du menu | Elle expose le stock et les produits désactivés. | `api.test.ts` |
+| Réponse identique pour un numéro inconnu et un mot de passe faux | Distinguer les deux révélerait quels numéros sont inscrits. | `api.test.ts` |
+| Un produit commandé est archivé, jamais effacé | Sinon l'historique perd son sens. | `api.test.ts` |
+| Service franchissant minuit | Un fast-food qui ferme à 1 h du matin est la règle. | `hours.test.ts` |
+| Codes de retrait sans caractères ambigus | Ils sont dictés au comptoir, dans le bruit. | `codes.test.ts` |
+
+---
+
+## Recette manuelle
+
+Ce que l'automatisation ne couvre pas, et qui se vérifie dans un vrai navigateur, sur un vrai
+téléphone.
+
+### Application cliente
+
+- [x] Commander en retrait **sans créer de compte** → code à cinq caractères obtenu
+- [x] Option obligatoire non choisie → l'ajout au panier est bloqué, le champ fautif est désigné
+- [x] Totaux : Double Cheese 3 500 F + supplément 500 F = 4 000 F, identiques côté serveur
+- [x] Scanner un QR de table → menu ouvert, commande marquée `Table 08`
+- [x] Jeton de table inventé → refusé avec un message clair
+- [x] Réseau coupé → le menu reste consultable, un bandeau prévient
+- [x] Aucun débordement horizontal à 360 px de large
+- [ ] Installation depuis Chrome Android sur un téléphone réel
+- [ ] Score Lighthouse PWA ≥ 90
+
+### Logiciel restaurant
+
+- [x] Caisse : commande au comptoir en quelques touches, envoyée en cuisine
+- [x] Une commande de caisse démarre directement en préparation
+- [x] Elle passe même restaurant fermé — l'employé présent fait foi
+- [x] Cuisine → prête → remise → le chiffre d'affaires du jour se met à jour
+- [x] Le rôle cuisine ne voit ni la caisse, ni les employés, ni les statistiques
+- [x] Accès direct à `/employes` par URL → renvoyé vers l'accueil
+- [ ] Alerte sonore sur un poste réel, en conditions de bruit
+- [ ] Usage sur tablette tactile, en cuisine
+
+### Avant l'ouverture au public
+
+- [ ] Pilote avec le personnel, en conditions réelles, avant les premiers clients
+- [ ] Commande passée depuis un téléphone d'entrée de gamme sur données mobiles
+- [ ] Coupure de courant simulée pendant un service
+- [ ] Restauration d'une sauvegarde vérifiée
+
+---
+
+## Limites connues
+
+Trois points n'ont pas pu être vérifiés dans l'environnement de développement. Ils sont signalés
+plutôt que passés sous silence.
+
+| Limite | Conséquence | Quand ce sera levé |
+|---|---|---|
+| La construction Gradle de l'APK n'a jamais été exécutée | Le workflow Android n'est pas prouvé | Au premier lancement du workflow |
+| Aucun agrégateur Mobile Money n'est branché | Le paiement en ligne reste simulé | À l'ouverture du compte marchand |
+| Les images de production n'ont pas été construites | Docker était indisponible ici | Au premier déploiement |
+
+Aucune de ces limites n'affecte les règles métier, qui sont, elles, entièrement testées.

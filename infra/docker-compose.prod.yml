@@ -1,0 +1,73 @@
+# Déploiement de production, sur un VPS.
+#
+#   cp infra/.env.prod.example infra/.env.prod   # puis renseignez les valeurs
+#   docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d
+#
+# Le reverse proxy et le certificat TLS restent à la charge de l'hébergement (Caddy, Traefik ou
+# nginx + certbot) : ils dépendent du domaine et ne se devinent pas ici.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Les sauvegardes sortent du conteneur : un volume perdu ne doit pas emporter les données.
+      - ./backups:/backups
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Pas de port publié : seul le réseau interne y accède.
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      PUBLIC_CLIENT_URL: ${PUBLIC_CLIENT_URL}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-sandbox}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET}
+    ports:
+      - '127.0.0.1:4000:4000'
+
+  client:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.web
+      args:
+        APP: client
+        VITE_API_URL: ${PUBLIC_API_URL}
+        VITE_REALTIME_URL: ${PUBLIC_REALTIME_URL}
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:8080:80'
+
+  restaurant:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.web
+      args:
+        APP: restaurant
+        VITE_API_URL: ${PUBLIC_API_URL}
+        VITE_REALTIME_URL: ${PUBLIC_REALTIME_URL}
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:8081:80'
+
+volumes:
+  db-data:
