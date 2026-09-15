@@ -12,7 +12,7 @@ Un VPS modeste suffit — 2 Go de mémoire vive tiennent largement la charge d'u
 | Un VPS Linux avec Docker | Héberger les trois briques |
 | Un nom de domaine | Les QR Codes de table et l'installation de la PWA |
 | Un certificat TLS | Obligatoire : sans HTTPS, ni service worker ni PWA installable |
-| Un compte marchand Mobile Money | Le paiement en ligne réel (facultatif au lancement) |
+| Un numéro marchand Orange Money ou Moov Money | Encaisser en Mobile Money — **aucun agrégateur n'est nécessaire** ([ADR 008](adr/008-paiement-declare-atteste.md)) |
 
 Trois sous-domaines suffisent, par exemple :
 
@@ -125,10 +125,31 @@ arrière-plan et l'active. Aucune réinstallation, aucun passage par un magasin 
 
 ---
 
-## Brancher le Mobile Money
+## Mettre en service le Mobile Money
 
-L'architecture attend un agrégateur (voir [ADR 007](adr/007-paiement-adaptateurs.md)). Une fois le
-compte marchand ouvert :
+**Il n'y a pas d'agrégateur à contractualiser.** Une version antérieure de ce document l'affirmait ;
+c'était faux, et cela retardait le seul moyen de paiement réellement utilisé par la clientèle. Orange
+Money et Moov Money fonctionnent par code USSD, et la preuve du paiement est faite par le restaurant
+lui-même, sur le SMS reçu sur son propre téléphone ([ADR 008](adr/008-paiement-declare-atteste.md)).
+
+Il suffit donc du numéro marchand :
+
+1. Vérifier que `PAYMENT_PROVIDER=declared` dans `infra/.env.prod` — c'est le défaut.
+2. Dans le logiciel restaurant, **Paramètres → Mobile Money**, saisir le ou les numéros marchands et
+   activer les moyens correspondants.
+3. C'est tout. Un moyen de paiement n'apparaît au client que si son numéro est renseigné : il est donc
+   impossible de proposer un code USSD qui n'aboutirait nulle part.
+
+Former l'équipe à l'écran **Paiements à vérifier** : c'est là que se fait l'attestation, et rien n'est
+encaissé tant qu'elle n'a pas eu lieu. La règle tient en une phrase, et elle mérite d'être affichée au
+comptoir :
+
+> Celui qui paie ne confirme jamais son propre paiement.
+
+### Le jour où un agrégateur devient justifié
+
+Quand le volume rend la vérification manuelle pesante, l'automatisation se branche sans rien défaire
+(voir [ADR 007](adr/007-paiement-adaptateurs.md)) :
 
 1. Écrire `apps/api/src/payments/<agregateur>.ts` en implémentant l'interface `PaymentProvider`.
 2. L'enregistrer dans `apps/api/src/payments/index.ts`.
@@ -148,6 +169,8 @@ Rien d'autre ne bouge : le reste du système ignore quel fournisseur encaisse.
 - [ ] Menu, prix et photos réels saisis par le restaurant
 - [ ] Horaires réels renseignés
 - [ ] Zones de livraison réelles et leurs forfaits
+- [ ] Numéros marchands Mobile Money saisis et vérifiés par un paiement réel de 100 F
+- [ ] Équipe formée à l'écran « Paiements à vérifier »
 - [ ] QR Codes imprimés et collés sur les tables
 - [ ] Comptes créés pour chaque employé, avec le bon rôle
 - [ ] Sauvegarde planifiée **et restauration testée**

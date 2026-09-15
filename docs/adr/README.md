@@ -13,3 +13,4 @@ nouvelle décision qui la remplace explicitement.
 | [005](005-caisse-multicanal.md) | Le logiciel encaisse tous les canaux de commande | Acceptée |
 | [006](006-temps-reel-socketio.md) | Temps réel par Socket.IO avec repli | Acceptée |
 | [007](007-paiement-adaptateurs.md) | Paiement par adaptateurs, confirmation serveur | Acceptée |
+| [008](008-paiement-declare-atteste.md) | Paiement Mobile Money déclaré par le client, attesté par le restaurant | Acceptée |

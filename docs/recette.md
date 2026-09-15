@@ -26,6 +26,7 @@ npm test
 | A8 | Une transition de statut interdite est rejetée | `order-status.test.ts`, `api.test.ts` |
 | A9 | Un rôle `KITCHEN` ne peut pas modifier un prix | `permissions.test.ts`, `api.test.ts` |
 | A10 | Un paiement n'est confirmé que par le serveur | `api.test.ts` (écart de total refusé) |
+| A10b | Celui qui paie ne confirme jamais son propre paiement : la déclaration du client n'est jamais `CONFIRMED` | `api.test.ts`, `mobile-money.test.ts` |
 | A11 | Un jeton de table invalide ou expiré est refusé | `codes.test.ts`, `api.test.ts` |
 | A12 | Hors horaires, la création de commande est refusée | `hours.test.ts`, `api.test.ts` |
 | A13 | Aucun montant n'est représenté en flottant | `money.test.ts` |
@@ -100,7 +101,28 @@ plutôt que passés sous silence.
 | Limite | Conséquence | Quand ce sera levé |
 |---|---|---|
 | La construction Gradle de l'APK n'a jamais été exécutée | Le workflow Android n'est pas prouvé | Au premier lancement du workflow |
-| Aucun agrégateur Mobile Money n'est branché | Le paiement en ligne reste simulé | À l'ouverture du compte marchand |
 | Les images de production n'ont pas été construites | Docker était indisponible ici | Au premier déploiement |
 
 Aucune de ces limites n'affecte les règles métier, qui sont, elles, entièrement testées.
+
+**Une limite en moins.** Ce document annonçait que le paiement en ligne resterait simulé faute
+d'agrégateur. Ce n'est plus vrai : Orange Money et Moov Money fonctionnent par code USSD, la preuve
+étant faite par le restaurant sur le SMS reçu sur son propre téléphone
+([ADR 008](adr/008-paiement-declare-atteste.md)). Il ne manque que les numéros marchands d'Innova Group.
+
+## Recette du paiement Mobile Money *(vérifiée au navigateur)*
+
+Parcours complet, client et restaurant en parallèle, sans rechargement côté client :
+
+1. Commander en retrait, choisir Orange Money. **Moov Money ne doit pas apparaître** si son numéro
+   marchand n'est pas renseigné — proposer un code USSD muet ferait payer dans le vide.
+2. La validation mène à l'écran de paiement, pas au suivi : le client a son téléphone en main.
+3. Le code est pré-rempli — `*144*10*<numéro marchand>*<montant>#` — et le montant correspond au total.
+4. Le lien composable encode le `#` en `%23`, sans quoi le code serait tronqué.
+5. Déclarer un identifiant de transaction. Le suivi doit annoncer **une vérification en cours**, jamais
+   un paiement confirmé.
+6. Côté restaurant, coller le SMS de l'opérateur : la commande est reconnue **par l'identifiant**.
+7. Attester : la file se vide, et le client voit « Paiement confirmé » **en temps réel**, sans avoir
+   rien touché — c'est la promesse faite à l'écran de paiement.
+
+Les sept points passent.

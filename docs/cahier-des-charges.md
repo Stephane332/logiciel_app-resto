@@ -344,19 +344,41 @@ le plus proche.
 
 Chaque politique est un **paramètre du restaurant**, modifiable sans redéploiement.
 
-### 9.3 Intégrations
-Orange Money, Moov Money, MTN Mobile Money si disponible chez l'agrégateur retenu, espèces si le
-restaurant l'autorise.
+### 9.3 Intégrations *(révisé — voir [ADR 008](adr/008-paiement-declare-atteste.md))*
+Orange Money et Moov Money **par code USSD, sans agrégateur**, espèces si le restaurant l'autorise. Les
+deux documents d'origine tenaient le Mobile Money pour suspendu à un contrat d'agrégateur : c'était une
+erreur d'analyse, et elle repoussait le seul moyen de paiement réellement utilisé par la clientèle visée.
+
+Un agrégateur n'apporte pas le paiement — il apporte sa **confirmation automatique**, et la facture. Le
+paiement, lui, fonctionne déjà.
 
 ### 9.4 Règle de confirmation
-Un paiement n'est **jamais** confirmé sur la foi de l'application cliente. Le serveur reçoit un webhook
-signé, **puis vérifie la transaction auprès de l'agrégateur** avant de marquer la commande payée. Toute
-confirmation porte une référence unique et est journalisée.
+Un paiement n'est **jamais** confirmé sur la foi de l'application cliente. C'est le seul endroit du
+système où un mensonge rapporte de l'argent. La règle s'énonce ainsi :
+
+> **Celui qui paie ne confirme jamais son propre paiement.**
+
+Le parcours en trois temps :
+
+1. **Composer.** Le serveur construit le code USSD déjà rempli — numéro marchand du restaurant et montant
+   exact. Le client compose depuis un lien, ou recopie le code affiché.
+2. **Déclarer.** Le client recopie l'identifiant de transaction reçu par SMS. Le paiement passe à
+   `DECLARED` : une affirmation, pas une preuve. La commande n'avance pas, et l'écran le dit au client.
+3. **Attester.** Un employé habilité (`payment:collect`) compare avec le SMS reçu sur **le téléphone du
+   restaurant** — le logiciel y lit le montant et l'identifiant et désigne la commande — puis atteste.
+   Le paiement devient alors `CONFIRMED`, avec son auteur, son horodatage et sa note.
+
+Le rapprochement refuse de deviner : l'identifiant prime sur le montant, et si deux commandes portent la
+même somme sans identifiant pour trancher, le logiciel le signale au lieu de choisir.
+
+Le jour où un agrégateur est contractualisé, la confirmation par webhook signé puis vérification de la
+transaction (ADR 007) se branche sans rien défaire.
 
 ### 9.5 État V1
-Espèces opérationnelles, plus un fournisseur **simulé** pour développement et démonstration. L'agrégateur
-réel n'est pas encore contractualisé : le code expose une interface `PaymentProvider` et son branchement
-se limite à l'écriture d'un adaptateur.
+**Mobile Money opérationnel** — Orange Money et Moov Money, dès que le restaurant a saisi ses numéros
+marchands dans ses paramètres. Espèces opérationnelles. Un fournisseur simulé reste disponible pour le
+développement et la démonstration. Un moyen de paiement n'est proposé au client que si son numéro
+marchand est réellement renseigné.
 
 ---
 
@@ -549,7 +571,7 @@ planche de maquettes ne montre jamais mais qu'une application réelle doit assum
 | Menu, disponibilités, **stock** | ✔ |
 | **Saisie du catalogue par le restaurant + assistant de configuration** | ✔ *(nouveau)* |
 | Paiement espèces + simulateur | ✔ |
-| Mobile Money réel | adaptateur prêt, en attente d'agrégateur |
+| **Mobile Money réel (USSD déclaré, attesté)** | ✔ *(nouveau — plus d'agrégateur requis)* |
 | Notifications | ✔ |
 | **Fidélité par points** | ✔ *(remonté de V2)* |
 | **Page livreur web** | ✔ *(remplace l'application livreur V2)* |
@@ -610,7 +632,7 @@ restauration ; APK Android.
 |---|---|---|
 | Menu, prix et suppléments réels d'Innova Group | pilote | Innova Group |
 | Logo, couleurs et comptes sociaux réels | publication de l'APK | Innova Group |
-| Agrégateur Mobile Money et compte marchand | mise en production | Concepteur |
+| Numéros marchands Orange Money / Moov Money | activation du paiement en ligne | Innova Group |
 | Horaires réels et zones de livraison de Ouahigouya | activation de la livraison | Innova Group |
 | Hébergement et nom de domaine | mise en production | Concepteur |
 | Matériel : tablette, imprimante thermique | pilote | Innova Group |

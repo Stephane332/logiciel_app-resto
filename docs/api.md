@@ -118,15 +118,28 @@ Toutes exigent une permission et respectent la machine à états. Une transition
 
 ## Paiements
 
-| Route | Rôle |
-|---|---|
-| `POST /payments/:orderId/initiate` | Démarre un paiement en ligne |
-| `POST /payments/webhook/:provider` | **Seul chemin** vers un paiement confirmé |
-| `POST /payments/:orderId/collect` | Encaissement au comptoir (`payment:collect`) |
-| `POST /payments/:paymentId/refund` | Remboursement tracé (`payment:refund`) |
+| Route | Rôle | Accès |
+|---|---|---|
+| `POST /payments/:orderId/initiate` | Renvoie le code USSD pré-rempli, le lien composable et le numéro marchand | client |
+| `POST /payments/:orderId/declare` | Le client déclare avoir payé et recopie l'identifiant du SMS → `DECLARED` | client |
+| `GET /payments/to-verify` | File des paiements déclarés en attente d'attestation | `payment:collect` |
+| `POST /payments/read-sms` | Lit un SMS d'opérateur et désigne la commande correspondante | `payment:collect` |
+| `POST /payments/:paymentId/attest` | **Seul chemin** vers `CONFIRMED` en Mobile Money | `payment:collect` |
+| `POST /payments/webhook/:provider` | Confirmation automatique, si un agrégateur est branché un jour | signature |
+| `POST /payments/:orderId/collect` | Encaissement au comptoir | `payment:collect` |
+| `POST /payments/:paymentId/refund` | Remboursement tracé | `payment:refund` |
 
-Le webhook vérifie la signature, **puis interroge l'agrégateur** avant de confirmer, et recoupe le
-montant. Un webhook rejoué ne réencaisse pas : la référence du fournisseur est unique.
+**Aucune route accessible au client ne produit `CONFIRMED`.** `declare` place le paiement en `DECLARED` —
+une affirmation non vérifiée — et rien de plus : c'est l'attestation par un employé habilité, faite sur le
+SMS reçu par le restaurant lui-même, qui confirme ([ADR 008](adr/008-paiement-declare-atteste.md)).
+
+`read-sms` ne tranche jamais au hasard : l'identifiant de transaction prime sur le montant, et si
+plusieurs commandes correspondent sans identifiant pour les départager, la réponse est `AMBIGUOUS` et
+laisse l'employé décider.
+
+Attester deux fois n'encaisse pas deux fois : un paiement déjà `CONFIRMED` renvoie `alreadyConfirmed`.
+Le webhook, lui, vérifie la signature **puis interroge l'agrégateur** avant de confirmer, et recoupe le
+montant ; rejoué, il ne réencaisse pas, la référence du fournisseur étant unique.
 
 ---
 
