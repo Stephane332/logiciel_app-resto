@@ -96,7 +96,39 @@ export interface RestaurantSettings {
   loyaltyPointValue: number;
   loyaltyMinimumPoints: number;
   loyaltyMaxRedemptionPct: number;
+  orangeMoneyNumber: string | null;
+  orangeMoneyUssd: string;
+  orangeMoneyEnabled: boolean;
+  moovMoneyNumber: string | null;
+  moovMoneyUssd: string;
+  moovMoneyEnabled: boolean;
+  whatsappOrderNumber: string | null;
 }
+
+/** Paiement déclaré par le client, en attente d'attestation du restaurant. */
+export interface PaymentToVerify {
+  id: string;
+  amount: number;
+  method: PaymentMethod;
+  status: string;
+  declaredReference: string | null;
+  declaredAt: string | null;
+  order: {
+    id: string;
+    dailyNumber: number;
+    type: OrderType;
+    status: OrderStatus;
+    customerName: string | null;
+    customerPhone: string | null;
+    customer: { name: string; phone: string } | null;
+  };
+}
+
+export type SmsReadResult =
+  | { kind: 'UNREADABLE' }
+  | { kind: 'NO_MATCH'; amount: number | null }
+  | { kind: 'MATCHED'; byReference: boolean; payment: PaymentToVerify }
+  | { kind: 'AMBIGUOUS'; amount: number; candidates: PaymentToVerify[] };
 
 export interface RestaurantInfo {
   restaurant: {
@@ -118,6 +150,8 @@ export interface RestaurantInfo {
       cashOnDelivery: boolean;
       cashOnPickup: boolean;
       cashOnDineIn: boolean;
+      orangeMoney: boolean;
+      moovMoney: boolean;
     };
     loyalty: {
       amountPerPoint: number;

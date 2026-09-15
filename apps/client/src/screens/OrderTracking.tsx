@@ -31,11 +31,6 @@ export function OrderTracking() {
     onSuccess: refresh,
   });
 
-  const pay = useMutation({
-    mutationFn: () => api.simulatePayment(id!),
-    onSuccess: refresh,
-  });
-
   if (isLoading) return <Loading rows={3} />;
   if (isError || !data) {
     return <ErrorState message="Cette commande est introuvable." onRetry={() => void refetch()} />;
@@ -46,8 +41,16 @@ export function OrderTracking() {
   const currentIndex = steps.indexOf(order.status);
   const finished = isTerminal(order.status);
   const cancellable = order.status === 'PENDING';
+  const payment = order.payment;
   const payable =
-    order.payment?.status !== 'CONFIRMED' && order.payment?.method !== 'CASH' && !finished;
+    payment && payment.status !== 'CONFIRMED' && payment.status !== 'DECLARED' &&
+    payment.method !== 'CASH' && !finished;
+  const awaitingAttestation = payment?.status === 'DECLARED';
+  const paymentRefused = payment?.status === 'FAILED';
+  // Le client a avancé son argent et attendu une vérification humaine : quand elle tombe, il faut
+  // le lui dire. Sans ce bandeau, le message « en attente » disparaît sans rien annoncer et le
+  // client reste devant un écran qui ne répond plus à sa seule question.
+  const paymentConfirmed = payment?.status === 'CONFIRMED' && payment.method !== 'CASH';
 
   return (
     <div>
@@ -191,15 +194,36 @@ export function OrderTracking() {
           )}
         </section>
 
+        {/* L'état du paiement est dit sans détour : croire sa commande réglée alors que
+            personne ne l'a vérifiée, c'est repartir sans son repas. */}
+        {paymentConfirmed && (
+          <div className="banner banner--success">
+            <IconCheck size={16} />
+            <span>Paiement confirmé par le restaurant. Il n'y a plus rien à régler.</span>
+          </div>
+        )}
+
+        {awaitingAttestation && (
+          <div className="banner banner--warning">
+            <span>
+              Paiement déclaré. Le restaurant vérifie sur son propre téléphone et confirme —
+              vous le verrez ici.
+            </span>
+          </div>
+        )}
+
+        {paymentRefused && (
+          <div className="banner banner--danger">
+            <span>
+              Le restaurant n'a pas constaté votre paiement. Vérifiez votre SMS, ou appelez-le.
+            </span>
+          </div>
+        )}
+
         {payable && (
-          <button
-            type="button"
-            className="btn btn--primary btn--block"
-            disabled={pay.isPending}
-            onClick={() => pay.mutate()}
-          >
-            {pay.isPending ? 'Paiement en cours…' : 'Payer maintenant'}
-          </button>
+          <Link to={`/commande/${order.id}/paiement`} className="btn btn--primary btn--block">
+            Payer maintenant
+          </Link>
         )}
 
         {cancellable && (

@@ -69,6 +69,9 @@ enum PaymentMethod {
 enum PaymentStatus {
   PENDING
   PROCESSING
+  /// Le client dit avoir payé. Personne au restaurant n'a encore rien vérifié.
+  /// Une déclaration n'est pas une preuve : voir packages/shared/src/mobile-money.ts.
+  DECLARED
   CONFIRMED
   FAILED
   REFUNDED
@@ -148,6 +151,23 @@ model Restaurant {
   /// Délai de préparation annoncé au client, en minutes.
   preparationMinutes Int @default(20)
 
+  /// --- Mobile Money sans agrégateur ---
+  ///
+  /// Le client compose un code USSD déjà rempli, puis recopie l'identifiant que
+  /// l'opérateur lui envoie par SMS. Le restaurant compare avec SON propre SMS et
+  /// atteste. Aucun abonnement, aucune commission : voir ADR 008.
+  orangeMoneyNumber  String?
+  orangeMoneyUssd    String  @default("*144*10*{NUM}*{MONTANT}#")
+  orangeMoneyEnabled Boolean @default(false)
+
+  moovMoneyNumber    String?
+  moovMoneyUssd      String  @default("*555*4*1*{NUM}*{MONTANT}#")
+  moovMoneyEnabled   Boolean @default(false)
+
+  /// Numéro WhatsApp de service : canal de secours garanti, gratuit, quand la
+  /// tablette de cuisine est éteinte ou hors réseau.
+  whatsappOrderNumber String?
+
   /// Fidélité (§ 2.4). Valeurs par défaut alignées sur packages/shared/src/loyalty.ts.
   loyaltyEnabled            Boolean @default(true)
   loyaltyAmountPerPoint     Int     @default(100)
@@ -214,6 +234,7 @@ model User {
   loyaltyTransactions LoyaltyTransaction[]
   auditLogs           AuditLog[]
   deliveredOrders     Order[]   @relation("OrderCourier")
+  attestedPayments    Payment[] @relation("PaymentAttestedBy")
 
   @@unique([restaurantId, phone])
   @@index([restaurantId, role])
@@ -490,6 +511,19 @@ model Payment {
   failureReason     String?
   rawPayload        Json?
 
+  /// Identifiant de transaction recopié par le client depuis son SMS.
+  /// C'est une déclaration : elle sert au restaurant à retrouver la ligne dans
+  /// son propre SMS, jamais à valider le paiement toute seule.
+  declaredReference String?
+  declaredAt        DateTime?
+
+  /// Qui a attesté au restaurant, et quand. Vide tant que personne n'a vérifié.
+  attestedById String?
+  attestedBy   User?     @relation("PaymentAttestedBy", fields: [attestedById], references: [id], onDelete: SetNull)
+  attestedAt   DateTime?
+  /// Extrait du SMS du marchand, conservé comme trace de l'attestation.
+  attestNote   String?
+
   confirmedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -497,6 +531,7 @@ model Payment {
   refunds Refund[]
 
   @@index([orderId])
+  @@index([status, createdAt])
   @@map("payments")
 }
 

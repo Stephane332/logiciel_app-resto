@@ -6,7 +6,7 @@
  *   — l'adresse se saisit par secteur et point de repère, parce que c'est ainsi qu'on se repère à
  *     Ouahigouya, et non par numéro de rue (§ 10).
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { isValidBurkinaPhone, type OrderType, type PaymentMethod } from '@barabite/shared';
@@ -69,6 +69,17 @@ export function Checkout() {
     if (items.length === 0 && !orderPlaced.current) navigate('/panier', { replace: true });
   }, [items.length, navigate]);
 
+  /**
+   * Si le restaurant coupe un moyen de paiement pendant que le client remplit son panier, le choix
+   * affiché resterait sélectionné alors qu'il n'est plus proposé. On le ramène sur le premier moyen
+   * réellement disponible. Mémoïsé : sans cela la liste change d'identité à chaque rendu et l'effet
+   * repasserait en boucle sur un choix déjà valide.
+   */
+  const payments = useMemo(() => availablePayments(mode, info), [mode, info]);
+  useEffect(() => {
+    if (!payments.includes(payment)) setPayment(payments[0]!);
+  }, [payments, payment]);
+
   const selectedZone = zones.find((zone) => zone.id === zoneId);
   const deliveryFee = mode === 'DELIVERY' ? (selectedZone?.fee ?? 0) : 0;
   const totals = cartTotals(items, { deliveryFee });
@@ -121,7 +132,12 @@ export function Checkout() {
         pickupCode: order.pickupCode,
       });
       clear();
-      navigate(`/commande/${order.id}`, { replace: true });
+      // Un paiement Mobile Money se règle tout de suite, tant que le client a son
+      // téléphone en main : on l'y emmène au lieu de l'afficher sur le suivi.
+      const needsPayment = payment !== 'CASH';
+      navigate(needsPayment ? `/commande/${order.id}/paiement` : `/commande/${order.id}`, {
+        replace: true,
+      });
     },
   });
 
@@ -339,7 +355,7 @@ export function Checkout() {
         <section className="stack" style={{ gap: 'var(--space-3)' }}>
           <h2 className="section-title">Paiement</h2>
           <div className="stack" style={{ gap: 'var(--space-2)' }}>
-            {availablePayments(mode, info).map((method) => (
+            {payments.map((method) => (
               <button
                 key={method}
                 type="button"
@@ -414,10 +430,29 @@ export function Checkout() {
   );
 }
 
-/** Les moyens proposés dépendent du mode et de la politique du restaurant (§ 9.2). */
+/**
+ * Les moyens proposés dépendent du mode et de la politique du restaurant (§ 9.2).
+ *
+ * Un moyen Mobile Money n'apparaît que si le restaurant a réellement renseigné son
+ * numéro marchand : sans lui, le code USSD serait muet et le client croirait avoir
+ * payé dans le vide.
+ */
 function availablePayments(
   mode: OrderType | null,
-  info: { restaurant: { payment: { online: boolean; cashOnDelivery: boolean; cashOnPickup: boolean; cashOnDineIn: boolean } } } | undefined,
+  info:
+    | {
+        restaurant: {
+          payment: {
+            online: boolean;
+            cashOnDelivery: boolean;
+            cashOnPickup: boolean;
+            cashOnDineIn: boolean;
+            orangeMoney: boolean;
+            moovMoney: boolean;
+          };
+        };
+      }
+    | undefined,
 ): PaymentMethod[] {
   const policy = info?.restaurant.payment;
   const methods: PaymentMethod[] = [];
@@ -430,7 +465,11 @@ function availablePayments(
         : policy?.cashOnDineIn;
 
   if (cashAllowed !== false) methods.push('CASH');
-  if (policy?.online !== false) methods.push('ORANGE_MONEY', 'MOOV_MONEY');
+
+  if (policy?.online !== false) {
+    if (policy?.orangeMoney) methods.push('ORANGE_MONEY');
+    if (policy?.moovMoney) methods.push('MOOV_MONEY');
+  }
 
   return methods.length > 0 ? methods : ['CASH'];
 }

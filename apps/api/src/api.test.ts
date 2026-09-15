@@ -585,6 +585,251 @@ describe('fidélité (critère A16)', () => {
   });
 });
 
+describe('Mobile Money déclaré puis attesté (ADR 008)', () => {
+  /**
+   * La règle qui commande tout ce bloc :
+   *
+   *   Celui qui paie ne confirme jamais son propre paiement.
+   *
+   * Un client peut mentir dans le champ « identifiant ». Il ne peut pas faire
+   * apparaître un SMS sur le téléphone du patron. Ces tests vérifient que le
+   * code ne lui offre aucun raccourci.
+   */
+  async function enableOrangeMoney() {
+    await prisma.restaurant.update({
+      where: { id: fixture.restaurantId },
+      data: { orangeMoneyEnabled: true, orangeMoneyNumber: '76055792' },
+    });
+  }
+
+  async function createMobileMoneyOrder() {
+    const response = await app.inject({
+      method: 'POST',
+      url: api('/orders'),
+      payload: {
+        type: 'PICKUP',
+        channel: 'APP',
+        paymentMethod: 'ORANGE_MONEY',
+        customerName: 'Aminata Ouédraogo',
+        customerPhone: '+22670111222',
+        lines: [{ productId: fixture.friesId, quantity: 1 }],
+      },
+    });
+    expect(response.statusCode, response.body).toBe(201);
+    return response.json().order;
+  }
+
+  it("remet au client le code USSD déjà rempli, sans jamais lui donner le modèle", async () => {
+    await enableOrangeMoney();
+    const order = await createMobileMoneyOrder();
+
+    const response = await app.inject({ method: 'POST', url: api(`/payments/${order.id}/initiate`) });
+    expect(response.statusCode, response.body).toBe(200);
+
+    const body = response.json();
+    // Le montant et le numéro du marchand sont déjà dans le code : le client n'a rien à saisir.
+    expect(body.ussdCode).toBe('*144*10*76055792*1500#');
+    expect(body.dialLink).toContain('%23');
+    expect(body.requiresDeclaration).toBe(true);
+  });
+
+  it("refuse d'initier un moyen que le restaurant n'a pas activé", async () => {
+    const order = await createMobileMoneyOrder();
+    const response = await app.inject({ method: 'POST', url: api(`/payments/${order.id}/initiate`) });
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe('METHOD_UNAVAILABLE');
+  });
+
+  it('enregistre la déclaration du client SANS confirmer le paiement', async () => {
+    await enableOrangeMoney();
+    const order = await createMobileMoneyOrder();
+    await app.inject({ method: 'POST', url: api(`/payments/${order.id}/initiate`) });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: api(`/payments/${order.id}/declare`),
+      payload: { reference: 'MP260902.0128.19397304' },
+    });
+
+    expect(response.statusCode, response.body).toBe(200);
+    // DECLARED, surtout pas CONFIRMED : la parole du payeur n'encaisse rien.
+    expect(response.json().payment.status).toBe('DECLARED');
+
+    const payment = await prisma.payment.findFirst({ where: { orderId: order.id } });
+    expect(payment?.status).toBe('DECLARED');
+    expect(payment?.confirmedAt).toBeNull();
+  });
+
+  it("n'offre au client aucune route pour attester lui-même", async () => {
+    await enableOrangeMoney();
+    const order = await createMobileMoneyOrder();
+    await app.inject({ method: 'POST', url: api(`/payments/${order.id}/initiate`) });
+    await app.inject({
+      method: 'POST',
+      url: api(`/payments/${order.id}/declare`),
+      payload: { reference: 'MP260902.0128.19397304' },
+    });
+
+    const payment = await prisma.payment.findFirst({ where: { orderId: order.id } });
+    const client = await asClient();
+
+    // Ni connecté comme client, ni anonyme : l'attestation est réservée au personnel.
+    const asCustomer = await app.inject({
+      method: 'POST',
+      url: api(`/payments/${payment!.id}/attest`),
+      headers: auth(client),
+      payload: { received: true },
+    });
+    const anonymous = await app.inject({
+      method: 'POST',
+      url: api(`/payments/${payment!.id}/attest`),
+      payload: { received: true },
+    });
+
+    expect(asCustomer.statusCode).toBe(403);
+    expect(anonymous.statusCode).toBe(401);
+
+    const after = await prisma.payment.findUnique({ where: { id: payment!.id } });
+    expect(after?.status).toBe('DECLARED');
+  });
+
+  it("confirme le paiement quand le restaurant atteste l'avoir reçu", async () => {
+    await enableOrangeMoney();
+    const cashier = await asCashier();
+    const order = await createMobileMoneyOrder();
+    await app.inject({ method: 'POST', url: api(`/payments/${order.id}/initiate`) });
+    await app.inject({
+      method: 'POST',
+      url: api(`/payments/${order.id}/declare`),
+      payload: { reference: 'MP260902.0128.19397304' },
+    });
+
+    const payment = await prisma.payment.findFirst({ where: { orderId: order.id } });
+    const response = await app.inject({
+      method: 'POST',
+      url: api(`/payments/${payment!.id}/attest`),
+      headers: auth(cashier),
+      payload: { received: true, note: 'SMS reçu à 12h04' },
+    });
+
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json().payment.status).toBe('CONFIRMED');
+
+    const after = await prisma.payment.findUnique({ where: { id: payment!.id } });
+    expect(after?.attestedById).toBeTruthy();
+    expect(after?.confirmedAt).not.toBeNull();
+  });
+
+  it("marque le paiement en échec quand le restaurant n'a rien vu", async () => {
+    await enableOrangeMoney();
+    const cashier = await asCashier();
+    const order = await createMobileMoneyOrder();
+    await app.inject({ method: 'POST', url: api(`/payments/${order.id}/initiate`) });
+    await app.inject({
+      method: 'POST',
+      url: api(`/payments/${order.id}/declare`),
+      payload: { reference: 'FAUX999999' },
+    });
+
+    const payment = await prisma.payment.findFirst({ where: { orderId: order.id } });
+    await app.inject({
+      method: 'POST',
+      url: api(`/payments/${payment!.id}/attest`),
+      headers: auth(cashier),
+      payload: { received: false },
+    });
+
+    const after = await prisma.payment.findUnique({ where: { id: payment!.id } });
+    expect(after?.status).toBe('FAILED');
+  });
+
+  it('liste les paiements à vérifier pour le personnel uniquement', async () => {
+    await enableOrangeMoney();
+    const order = await createMobileMoneyOrder();
+    await app.inject({ method: 'POST', url: api(`/payments/${order.id}/initiate`) });
+    await app.inject({
+      method: 'POST',
+      url: api(`/payments/${order.id}/declare`),
+      payload: { reference: 'MP260902.0128.19397304' },
+    });
+
+    const cashier = await asCashier();
+    const client = await asClient();
+
+    const staffView = await app.inject({ method: 'GET', url: api('/payments/to-verify'), headers: auth(cashier) });
+    const clientView = await app.inject({ method: 'GET', url: api('/payments/to-verify'), headers: auth(client) });
+
+    expect(staffView.statusCode).toBe(200);
+    expect(staffView.json().payments).toHaveLength(1);
+    expect(clientView.statusCode).toBe(403);
+  });
+
+  it("retrouve la commande à partir du SMS collé par le restaurant", async () => {
+    await enableOrangeMoney();
+    const cashier = await asCashier();
+    const order = await createMobileMoneyOrder();
+    await app.inject({ method: 'POST', url: api(`/payments/${order.id}/initiate`) });
+    await app.inject({
+      method: 'POST',
+      url: api(`/payments/${order.id}/declare`),
+      payload: { reference: 'MP260902.0128.19397304' },
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: api('/payments/read-sms'),
+      headers: auth(cashier),
+      payload: {
+        text:
+          'Votre paiement de 1500.00 FCFA, Frais: 4.3478 FCFA a INNOVA GROUP a ete effectue ' +
+          'avec succes. Trans id: MP260902.0128.19397304.',
+      },
+    });
+
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json().kind).toBe('MATCHED');
+    // Reconnue par l'identifiant : deux transactions ne portent jamais le même numéro.
+    expect(response.json().byReference).toBe(true);
+  });
+
+  it("refuse la lecture du SMS à un client — c'est l'écran du patron", async () => {
+    const client = await asClient();
+    const response = await app.inject({
+      method: 'POST',
+      url: api('/payments/read-sms'),
+      headers: auth(client),
+      payload: { text: 'Votre paiement de 1500 FCFA. Trans id: ABC123456.' },
+    });
+    expect(response.statusCode).toBe(403);
+  });
+
+  it('refuse un identifiant qui ne ressemble à rien', async () => {
+    await enableOrangeMoney();
+    const order = await createMobileMoneyOrder();
+    await app.inject({ method: 'POST', url: api(`/payments/${order.id}/initiate`) });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: api(`/payments/${order.id}/declare`),
+      payload: { reference: '<script>' },
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe('INVALID_REFERENCE');
+  });
+
+  it("refuse d'activer un moyen sans numéro marchand", async () => {
+    // Le clavier du client s'ouvrirait sur un code muet, et il croirait avoir payé.
+    const admin = await login('+22670000001');
+    const response = await app.inject({
+      method: 'PATCH',
+      url: api('/restaurant/settings'),
+      headers: auth(admin),
+      payload: { moovMoneyEnabled: true, moovMoneyNumber: '' },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+});
+
 describe('suivi et historique', () => {
   it('laisse suivre une commande sans compte : connaître son identifiant suffit', async () => {
     const created = await createPickupOrder();

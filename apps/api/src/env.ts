@@ -16,7 +16,7 @@ const schema = z.object({
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(30),
   CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:5174'),
   PUBLIC_CLIENT_URL: z.string().default('http://localhost:5173'),
-  PAYMENT_PROVIDER: z.enum(['sandbox', 'cinetpay', 'ligdicash']).default('sandbox'),
+  PAYMENT_PROVIDER: z.enum(['declared', 'sandbox', 'cinetpay', 'ligdicash']).default('declared'),
   PAYMENT_WEBHOOK_SECRET: z.string().default('dev-webhook-secret'),
 });
 

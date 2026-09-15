@@ -38,9 +38,24 @@ export const customerApi = {
     request<{ order: CustomerOrder }>(`/orders/${id}/cancel`, { method: 'POST', body: { reason } }),
 
   initiatePayment: (orderId: string) =>
-    request<{ payment: { id: string; status: string }; redirectUrl?: string; instructions?: string }>(
-      `/payments/${orderId}/initiate`,
-      { method: 'POST' },
+    request<{
+      payment: { id: string; status: string; amount: number };
+      redirectUrl?: string;
+      instructions?: string;
+      ussdCode?: string;
+      dialLink?: string;
+      merchantNumber?: string;
+      requiresDeclaration: boolean;
+    }>(`/payments/${orderId}/initiate`, { method: 'POST' }),
+
+  /**
+   * Le client recopie l'identifiant reçu par SMS.
+   * C'est une déclaration : seul le restaurant peut confirmer le paiement.
+   */
+  declarePayment: (orderId: string, reference: string) =>
+    request<{ payment: { id: string; status: string }; message: string }>(
+      `/payments/${orderId}/declare`,
+      { method: 'POST', body: { reference } },
     ),
   simulatePayment: (orderId: string) =>
     request<{ payment: { status: string } }>(`/payments/${orderId}/simulate`, { method: 'POST' }),

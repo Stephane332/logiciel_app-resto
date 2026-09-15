@@ -64,6 +64,7 @@ export function Settings() {
       <BrandSection info={info} />
       <ServiceSection info={info} />
       <HoursSection hours={info.openingHours} />
+      <MobileMoneySection info={info} />
       <ZonesSection />
       <LoyaltySection info={info} />
     </div>
@@ -511,6 +512,103 @@ function ZoneModal({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </Modal>
+  );
+}
+
+/**
+ * Mobile Money sans agrégateur.
+ *
+ * Le client compose un code USSD déjà rempli et recopie l'identifiant de son SMS ;
+ * le restaurant compare avec le sien et atteste. Aucun abonnement, aucune
+ * commission — mais il faut que le numéro marchand soit juste (ADR 008).
+ */
+function MobileMoneySection({ info }: { info: Info }) {
+  const payment = info.restaurant.payment;
+  const update = useMutation({
+    mutationFn: (body: Record<string, unknown>) => staffApi.updateSettings(body),
+    onSuccess: invalidate,
+  });
+
+  const error = update.error instanceof Error ? update.error.message : null;
+
+  return (
+    <section className="card stack">
+      <div>
+        <h2 className="section-title">Mobile Money</h2>
+        <p className="faint">
+          Le client compose un code déjà rempli, puis recopie l'identifiant reçu par SMS. Vous
+          comparez avec votre propre SMS et vous attestez, depuis l'écran « Paiements ». Aucun
+          abonnement, aucune commission.
+        </p>
+      </div>
+
+      <div className="banner banner--info">
+        Vérifiez le numéro marchand auprès de l'opérateur avant votre premier encaissement : un
+        chiffre faux, et le client paie quelqu'un d'autre.
+      </div>
+
+      <MoneyAccount
+        label="Orange Money"
+        enabled={payment.orangeMoney}
+        onToggle={(value) => update.mutate({ orangeMoneyEnabled: value })}
+        onNumber={(value) => update.mutate({ orangeMoneyNumber: value || null })}
+        hint="Code marchand par défaut : *144*10*NUMÉRO*MONTANT#"
+      />
+
+      <div className="divider" />
+
+      <MoneyAccount
+        label="Moov Money"
+        enabled={payment.moovMoney}
+        onToggle={(value) => update.mutate({ moovMoneyEnabled: value })}
+        onNumber={(value) => update.mutate({ moovMoneyNumber: value || null })}
+        hint="Code marchand par défaut : *555*4*1*NUMÉRO*MONTANT#"
+      />
+
+      {error && <p className="field__error">{error}</p>}
+    </section>
+  );
+}
+
+function MoneyAccount({
+  label,
+  enabled,
+  onToggle,
+  onNumber,
+  hint,
+}: {
+  label: string;
+  enabled: boolean;
+  onToggle: (value: boolean) => void;
+  onNumber: (value: string) => void;
+  hint: string;
+}) {
+  const [number, setNumber] = useState('');
+
+  return (
+    <div className="stack" style={{ gap: 'var(--space-2)' }}>
+      <Switch
+        checked={enabled}
+        label={label}
+        hint={enabled ? 'Proposé aux clients' : 'Non proposé'}
+        onChange={onToggle}
+      />
+      <div className="field" style={{ maxWidth: 280 }}>
+        <label className="field__label" htmlFor={`num-${label}`}>
+          Numéro marchand
+        </label>
+        <input
+          id={`num-${label}`}
+          className="input"
+          value={number}
+          inputMode="tel"
+          placeholder="76 05 57 92"
+          onChange={(event) => setNumber(event.target.value)}
+          onBlur={() => number.trim() && onNumber(number.trim())}
+        />
+        <span className="faint">{hint}</span>
+      </div>
+    </div>
   );
 }
 

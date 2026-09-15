@@ -3,6 +3,8 @@ import type { OrderStatus, PaymentMethod, RejectionReason, Role } from '@barabit
 import { request } from './http.js';
 import type {
   Category,
+  PaymentToVerify,
+  SmsReadResult,
   DeliveryZone,
   Employee,
   OpeningHour,
@@ -76,6 +78,19 @@ export const staffApi = {
       method: 'POST',
       body: { method },
     }),
+  /** File des paiements déclarés, en attente d'attestation. */
+  paymentsToVerify: () => request<{ payments: PaymentToVerify[] }>('/payments/to-verify'),
+
+  /** Le restaurant atteste avoir vu — ou non — l'argent arriver. */
+  attestPayment: (paymentId: string, received: boolean, note?: string) =>
+    request<{ payment: { id: string; status: string } }>(`/payments/${paymentId}/attest`, {
+      method: 'POST',
+      body: { received, note },
+    }),
+
+  /** Lecture du SMS de l'opérateur collé par le restaurant. */
+  readSms: (text: string) => request<SmsReadResult>('/payments/read-sms', { method: 'POST', body: { text } }),
+
   refund: (paymentId: string, body: { amount?: number; reason: string }) =>
     request<{ refund: { id: string; amount: number } }>(`/payments/${paymentId}/refund`, {
       method: 'POST',

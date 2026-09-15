@@ -14,13 +14,16 @@ const TABS = [
 
 /** Écrans en plein écran : la navigation basse y volerait de la place et de l'attention. */
 const FULLSCREEN = ['/commander', '/produit/', '/t/', '/compte/connexion', '/compte/inscription'];
+const FULLSCREEN_SUFFIX = ['/paiement'];
 
 export function Layout() {
   const location = useLocation();
   const items = useCart((state) => state.items);
   const count = cartItemCount(items);
 
-  const hideNav = FULLSCREEN.some((path) => location.pathname.startsWith(path));
+  const hideNav =
+    FULLSCREEN.some((path) => location.pathname.startsWith(path)) ||
+    FULLSCREEN_SUFFIX.some((suffix) => location.pathname.endsWith(suffix));
 
   return (
     <div className="app">

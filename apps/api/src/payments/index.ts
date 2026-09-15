@@ -7,11 +7,13 @@
 import { env } from '../env.js';
 import { badRequest } from '../lib/errors.js';
 import { cashProvider } from './cash.js';
+import { declaredProvider } from './declared.js';
 import { sandboxProvider } from './sandbox.js';
 import type { PaymentProvider } from './provider.js';
 
 const providers = new Map<string, PaymentProvider>([
   [cashProvider.name, cashProvider],
+  [declaredProvider.name, declaredProvider],
   [sandboxProvider.name, sandboxProvider],
 ]);
 
@@ -31,5 +33,5 @@ export function providerFor(method: string): PaymentProvider {
   return configured;
 }
 
-export { cashProvider, sandboxProvider };
+export { cashProvider, declaredProvider, sandboxProvider };
 export type { PaymentProvider } from './provider.js';

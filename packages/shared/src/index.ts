@@ -15,4 +15,5 @@ export * from './loyalty.js';
 export * from './codes.js';
 export * from './phone.js';
 export * from './hours.js';
+export * from './mobile-money.js';
 export * from './schemas.js';

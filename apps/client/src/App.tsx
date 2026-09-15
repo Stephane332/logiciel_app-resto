@@ -18,6 +18,7 @@ import { Cart } from './screens/Cart';
 // affichage sur 3G se paie en secondes d'attente.
 const Checkout = lazy(() => import('./screens/Checkout').then((m) => ({ default: m.Checkout })));
 const OrderTracking = lazy(() => import('./screens/OrderTracking').then((m) => ({ default: m.OrderTracking })));
+const Payment = lazy(() => import('./screens/Payment').then((m) => ({ default: m.Payment })));
 const Orders = lazy(() => import('./screens/Orders').then((m) => ({ default: m.Orders })));
 const Account = lazy(() => import('./screens/Account').then((m) => ({ default: m.Account })));
 const Login = lazy(() => import('./screens/Login').then((m) => ({ default: m.Login })));
@@ -72,6 +73,7 @@ export function App() {
             <Route path="/panier" element={<Cart />} />
             <Route path="/commander" element={<Checkout />} />
             <Route path="/commande/:id" element={<OrderTracking />} />
+            <Route path="/commande/:id/paiement" element={<Payment />} />
             <Route path="/commandes" element={<Orders />} />
             <Route path="/compte" element={<Account />} />
             <Route path="/compte/connexion" element={<Login />} />

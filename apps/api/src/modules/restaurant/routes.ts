@@ -67,6 +67,8 @@ export async function restaurantRoutes(app: FastifyInstance): Promise<void> {
           cashOnDelivery: restaurant.cashOnDelivery,
           cashOnPickup: restaurant.cashOnPickup,
           cashOnDineIn: restaurant.cashOnDineIn,
+          orangeMoney: restaurant.orangeMoneyEnabled && Boolean(restaurant.orangeMoneyNumber),
+          moovMoney: restaurant.moovMoneyEnabled && Boolean(restaurant.moovMoneyNumber),
         },
         loyalty: restaurant.loyaltyEnabled
           ? {
@@ -123,6 +125,31 @@ export async function restaurantRoutes(app: FastifyInstance): Promise<void> {
         loyaltyPointValue: z.number().int().min(1).optional(),
         loyaltyMinimumPoints: z.number().int().min(0).optional(),
         loyaltyMaxRedemptionPct: z.number().int().min(1).max(100).optional(),
+
+        // Mobile Money sans agrégateur (ADR 008)
+        orangeMoneyNumber: z.string().trim().max(20).nullable().optional(),
+        orangeMoneyUssd: z.string().trim().min(5).max(40).optional(),
+        orangeMoneyEnabled: z.boolean().optional(),
+        moovMoneyNumber: z.string().trim().max(20).nullable().optional(),
+        moovMoneyUssd: z.string().trim().min(5).max(40).optional(),
+        moovMoneyEnabled: z.boolean().optional(),
+        whatsappOrderNumber: z.string().trim().max(20).nullable().optional(),
+      })
+      .superRefine((settings, ctx) => {
+        // Activer un moyen sans numéro produirait un code USSD muet : le clavier
+        // s'ouvrirait sur rien, et le client croirait avoir payé.
+        for (const [enabled, number, label] of [
+          ['orangeMoneyEnabled', 'orangeMoneyNumber', 'Orange Money'],
+          ['moovMoneyEnabled', 'moovMoneyNumber', 'Moov Money'],
+        ] as const) {
+          if (settings[enabled] === true && settings[number] !== undefined && !settings[number]) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `Renseignez le numéro marchand ${label} avant de l'activer.`,
+              path: [number],
+            });
+          }
+        }
       })
       .parse(request.body);
     const restaurantId = await currentRestaurantId();

@@ -18,6 +18,7 @@ import { Orders } from './screens/Orders';
 const Pos = lazy(() => import('./screens/Pos').then((m) => ({ default: m.Pos })));
 const Kitchen = lazy(() => import('./screens/Kitchen').then((m) => ({ default: m.Kitchen })));
 const Tables = lazy(() => import('./screens/Tables').then((m) => ({ default: m.Tables })));
+const PaymentsToVerify = lazy(() => import('./screens/PaymentsToVerify').then((m) => ({ default: m.PaymentsToVerify })));
 const MenuManage = lazy(() => import('./screens/MenuManage').then((m) => ({ default: m.MenuManage })));
 const Stats = lazy(() => import('./screens/Stats').then((m) => ({ default: m.Stats })));
 const Employees = lazy(() => import('./screens/Employees').then((m) => ({ default: m.Employees })));
@@ -83,6 +84,14 @@ export function App() {
               element={
                 <RequireAbility ability="order:prepare">
                   <Kitchen />
+                </RequireAbility>
+              }
+            />
+            <Route
+              path="/paiements"
+              element={
+                <RequireAbility ability="payment:collect">
+                  <PaymentsToVerify />
                 </RequireAbility>
               }
             />

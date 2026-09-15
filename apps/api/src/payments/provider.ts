@@ -29,6 +29,17 @@ export interface PaymentInitResult {
   redirectUrl?: string;
   /** Consigne affichée au client — par exemple la syntaxe USSD à composer. */
   instructions?: string;
+
+  // --- Paiement déclaré (Mobile Money sans agrégateur) ---
+
+  /** Code à composer, déjà rempli : « *144*10*76055792*4000# ». */
+  ussdCode?: string;
+  /** Lien qui ouvre le clavier téléphonique sur ce code. */
+  dialLink?: string;
+  /** Numéro du marchand, affiché au client en cas d'échec du lien. */
+  merchantNumber?: string;
+  /** Vrai lorsque le client devra recopier l'identifiant reçu par SMS. */
+  requiresDeclaration?: boolean;
 }
 
 export interface WebhookVerification {

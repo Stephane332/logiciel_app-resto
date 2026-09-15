@@ -863,6 +863,11 @@ textarea.input {
   color: var(--warning);
 }
 
+.banner--success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
 .banner--danger {
   background: var(--danger-bg);
   color: var(--danger);

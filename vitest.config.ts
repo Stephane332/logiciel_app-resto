@@ -15,6 +15,9 @@ export default defineConfig({
         process.env.TEST_DATABASE_URL ?? 'postgresql://barabite@127.0.0.1:5432/barabite_test',
       JWT_SECRET: 'secret-de-test-uniquement-pour-les-tests-automatises',
       PAYMENT_WEBHOOK_SECRET: 'test-webhook-secret',
+      // Fixé explicitement : Prisma charge apps/api/.env au démarrage, et une valeur
+      // laissée à un poste de développement rendrait ces tests dépendants de lui.
+      PAYMENT_PROVIDER: 'declared',
       PUBLIC_CLIENT_URL: 'http://localhost:5173',
     },
   },
