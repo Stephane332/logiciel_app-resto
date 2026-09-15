@@ -22,3 +22,17 @@ apps/*/ios/
 *.keystore
 *.jks
 prisma/*.db
+
+# Sorties de compilation TypeScript tombées à côté des sources.
+# Vite résout « ./Checkout » en .js AVANT .tsx : un fichier compilé oublié dans src/ prend
+# silencieusement la place du source et l'application tourne sur du code mort. Jamais versionnés.
+apps/*/src/**/*.js
+apps/*/src/**/*.jsx
+apps/*/src/**/*.d.ts
+apps/*/src/**/*.js.map
+apps/*/src/**/*.d.ts.map
+packages/*/src/**/*.js
+packages/*/src/**/*.jsx
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.js.map
+packages/*/src/**/*.d.ts.map

@@ -10,7 +10,8 @@
   "workspaces": ["packages/*", "apps/*"],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "test": "vitest run",
+    "check:sources": "node scripts/check-sources.mjs",
+    "test": "npm run check:sources && vitest run",
     "test:watch": "vitest",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
