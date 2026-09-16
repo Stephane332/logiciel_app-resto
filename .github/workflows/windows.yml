@@ -1,0 +1,53 @@
+name: Logiciel Windows
+
+# Produit l'installateur Windows du logiciel restaurant.
+#
+# Construit sur un runner Windows : un installateur NSIS ne se fabrique pas correctement ailleurs,
+# et un exe produit par émulation est exactement le genre de chose qui échoue à l'installation chez
+# le client, là où personne ne peut le diagnostiquer.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  windows:
+    name: Construire l'installateur
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Construire l'interface et la préparer
+        run: npm run build:desktop
+
+      - name: Installer les outils d'empaquetage
+        working-directory: apps/desktop
+        run: npm install
+
+      - name: Construire l'installateur
+        working-directory: apps/desktop
+        run: npm run build:win
+        env:
+          # Aucune signature de code : le certificat coûte cher et n'est pas nécessaire pour une
+          # installation interne. Windows affichera un avertissement au premier lancement, ce que
+          # le guide d'installation explique.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Publier l'installateur
+        uses: actions/upload-artifact@v4
+        with:
+          name: savora-pro-windows
+          path: |
+            apps/desktop/release/*.exe
+            apps/desktop/release/*.blockmap
+          if-no-files-found: error
+          retention-days: 30

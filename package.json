@@ -6,8 +6,15 @@
   "author": "Ange Stephane Sawadogo",
   "license": "UNLICENSED",
   "type": "module",
-  "engines": { "node": ">=20" },
-  "workspaces": ["packages/*", "apps/*"],
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/api",
+    "apps/client",
+    "apps/restaurant"
+  ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "check:sources": "node scripts/check-sources.mjs",
@@ -23,7 +30,8 @@
     "db:studio": "npm run db:studio --workspace @savora/api",
     "dev": "npm run dev --workspace @savora/api",
     "dev:client": "npm run dev --workspace @savora/client",
-    "dev:restaurant": "npm run dev --workspace @savora/restaurant"
+    "dev:restaurant": "npm run dev --workspace @savora/restaurant",
+    "build:desktop": "npm run build --workspace @savora/restaurant && node scripts/preparer-desktop.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

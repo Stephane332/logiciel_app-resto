@@ -1,0 +1,34 @@
+{
+  "name": "@savora/desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Savora Pro — logiciel restaurant installable sur Windows",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win --publish never",
+    "build:linux": "electron-builder --linux --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "app.savora.pro",
+    "productName": "Savora Pro",
+    "directories": { "output": "release", "buildResources": "build" },
+    "files": ["main.cjs", "preload.cjs", "serveur.html", "web/**"],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icone.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Savora Pro"
+    },
+    "linux": { "target": ["AppImage"], "category": "Office" }
+  }
+}

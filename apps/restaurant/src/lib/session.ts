@@ -7,8 +7,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { configureApi, staffApi, type SessionUser } from '@savora/api-client';
+import { apiBase } from './server';
 
-const BASE = import.meta.env.VITE_API_URL || '/api/v1';
+// Résolue à l'exécution : le même exe sert tous les restaurants (voir server.ts).
+const BASE = apiBase();
 
 interface SessionState {
   user: SessionUser | null;

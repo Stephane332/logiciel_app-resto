@@ -39,3 +39,7 @@ packages/*/src/**/*.d.ts.map
 
 # Photos envoyées par le restaurant en développement : des données, pas du code.
 apps/api/uploads/
+
+# Application Windows : interface copiée à la construction, et sortie de l'empaqueteur.
+apps/desktop/web/
+apps/desktop/release/

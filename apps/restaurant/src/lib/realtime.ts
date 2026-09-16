@@ -8,8 +8,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { useSession } from './session';
+import { realtimeOrigin } from './server';
 
-const REALTIME_URL = import.meta.env.VITE_REALTIME_URL || window.location.origin;
+const REALTIME_URL = realtimeOrigin();
 
 export interface RealtimeState {
   connected: boolean;

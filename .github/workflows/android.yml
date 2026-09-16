@@ -37,6 +37,13 @@ jobs:
 
       - name: Préparer le SDK Android
         uses: android-actions/setup-android@v3
+        with:
+          # L'action installe par défaut un paquet « tools » retiré du SDK Android depuis des
+          # années : sdkmanager échoue alors avant même que Gradle ne démarre. On lui demande donc
+          # explicitement de ne rien installer d'implicite — le runner fournit déjà ce qu'il faut,
+          # et Gradle télécharge le reste à la demande.
+          packages: ''
+          accept-android-sdk-licenses: true
 
       - run: npm ci
 
