@@ -24,11 +24,16 @@ jobs:
           cache: npm
 
       - name: Installer les dépendances
-        # `npm install` et non `npm ci` : le verrou est produit sous Linux et ne contient donc pas
-        # le binaire natif de Rollup pour Windows. `npm ci` l'installe à l'identique, sans jamais
-        # résoudre cette dépendance optionnelle propre à la plateforme, et la construction échoue
-        # sur « Cannot find module @rollup/rollup-win32-x64-msvc ». C'est un défaut connu de npm.
-        run: npm install --no-audit --no-fund
+        # Le verrou est produit sous Linux : il ne référence pas le binaire natif de Rollup pour
+        # Windows. Ni `npm ci` ni `npm install` ne résolvent cette dépendance optionnelle tant que
+        # le verrou est là — la construction échoue sur « Cannot find module
+        # @rollup/rollup-win32-x64-msvc », et c'est le contournement que npm indique lui-même dans
+        # son message d'erreur. Le verrou n'est pas modifié dans le dépôt : il est seulement écarté
+        # le temps de cette construction, sur le runner.
+        shell: bash
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
 
       - name: Construire l'interface et la préparer
         run: npm run build:desktop
