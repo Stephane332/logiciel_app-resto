@@ -21,9 +21,20 @@ en ligne dit la vérité sur ce qui sort réellement de la cuisine, ou il ne dit
 ## Comment récupérer les livrables
 
 ### APK Android
-Onglet **Actions** du dépôt → workflow **APK Android** → dernière exécution → artefact
-`savora-apk`. Version de débogage : elle s'installe sans certificat, Android affiche un
-avertissement au premier lancement.
+
+**Avant de construire, il faut l'adresse de ton serveur.** Un APK ne vit pas sur le même domaine
+que l'API : sans adresse absolue, il s'installe, s'ouvre, et reste vide. Le workflow refuse
+désormais de construire sans elle — un workflow rouge se comprend en dix secondes, un APK mort se
+diagnostique en une journée.
+
+Deux façons de la donner :
+- au lancement du workflow, dans le champ **URL de l'API** ;
+- une fois pour toutes : **Réglages → Secrets and variables → Actions → Variables**,
+  `API_URL = https://api.ton-domaine.bf/api/v1`.
+
+Ensuite : onglet **Actions** → **APK Android** → **Run workflow** → artefact `savora-apk`.
+Version de débogage : elle s'installe sans certificat, Android affiche un avertissement au premier
+lancement.
 
 ### Logiciel Windows
 Onglet **Actions** → workflow **Logiciel Windows** → artefact `savora-pro-windows`.

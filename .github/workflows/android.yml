@@ -47,6 +47,28 @@ jobs:
 
       - run: npm ci
 
+      - name: Vérifier l'adresse du serveur
+        # Un APK construit sans adresse d'API tombe sur une adresse relative, donc sur lui-même :
+        # il s'installe, s'ouvre, et reste désespérément vide. L'échec serait découvert par le
+        # premier client à qui on le donne, et personne ne saurait pourquoi.
+        #
+        # Mieux vaut refuser de construire. Un workflow rouge se comprend en dix secondes ; un APK
+        # mort se diagnostique en une journée.
+        env:
+          API_URL: ${{ inputs.api_url || vars.API_URL }}
+        run: |
+          if [ -z "$API_URL" ]; then
+            echo "::error::Aucune adresse d'API."
+            echo "L'APK ne pourrait joindre aucun serveur et s'ouvrirait vide."
+            echo ""
+            echo "Deux façons de la fournir :"
+            echo "  — au lancement du workflow, dans le champ « URL de l'API » ;"
+            echo "  — une fois pour toutes : Réglages → Secrets and variables → Actions"
+            echo "    → Variables → API_URL = https://api.votre-domaine.bf/api/v1"
+            exit 1
+          fi
+          echo "APK construit pour : $API_URL"
+
       - name: Construire l'application web
         # L'APK n'a pas de « même domaine » : l'URL de l'API doit être absolue, sinon l'application
         # installée ne trouvera jamais le serveur.
