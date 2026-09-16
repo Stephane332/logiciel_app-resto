@@ -5,6 +5,7 @@
  * restaurant : une seule implémentation du jeton, du renouvellement de session et de la traduction
  * des erreurs.
  */
+import { apiBase } from './server';
 import { configureApi as configureCore, customerApi } from '@savora/api-client';
 
 export { ApiError, request } from '@savora/api-client';
@@ -26,17 +27,13 @@ export type {
 /** L'application cliente ne voit que la vue restreinte des commandes. */
 export type { CustomerOrder as OrderView } from '@savora/api-client';
 
-/**
- * En web, l'API répond sur le même domaine. Dans l'APK, il n'y a pas de « même domaine » :
- * l'URL doit être absolue, fournie à la construction (voir docs/apk-android.md).
- */
-const BASE = import.meta.env.VITE_API_URL || '/api/v1';
-
 export function configureApi(options: {
   readToken: () => string | null;
   refreshSession: () => Promise<string | null>;
 }): void {
-  configureCore({ baseUrl: BASE, ...options });
+  // Résolue à l'appel et non au chargement du module : dans l'APK, l'adresse peut être saisie
+  // après le démarrage de l'application (voir lib/server.ts).
+  configureCore({ baseUrl: apiBase(), ...options });
 }
 
 export const api = customerApi;

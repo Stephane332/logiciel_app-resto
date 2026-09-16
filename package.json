@@ -17,6 +17,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
+    "demarrer": "node scripts/demarrer.mjs",
     "check:sources": "node scripts/check-sources.mjs",
     "test": "npm run check:sources && vitest run",
     "test:watch": "vitest",

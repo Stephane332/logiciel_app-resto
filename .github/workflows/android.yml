@@ -47,27 +47,26 @@ jobs:
 
       - run: npm ci
 
-      - name: Vérifier l'adresse du serveur
-        # Un APK construit sans adresse d'API tombe sur une adresse relative, donc sur lui-même :
-        # il s'installe, s'ouvre, et reste désespérément vide. L'échec serait découvert par le
-        # premier client à qui on le donne, et personne ne saurait pourquoi.
-        #
-        # Mieux vaut refuser de construire. Un workflow rouge se comprend en dix secondes ; un APK
-        # mort se diagnostique en une journée.
+      - name: Annoncer l'adresse du serveur
+        # Sans adresse, l'APK ne tombe plus sur une adresse relative — donc sur lui-même, vide. Il
+        # demande son serveur au premier lancement (apps/client/src/lib/server.ts). La construction
+        # se poursuit donc, mais en le disant clairement : un APK de diffusion doit porter son
+        # adresse, et personne ne devrait taper une adresse de serveur pour commander un burger.
         env:
           API_URL: ${{ inputs.api_url || vars.API_URL }}
         run: |
           if [ -z "$API_URL" ]; then
-            echo "::error::Aucune adresse d'API."
-            echo "L'APK ne pourrait joindre aucun serveur et s'ouvrirait vide."
+            echo "::warning::APK d'essai : aucune adresse d'API."
+            echo "L'application demandera son serveur au premier lancement."
+            echo "Pratique pour essayer sur un réseau local — à ne pas distribuer tel quel."
             echo ""
-            echo "Deux façons de la fournir :"
+            echo "Pour un APK de diffusion, fournissez l'adresse :"
             echo "  — au lancement du workflow, dans le champ « URL de l'API » ;"
-            echo "  — une fois pour toutes : Réglages → Secrets and variables → Actions"
+            echo "  — ou une fois pour toutes : Réglages → Secrets and variables → Actions"
             echo "    → Variables → API_URL = https://api.votre-domaine.bf/api/v1"
-            exit 1
+          else
+            echo "APK de diffusion, construit pour : $API_URL"
           fi
-          echo "APK construit pour : $API_URL"
 
       - name: Construire l'application web
         # L'APK n'a pas de « même domaine » : l'URL de l'API doit être absolue, sinon l'application

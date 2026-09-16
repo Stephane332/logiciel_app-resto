@@ -7,6 +7,8 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import { Serveur } from './screens/Serveur';
+import { serveurManquant } from './lib/server';
 import { Loading } from './components/ui';
 import { useRestaurant } from './lib/queries';
 import { Home } from './screens/Home';
@@ -62,6 +64,13 @@ function BrandTheme() {
 }
 
 export function App() {
+  /*
+   * Application installée qui ne sait pas où est son serveur : on le demande avant tout le reste.
+   * Charger l'accueil d'abord afficherait un menu vide et une erreur réseau — le symptôme, jamais
+   * la cause. Ce cas n'existe pas sur le web ni dans un APK construit avec son adresse.
+   */
+  if (serveurManquant()) return <Serveur />;
+
   return (
     <>
       <ScrollToTop />

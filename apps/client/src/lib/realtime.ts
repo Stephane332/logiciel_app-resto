@@ -7,7 +7,9 @@
 import { useEffect } from 'react';
 import { io, type Socket } from 'socket.io-client';
 
-const REALTIME_URL = import.meta.env.VITE_REALTIME_URL ?? window.location.origin;
+import { realtimeOrigin } from './server';
+
+const REALTIME_URL = realtimeOrigin();
 
 export function useOrderRealtime(orderId: string | undefined, onUpdate: () => void): void {
   useEffect(() => {

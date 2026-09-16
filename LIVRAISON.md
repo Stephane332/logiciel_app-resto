@@ -36,6 +36,11 @@ Ensuite : onglet **Actions** → **APK Android** → **Run workflow** → artefa
 Version de débogage : elle s'installe sans certificat, Android affiche un avertissement au premier
 lancement.
 
+**Pour essayer avant d'avoir un domaine :** construis l'APK sans adresse et il te la demandera au
+premier lancement. Lance `npm run demarrer` sur ton ordinateur, saisis l'adresse qu'il affiche, et
+l'application se connecte. Cet écran n'apparaît jamais dans un APK construit avec son adresse — un
+client n'a pas à taper une adresse de serveur pour commander.
+
 ### Logiciel Windows
 Onglet **Actions** → workflow **Logiciel Windows** → artefact `savora-pro-windows`.
 Installateur classique : double-clic, raccourci sur le bureau.
@@ -56,10 +61,23 @@ d'accueil comme n'importe quelle autre.
 ```bash
 npm install
 npm run db:migrate && npm run db:seed
-npm run dev            # API           → :4000
-npm run dev:restaurant # Savora Pro    → :5174
-npm run dev:client     # Savora        → :5173
+npm run demarrer
 ```
+
+Une seule commande. Elle lance les trois serveurs et affiche **l'adresse à taper sur ton
+téléphone**, à condition qu'il soit sur le même Wi-Fi.
+
+Ce qu'elle affiche, et pourquoi ça compte :
+
+| | |
+|---|---|
+| `http://<ton-ip>:5173` | La PWA, depuis ton téléphone |
+| `http://<ton-ip>:5174` | Le logiciel, depuis une tablette |
+| `<ton-ip>:4000` | Ce que l'APK demande à son premier lancement |
+
+**Une limite à connaître :** Android ne propose « Installer » que sur une adresse sécurisée. Sur un
+réseau local, la PWA s'utilise dans le navigateur mais ne s'installe pas. L'installation demande un
+domaine en HTTPS — c'est la seule chose que l'hébergement débloque et que rien ne remplace.
 
 Connexion à Savora Pro : **70 00 00 01**, mot de passe **savora2026**.
 À changer avant toute mise en production — c'est écrit dans la liste de contrôle.
