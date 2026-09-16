@@ -34,6 +34,9 @@ export const ABILITIES = [
   'employee:write',
   'settings:write',
   'brand:write',
+  /// Voir ce que le restaurant doit à la plateforme, et déclarer un reversement (ADR 009).
+  /// Réservé à la direction : ce n'est pas l'affaire de la cuisine ni de la caisse.
+  'commission:read',
 ] as const;
 
 export type Ability = (typeof ABILITIES)[number];
@@ -80,6 +83,7 @@ const MANAGER: readonly Ability[] = [
     'promotion:write',
     'loyalty:adjust',
     'stats:read',
+    'commission:read',
   ]),
 ];
 

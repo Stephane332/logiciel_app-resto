@@ -3,6 +3,10 @@ import type { OrderStatus, PaymentMethod, RejectionReason, Role } from '@barabit
 import { request } from './http.js';
 import type {
   Category,
+  CommissionEntry,
+  CommissionSettlement,
+  CommissionSummary,
+  CommissionTransfer,
   PaymentToVerify,
   SmsReadResult,
   DeliveryZone,
@@ -146,6 +150,26 @@ export const staffApi = {
     request<{ products: { name: string; quantity: number; revenue: number }[] }>(
       `/stats/top-products?days=${days}`,
     ),
+
+  // --- Commission de la plateforme (ADR 009) ---------------------------------
+
+  commissionSummary: () => request<CommissionSummary>('/commission/summary'),
+  commissionEntries: (periodKey?: string) =>
+    request<{ entries: CommissionEntry[] }>(
+      `/commission/entries${periodKey ? `?periodKey=${encodeURIComponent(periodKey)}` : ''}`,
+    ),
+  commissionSettlements: () => request<{ settlements: CommissionSettlement[] }>('/commission/settlements'),
+  closeCommissionPeriod: (periodKey: string) =>
+    request<{ id: string; amount: number; entryCount: number }>('/commission/settlements/close', {
+      method: 'POST',
+      body: { periodKey },
+    }),
+  commissionTransfer: (id: string) => request<CommissionTransfer>(`/commission/settlements/${id}/transfer`),
+  declareCommissionPaid: (id: string, reference: string) =>
+    request<{ settlement: CommissionSettlement }>(`/commission/settlements/${id}/declare`, {
+      method: 'POST',
+      body: { reference },
+    }),
 
   employees: () => request<{ employees: Employee[] }>('/employees'),
   createEmployee: (body: { name: string; phone: string; role: Role; password: string }) =>

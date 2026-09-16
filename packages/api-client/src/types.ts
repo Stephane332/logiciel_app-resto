@@ -344,3 +344,64 @@ export interface SetupStatus {
   total: number;
   counts: { categories: number; products: number; tables: number; zones: number };
 }
+
+// --- Commission de la plateforme (ADR 009) ------------------------------------
+
+export interface CommissionSummary {
+  enabled: boolean;
+  /** Taux en points de base : 100 = 1 %. */
+  rateBps: number;
+  period: 'DAILY' | 'WEEKLY' | 'MONTHLY';
+  billableChannels: string[];
+  periodKey: string;
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  dueThisPeriod: number;
+  entryCount: number;
+  outstanding: number;
+  outstandingSettlements: number;
+  platform: { name: string; momoNumber: string | null; operator: string };
+}
+
+export interface CommissionEntry {
+  id: string;
+  orderId: string;
+  base: number;
+  rateBps: number;
+  amount: number;
+  periodKey: string;
+  reversed: boolean;
+  createdAt: string;
+  order: {
+    id: string;
+    dailyNumber: number;
+    orderDate: string;
+    channel: string;
+    type: string;
+    total: number;
+  };
+}
+
+export interface CommissionSettlement {
+  id: string;
+  periodKey: string;
+  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
+  entryCount: number;
+  amount: number;
+  status: 'OPEN' | 'CLOSED' | 'DECLARED' | 'PAID';
+  declaredReference: string | null;
+  declaredAt: string | null;
+  attestedAt: string | null;
+  closedAt: string | null;
+}
+
+export interface CommissionTransfer {
+  amount: number;
+  periodLabel: string;
+  recipient: { name: string; number: string; operator: string };
+  ussdCode: string;
+  dialLink: string;
+}

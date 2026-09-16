@@ -33,13 +33,30 @@ import { type Amount, assertAmount } from './money.js';
 /**
  * Modèles par défaut au Burkina Faso.
  *
- * `{NUM}` reçoit le numéro du marchand, `{MONTANT}` le montant en francs.
+ * `{NUM}` reçoit le numéro destinataire, `{MONTANT}` le montant en francs.
+ * L'ordre des deux marqueurs **change d'un code à l'autre** : voir le code de
+ * transfert plus bas. La substitution se fait donc par nom, jamais par position.
+ *
  * **À vérifier auprès de l'opérateur avant le premier encaissement** : les codes
- * marchands changent d'un pays à l'autre, et parfois d'une offre à l'autre.
+ * changent d'un pays à l'autre, et parfois d'une offre à l'autre. Le menu Orange
+ * Money burkinabè comporte d'autres entrées (`*144*3*…#` notamment) : chaque
+ * modèle reste un réglage, jamais une valeur écrite en dur.
  */
 export const USSD_TEMPLATES = {
+  /** Paiement à un marchand : le numéro d'abord, puis le montant. */
   ORANGE_MONEY: '*144*10*{NUM}*{MONTANT}#',
   MOOV_MONEY: '*555*4*1*{NUM}*{MONTANT}#',
+  /**
+   * Envoi d'argent à une personne, Orange Money Burkina. Sert au reversement de
+   * la commission : le restaurant transfère au numéro de la plateforme.
+   *
+   * Comme pour le code marchand, le numéro vient avant le montant — mais rien ne
+   * garantit qu'il en aille de même sur les autres entrées du menu, ni demain.
+   * La substitution se fait donc par nom de marqueur, jamais par position : un
+   * code construit à l'aveugle enverrait 3 500 F au numéro « 3500 », le code
+   * partirait, l'opérateur répondrait, et l'argent n'arriverait nulle part.
+   */
+  ORANGE_MONEY_TRANSFER: '*144*2*1*{NUM}*{MONTANT}#',
 } as const;
 
 export interface UssdInput {
@@ -72,8 +89,28 @@ export function buildUssdCode(input: UssdInput): string {
   if (!input.template.includes('{NUM}') || !input.template.includes('{MONTANT}')) {
     throw new UssdError('Le modèle USSD doit contenir {NUM} et {MONTANT}.');
   }
+  assertNoPinInTemplate(input.template);
 
   return input.template.replace('{NUM}', digits).replace('{MONTANT}', String(input.amount));
+}
+
+/**
+ * Refuse tout modèle qui embarquerait un code secret.
+ *
+ * Certains codes du menu opérateur acceptent le PIN en ligne — le retrait chez un agent s'écrit
+ * par exemple `*144*2*3*CodeAgent*Montant*CodePIN#`. Cette forme ne doit jamais entrer ici.
+ *
+ * Un code USSD construit par le logiciel finit dans un lien `tel:`, donc dans l'historique du
+ * navigateur, dans les journaux du serveur, dans une capture d'écran envoyée au support. Un numéro
+ * de marchand qui traîne là n'est pas grave : il est public. Un code secret qui traîne là vide un
+ * compte. Le PIN se tape sur le clavier de son propriétaire, à la fin, et nulle part ailleurs.
+ */
+export function assertNoPinInTemplate(template: string): void {
+  if (/\{\s*(PIN|CODE_?PIN|SECRET|MDP)\s*\}/i.test(template) || /\bpin\b/i.test(template)) {
+    throw new UssdError(
+      "Ce modèle USSD contient un code secret. Le PIN se saisit sur le téléphone de son propriétaire, jamais dans un code construit par le logiciel.",
+    );
+  }
 }
 
 /**

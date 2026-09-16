@@ -380,6 +380,34 @@ marchands dans ses paramètres. Espèces opérationnelles. Un fournisseur simul�
 développement et la démonstration. Un moyen de paiement n'est proposé au client que si son numéro
 marchand est réellement renseigné.
 
+### 9.6 Modèle économique : commission de la plateforme *(nouvellement spécifié)*
+
+Aucun des deux documents d'origine n'abordait le financement du logiciel. C'est pourtant une décision
+structurante, et elle touche au code : **1 % sur les ventes apportées par l'application**, pas
+d'abonnement ([ADR 009](adr/009-commission-plateforme.md)).
+
+**Accumulée, puis reversée — et non prélevée à la transaction.** Ce n'est pas un arbitrage de
+confort : le client paie le restaurant directement, de son téléphone au numéro marchand (§ 9.4). Il
+n'existe aucun intermédiaire dans le flux d'argent, donc rien à prélever au passage. La commission
+est une dette enregistrée, réglée par transfert à l'échéance. S'y ajoutent trois raisons de fond :
+une partie des ventes se règle en espèces, un transfert de 35 F coûte plus qu'il ne rapporte, et une
+vente remboursée doit pouvoir se contre-passer.
+
+| | Dans l'assiette |
+|---|---|
+| Commande passée depuis l'application ou par QR de table | **oui** |
+| Vente au comptoir, commande par téléphone | non |
+| Frais de livraison | non — ils vont au livreur |
+| Remises commerciales et fidélité | non — argent jamais encaissé |
+
+**Le comptoir n'est jamais facturé, délibérément.** Le jour où saisir une vente au comptoir coûte de
+l'argent, l'équipe cesse de la saisir : le chiffre d'affaires devient faux, le stock dérive, et le
+logiciel perd ce qui faisait sa valeur. On ne taxe pas quelqu'un qui saisit ses propres données.
+
+**Tout est visible par le restaurant** — taux, assiette, détail commande par commande, et ce qui
+n'est pas facturé. Une commission qu'on ne peut ni recouper ni contester détruit la relation à la
+première fin de mois. **Le client, lui, ne voit jamais rien** : il paie le prix affiché.
+
 ---
 
 ## 10. Livraison
@@ -572,6 +600,7 @@ planche de maquettes ne montre jamais mais qu'une application réelle doit assum
 | **Saisie du catalogue par le restaurant + assistant de configuration** | ✔ *(nouveau)* |
 | Paiement espèces + simulateur | ✔ |
 | **Mobile Money réel (USSD déclaré, attesté)** | ✔ *(nouveau — plus d'agrégateur requis)* |
+| **Commission de la plateforme (1 %, accumulée puis reversée)** | ✔ *(nouveau)* |
 | Notifications | ✔ |
 | **Fidélité par points** | ✔ *(remonté de V2)* |
 | **Page livreur web** | ✔ *(remplace l'application livreur V2)* |
@@ -633,6 +662,7 @@ restauration ; APK Android.
 | Menu, prix et suppléments réels d'Innova Group | pilote | Innova Group |
 | Logo, couleurs et comptes sociaux réels | publication de l'APK | Innova Group |
 | Numéros marchands Orange Money / Moov Money | activation du paiement en ligne | Innova Group |
+| Taux de commission accepté par écrit | première facturation | Innova Group et Concepteur |
 | Horaires réels et zones de livraison de Ouahigouya | activation de la livraison | Innova Group |
 | Hébergement et nom de domaine | mise en production | Concepteur |
 | Matériel : tablette, imprimante thermique | pilote | Innova Group |

@@ -25,6 +25,7 @@ import { prisma } from '../../db.js';
 import { badRequest, conflict, notFound, unprocessable } from '../../lib/errors.js';
 import { emitToOrder, emitToRestaurant } from '../../lib/realtime.js';
 import { notify } from '../../lib/notify.js';
+import { accrueCommission } from '../commission/service.js';
 
 export const ORDER_INCLUDE = {
   items: { include: { options: true } },
@@ -664,6 +665,23 @@ export async function transitionOrder(input: TransitionInput): Promise<OrderWith
 
     return result;
   });
+
+  // Commission de la plateforme : inscrite quand la vente est faite, jamais avant (ADR 009).
+  //
+  // Hors de la transaction, et délibérément. Une écriture comptable de la plateforme n'a pas à
+  // pouvoir faire échouer la remise d'une commande au client : si elle échoue, le service continue
+  // et l'écriture se rattrape. L'appel est idempotent, donc le double passage DELIVERED puis
+  // COMPLETED n'inscrit qu'une seule ligne.
+  if (isCompletion(input.to)) {
+    try {
+      await accrueCommission(updated.id);
+    } catch (error) {
+      // Journalisé et non avalé : une notification perdue est un désagrément, une commission
+      // perdue est de l'argent. Le rattrapage (rattraperCommissions) repassera : l'inscription
+      // se déduit entièrement de l'état des commandes, rien n'est définitivement perdu.
+      console.error('[commission] écriture non inscrite pour la commande', updated.id, error);
+    }
+  }
 
   emitToRestaurant(input.restaurantId, 'order:updated', updated);
   emitToOrder(updated.id, 'order:status', { orderId: updated.id, status: updated.status });

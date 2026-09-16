@@ -148,3 +148,35 @@ describe('identifiant déclaré par le client', () => {
     expect(looksLikeTransactionId('')).toBe(false);
   });
 });
+
+describe('modèle de transfert et code secret', () => {
+  it('construit un transfert de personne à personne, numéro puis montant', () => {
+    // Vérifié auprès d'Orange Burkina : *144# → 2 → 1 → numéro → montant → PIN.
+    expect(
+      buildUssdCode({
+        template: USSD_TEMPLATES.ORANGE_MONEY_TRANSFER,
+        merchantNumber: '66798031',
+        amount: 2500,
+      }),
+    ).toBe('*144*2*1*66798031*2500#');
+  });
+
+  it('substitue par nom et non par position : un modèle inversé reste correct', () => {
+    expect(
+      buildUssdCode({ template: '*999*{MONTANT}*{NUM}#', merchantNumber: '70000000', amount: 500 }),
+    ).toBe('*999*500*70000000#');
+  });
+
+  it('refuse un modèle qui embarquerait le code secret', () => {
+    // Le retrait chez un agent s'écrit *144*2*3*Agent*Montant*PIN# : cette forme ne doit jamais
+    // entrer ici. Un code construit par le logiciel finit dans un lien tel:, donc dans
+    // l'historique du navigateur et dans les captures d'écran.
+    expect(() =>
+      buildUssdCode({
+        template: '*144*2*3*{NUM}*{MONTANT}*{PIN}#',
+        merchantNumber: '70000000',
+        amount: 500,
+      }),
+    ).toThrow(UssdError);
+  });
+});

@@ -164,6 +164,28 @@ Un produit déjà commandé n'est jamais supprimé : il est retiré du menu et c
 
 ---
 
+## Commission de la plateforme
+
+| Route | Rôle | Accès |
+|---|---|---|
+| `GET /commission/summary` | Taux, encours de la période, reste à reverser | `commission:read` |
+| `GET /commission/entries` | Détail commande par commande, avec assiette et taux | `commission:read` |
+| `GET /commission/settlements` | Relevés arrêtés | `commission:read` |
+| `POST /commission/settlements/close` | Arrête une période et fige son montant | `commission:read` |
+| `GET /commission/settlements/:id/transfer` | Code USSD de reversement, déjà rempli | `commission:read` |
+| `POST /commission/settlements/:id/declare` | Le restaurant déclare avoir reversé | `commission:read` |
+
+`commission:read` n'est accordé qu'au gérant et à l'administrateur : ce que le restaurant doit à la
+plateforme est une affaire de contrat, pas de service ([ADR 009](adr/009-commission-plateforme.md)).
+
+**Aucune route cliente n'expose la commission.** Le client paie le prix affiché ; ce que le
+restaurant reverse ne le regarde pas — un test le vérifie sur la route de suivi.
+
+La période en cours ne peut pas être arrêtée : figer un total auquel des ventes vont encore
+s'ajouter produirait une facture invérifiable. `close` répond alors `400 PERIOD_STILL_OPEN`.
+
+---
+
 ## Temps réel
 
 Socket.IO, chemin `/realtime`.

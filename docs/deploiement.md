@@ -171,6 +171,8 @@ Rien d'autre ne bouge : le reste du système ignore quel fournisseur encaisse.
 - [ ] Zones de livraison réelles et leurs forfaits
 - [ ] Numéros marchands Mobile Money saisis et vérifiés par un paiement réel de 100 F
 - [ ] Équipe formée à l'écran « Paiements à vérifier »
+- [ ] `PLATFORM_MOMO_NUMBER` renseigné — le serveur refuse de démarrer sans, en production
+- [ ] Taux de commission confirmé avec le restaurant, par écrit, avant la première facturation
 - [ ] QR Codes imprimés et collés sur les tables
 - [ ] Comptes créés pour chaque employé, avec le bon rôle
 - [ ] Sauvegarde planifiée **et restauration testée**

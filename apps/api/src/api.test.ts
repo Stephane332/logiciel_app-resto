@@ -978,3 +978,162 @@ describe('authentification', () => {
     expect(response.statusCode).toBe(401);
   });
 });
+
+// ---------------------------------------------------------------------------
+
+describe('commission de la plateforme (ADR 009)', () => {
+  /** Mène une commande de retrait jusqu'à sa remise au client. */
+  async function serveOrder(orderId: string, token: string) {
+    for (const step of ['accept', 'prepare', 'ready', 'handover', 'complete']) {
+      const response = await app.inject({
+        method: 'POST',
+        url: api(`/orders/${orderId}/${step}`),
+        headers: auth(token),
+        payload: {},
+      });
+      expect(response.statusCode, `${step} → ${response.body}`).toBe(200);
+    }
+  }
+
+  it('inscrit 1 % de l\'assiette quand la vente est faite, et pas avant', async () => {
+    const created = await createPickupOrder();
+    const order = created.json().order;
+    const cashier = await asCashier();
+
+    const manager = await asManager();
+    const avant = await app.inject({
+      method: 'GET',
+      url: api('/commission/summary'),
+      headers: auth(manager),
+    });
+    const dueAvant = avant.json().dueThisPeriod as number;
+
+    await serveOrder(order.id, cashier);
+
+    const apres = await app.inject({
+      method: 'GET',
+      url: api('/commission/summary'),
+      headers: auth(manager),
+    });
+    expect(apres.statusCode, apres.body).toBe(200);
+    const body = apres.json();
+
+    expect(body.rateBps).toBe(100);
+    expect(body.dueThisPeriod - dueAvant).toBe(Math.round(order.subtotal / 100));
+  });
+
+  it('ne facture jamais deux fois la même vente, malgré DELIVERED puis COMPLETED', async () => {
+    // La commande passe deux fois par un statut d'achèvement : c'est la contrainte d'unicité sur
+    // orderId qui protège, pas la lecture préalable.
+    const created = await createPickupOrder();
+    const order = created.json().order;
+    const cashier = await asCashier();
+    await serveOrder(order.id, cashier);
+
+    const manager = await asManager();
+    const entries = await app.inject({
+      method: 'GET',
+      url: api('/commission/entries'),
+      headers: auth(manager),
+    });
+    const mine = entries.json().entries.filter((e: { orderId: string }) => e.orderId === order.id);
+    expect(mine).toHaveLength(1);
+  });
+
+  it('ne facture pas une vente au comptoir', async () => {
+    // Taxer la saisie au comptoir ferait cesser la saisie, et le chiffre d'affaires deviendrait faux.
+    const cashier = await asCashier();
+    const created = await app.inject({
+      method: 'POST',
+      url: api('/orders'),
+      headers: auth(cashier),
+      payload: {
+        type: 'PICKUP',
+        channel: 'COUNTER',
+        paymentMethod: 'CASH',
+        customerName: 'Client comptoir',
+        lines: [{ productId: fixture.friesId, quantity: 2 }],
+      },
+    });
+    const order = created.json().order;
+
+    for (const step of ['ready', 'handover', 'complete']) {
+      await app.inject({
+        method: 'POST',
+        url: api(`/orders/${order.id}/${step}`),
+        headers: auth(cashier),
+        payload: {},
+      });
+    }
+
+    const manager = await asManager();
+    const entries = await app.inject({
+      method: 'GET',
+      url: api('/commission/entries'),
+      headers: auth(manager),
+    });
+    const mine = entries.json().entries.filter((e: { orderId: string }) => e.orderId === order.id);
+    expect(mine).toHaveLength(0);
+  });
+
+  it('expose le détail commande par commande : une commission non vérifiable ne vaut rien', async () => {
+    const created = await createPickupOrder();
+    const order = created.json().order;
+    await serveOrder(order.id, await asCashier());
+
+    const manager = await asManager();
+    const response = await app.inject({
+      method: 'GET',
+      url: api('/commission/entries'),
+      headers: auth(manager),
+    });
+    const entry = response.json().entries.find((e: { orderId: string }) => e.orderId === order.id);
+
+    expect(entry).toBeDefined();
+    // De quoi refaire le calcul à la main — ce que le restaurateur fera au moins une fois.
+    expect(entry.base).toBe(order.subtotal);
+    expect(entry.rateBps).toBe(100);
+    expect(entry.amount).toBe(Math.round((entry.base * entry.rateBps) / 10_000));
+    expect(entry.order.dailyNumber).toBe(order.dailyNumber);
+  });
+
+  it('refuse d\'arrêter la période en cours : on ne fige pas un total encore ouvert', async () => {
+    const manager = await asManager();
+    const summary = await app.inject({
+      method: 'GET',
+      url: api('/commission/summary'),
+      headers: auth(manager),
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: api('/commission/settlements/close'),
+      headers: auth(manager),
+      payload: { periodKey: summary.json().periodKey },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('garde la commission hors de portée de la cuisine et de la caisse', async () => {
+    for (const token of [await asKitchen(), await asCashier(), await asClient()]) {
+      const response = await app.inject({
+        method: 'GET',
+        url: api('/commission/summary'),
+        headers: auth(token),
+      });
+      expect(response.statusCode).toBe(403);
+    }
+  });
+
+  it('n\'expose jamais la commission au client sur sa commande', async () => {
+    // Le client paie le prix affiché. Ce que le restaurant doit à la plateforme ne le regarde pas.
+    const created = await createPickupOrder();
+    const order = created.json().order;
+    await serveOrder(order.id, await asCashier());
+
+    // La route de suivi, celle que l'application cliente interroge réellement.
+    const response = await app.inject({ method: 'GET', url: api(`/orders/${order.id}/track`) });
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.body).not.toMatch(/commission/i);
+  });
+});

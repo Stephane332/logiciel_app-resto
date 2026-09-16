@@ -45,3 +45,18 @@ describe('permissions par rôle (critère A9)', () => {
     expect(isStaff('KITCHEN')).toBe(true);
   });
 });
+
+describe('commission de la plateforme', () => {
+  it('reste entre les mains de la direction', () => {
+    expect(can('ADMIN', 'commission:read')).toBe(true);
+    expect(can('MANAGER', 'commission:read')).toBe(true);
+  });
+
+  it('ne concerne ni la cuisine, ni la caisse, ni le livreur — encore moins le client', () => {
+    // Ce que le restaurant doit à la plateforme relève du contrat, pas du service.
+    expect(can('KITCHEN', 'commission:read')).toBe(false);
+    expect(can('CASHIER', 'commission:read')).toBe(false);
+    expect(can('DELIVERY', 'commission:read')).toBe(false);
+    expect(can('CLIENT', 'commission:read')).toBe(false);
+  });
+});

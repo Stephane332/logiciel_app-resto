@@ -116,37 +116,37 @@ enum NotificationType {
 /// La marque est une donnée, pas du code (ADR 004) : le restaurant modifie son nom, ses couleurs et
 /// son logo sans redéploiement, et un second établissement n'exige aucune ligne de code.
 model Restaurant {
-  id       String  @id @default(cuid())
-  slug     String  @unique
-  name     String
-  tagline  String?
-  logoUrl  String?
+  id      String  @id @default(cuid())
+  slug    String  @unique
+  name    String
+  tagline String?
+  logoUrl String?
 
   primaryColor    String @default("#F2B705")
   backgroundColor String @default("#0B1F17")
 
-  phone     String?
-  whatsapp  String?
-  address   String?
-  city      String  @default("Ouahigouya")
-  country   String  @default("Burkina Faso")
+  phone    String?
+  whatsapp String?
+  address  String?
+  city     String  @default("Ouahigouya")
+  country  String  @default("Burkina Faso")
 
   /// Le Burkina Faso est à UTC+0 toute l'année.
-  timezoneOffsetMinutes Int @default(0)
+  timezoneOffsetMinutes Int    @default(0)
   currencySymbol        String @default("F")
 
   /// Interrupteur du gérant : ferme la prise de commande quels que soient les horaires.
-  manuallyClosed   Boolean @default(false)
+  manuallyClosed  Boolean @default(false)
   /// Interrupteur indépendant : la livraison peut être suspendue sans fermer le restaurant.
-  deliveryEnabled  Boolean @default(true)
-  pickupEnabled    Boolean @default(true)
-  dineInEnabled    Boolean @default(true)
+  deliveryEnabled Boolean @default(true)
+  pickupEnabled   Boolean @default(true)
+  dineInEnabled   Boolean @default(true)
 
   /// Politiques de paiement par mode (§ 9.2 du cahier des charges).
-  cashOnDelivery   Boolean @default(true)
-  cashOnPickup     Boolean @default(true)
-  cashOnDineIn     Boolean @default(true)
-  onlinePayment    Boolean @default(true)
+  cashOnDelivery Boolean @default(true)
+  cashOnPickup   Boolean @default(true)
+  cashOnDineIn   Boolean @default(true)
+  onlinePayment  Boolean @default(true)
 
   /// Délai de préparation annoncé au client, en minutes.
   preparationMinutes Int @default(20)
@@ -160,20 +160,20 @@ model Restaurant {
   orangeMoneyUssd    String  @default("*144*10*{NUM}*{MONTANT}#")
   orangeMoneyEnabled Boolean @default(false)
 
-  moovMoneyNumber    String?
-  moovMoneyUssd      String  @default("*555*4*1*{NUM}*{MONTANT}#")
-  moovMoneyEnabled   Boolean @default(false)
+  moovMoneyNumber  String?
+  moovMoneyUssd    String  @default("*555*4*1*{NUM}*{MONTANT}#")
+  moovMoneyEnabled Boolean @default(false)
 
   /// Numéro WhatsApp de service : canal de secours garanti, gratuit, quand la
   /// tablette de cuisine est éteinte ou hors réseau.
   whatsappOrderNumber String?
 
   /// Fidélité (§ 2.4). Valeurs par défaut alignées sur packages/shared/src/loyalty.ts.
-  loyaltyEnabled            Boolean @default(true)
-  loyaltyAmountPerPoint     Int     @default(100)
-  loyaltyPointValue         Int     @default(1)
-  loyaltyMinimumPoints      Int     @default(500)
-  loyaltyMaxRedemptionPct   Int     @default(50)
+  loyaltyEnabled          Boolean @default(true)
+  loyaltyAmountPerPoint   Int     @default(100)
+  loyaltyPointValue       Int     @default(1)
+  loyaltyMinimumPoints    Int     @default(500)
+  loyaltyMaxRedemptionPct Int     @default(50)
 
   /// Étapes de l'assistant de configuration initiale déjà validées (§ 2.8).
   setupCompletedSteps String[] @default([])
@@ -181,21 +181,117 @@ model Restaurant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users               User[]
-  categories          Category[]
-  products            Product[]
-  orders              Order[]
-  tables              RestaurantTable[]
-  deliveryZones       DeliveryZone[]
-  promotions          Promotion[]
-  openingHours        OpeningHour[]
-  notifications       Notification[]
-  auditLogs           AuditLog[]
-  orderCounters       OrderCounter[]
-  loyaltyTransactions LoyaltyTransaction[]
-  addresses           Address[]
+  users                 User[]
+  categories            Category[]
+  products              Product[]
+  orders                Order[]
+  tables                RestaurantTable[]
+  deliveryZones         DeliveryZone[]
+  promotions            Promotion[]
+  openingHours          OpeningHour[]
+  notifications         Notification[]
+  auditLogs             AuditLog[]
+  orderCounters         OrderCounter[]
+  loyaltyTransactions   LoyaltyTransaction[]
+  addresses             Address[]
+  commissionEntries     CommissionEntry[]
+  commissionSettlements CommissionSettlement[]
+
+  /// Commission de la plateforme (ADR 009).
+  ///
+  /// Le taux est en **points de base** — 100 = 1 % — parce qu'un taux en flottant multiplié par un
+  /// montant produirait des francs à virgule, ce que le système interdit partout (ADR 003).
+  commissionRateBps  Int      @default(100)
+  commissionChannels String[] @default(["APP", "QR_TABLE"])
+  commissionPeriod   String   @default("MONTHLY")
+  /// Un restaurant en phase d'essai ne doit rien : le compteur tourne à zéro mais le relevé existe.
+  commissionEnabled  Boolean  @default(true)
 
   @@map("restaurants")
+}
+
+/// Ce que le restaurant doit à la plateforme pour une vente, figé au moment de la vente.
+///
+/// Le taux est **recopié sur l'écriture**, jamais seulement référencé : changer le taux du contrat
+/// ne doit pas réécrire ce qui a déjà été facturé. Une écriture est un fait passé.
+model CommissionEntry {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  /// Une commande ne peut être facturée qu'une fois. La contrainte le garantit, et pas seulement le
+  /// code : une commande passe par DELIVERED puis COMPLETED, donc l'accumulation est appelée deux
+  /// fois, et une course entre deux requêtes suffirait à doubler la facture.
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// Assiette retenue : produits encaissés, hors livraison et hors remises.
+  base    Int
+  rateBps Int
+  amount  Int
+
+  /// Clé de rattachement : « 2026-09 », « 2026-S38 » ou « 2026-09-17 ».
+  periodKey String
+
+  /// Une vente remboursée se contre-passe, elle ne s'efface pas : un relevé qu'on ne peut plus
+  /// recouper avec l'historique des commandes ne vaut rien le jour où un montant est contesté.
+  reversed     Boolean   @default(false)
+  reversedAt   DateTime?
+  reversalNote String?
+
+  settlementId String?
+  settlement   CommissionSettlement? @relation(fields: [settlementId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([restaurantId, periodKey])
+  @@index([restaurantId, settlementId])
+  @@map("commission_entries")
+}
+
+/// Relevé d'une période : ce qui est dû, et comment cela a été réglé.
+model CommissionSettlement {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  periodKey   String
+  periodStart DateTime
+  periodEnd   DateTime
+  periodLabel String
+
+  entryCount Int
+  amount     Int
+
+  status CommissionSettlementStatus @default(OPEN)
+
+  /// Reversement : le restaurant transfère, la plateforme atteste. Même règle qu'un paiement
+  /// client — celui qui paie ne confirme jamais son propre paiement (ADR 008).
+  declaredReference String?
+  declaredAt        DateTime?
+  attestedAt        DateTime?
+  attestNote        String?
+
+  closedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  entries CommissionEntry[]
+
+  @@unique([restaurantId, periodKey])
+  @@index([restaurantId, status])
+  @@map("commission_settlements")
+}
+
+enum CommissionSettlementStatus {
+  /// La période court encore : des ventes peuvent s'y ajouter.
+  OPEN
+  /// Période arrêtée, montant figé, en attente de reversement.
+  CLOSED
+  /// Le restaurant dit avoir reversé. Rien n'est encore vérifié.
+  DECLARED
+  /// La plateforme a constaté le virement sur son propre téléphone.
+  PAID
 }
 
 // ---------------------------------------------------------------------------
@@ -205,17 +301,17 @@ model Restaurant {
 /// Identité fondée sur le téléphone : c'est l'identifiant réel des personnes au Burkina Faso.
 /// Le mot de passe est optionnel — commander ne doit pas exiger d'en créer un (§ 2.2).
 model User {
-  id           String  @id @default(cuid())
+  id           String     @id @default(cuid())
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   /// Forme canonique E.164 : deux écritures du même numéro ne créent jamais deux comptes.
-  phone        String
-  name         String
-  email        String?
-  passwordHash String?
-  role         Role    @default(CLIENT)
-  isActive     Boolean @default(true)
+  phone         String
+  name          String
+  email         String?
+  passwordHash  String?
+  role          Role    @default(CLIENT)
+  isActive      Boolean @default(true)
   phoneVerified Boolean @default(false)
 
   /// Consentement distinct et révocable pour les messages promotionnels (§ 15.4).
@@ -233,8 +329,8 @@ model User {
   notifications       Notification[]
   loyaltyTransactions LoyaltyTransaction[]
   auditLogs           AuditLog[]
-  deliveredOrders     Order[]   @relation("OrderCourier")
-  attestedPayments    Payment[] @relation("PaymentAttestedBy")
+  deliveredOrders     Order[]              @relation("OrderCourier")
+  attestedPayments    Payment[]            @relation("PaymentAttestedBy")
 
   @@unique([restaurantId, phone])
   @@index([restaurantId, role])
@@ -242,15 +338,15 @@ model User {
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Seul le haché est stocké : une fuite de base ne donne aucune session utilisable.
-  tokenHash String   @unique
+  tokenHash String    @unique
   device    String?
   expiresAt DateTime
   revokedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([userId])
   @@map("refresh_tokens")
@@ -359,8 +455,8 @@ model Order {
   dailyNumber Int
   orderDate   DateTime @db.Date
 
-  customerId String?
-  customer   User?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerId    String?
+  customer      User?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
   /// Renseignés pour une commande au comptoir ou par téléphone, sans compte client.
   customerName  String?
   customerPhone String?
@@ -379,7 +475,7 @@ model Order {
   note String?
 
   /// Retrait : code dicté au comptoir, sans caractères ambigus.
-  pickupCode String?
+  pickupCode   String?
   scheduledFor DateTime?
 
   /// Sur place.
@@ -389,7 +485,7 @@ model Order {
   /// Livraison — l'adresse est copiée, pas seulement référencée : si le client la supprime ou la
   /// modifie plus tard, la commande passée doit conserver celle qui a servi à livrer.
   addressId        String?
-  address          Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  address          Address?      @relation(fields: [addressId], references: [id], onDelete: SetNull)
   deliverySector   String?
   deliveryDistrict String?
   deliveryLandmark String?
@@ -397,7 +493,7 @@ model Order {
   deliveryZoneId   String?
   deliveryZone     DeliveryZone? @relation(fields: [deliveryZoneId], references: [id], onDelete: SetNull)
   courierId        String?
-  courier          User?    @relation("OrderCourier", fields: [courierId], references: [id], onDelete: SetNull)
+  courier          User?         @relation("OrderCourier", fields: [courierId], references: [id], onDelete: SetNull)
 
   promotionId String?
   promotion   Promotion? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
@@ -409,13 +505,14 @@ model Order {
   acceptedAt  DateTime?
   readyAt     DateTime?
   completedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   items               OrderItem[]
   events              OrderEvent[]
   payments            Payment[]
   loyaltyTransactions LoyaltyTransaction[]
+  commissionEntry     CommissionEntry?
 
   @@unique([restaurantId, orderDate, dailyNumber])
   @@index([restaurantId, status, createdAt])
@@ -467,7 +564,7 @@ model OrderItemOption {
   optionItemId String?
   optionItem   OptionItem? @relation(fields: [optionItemId], references: [id], onDelete: SetNull)
   name         String
-  priceDelta   Int     @default(0)
+  priceDelta   Int         @default(0)
 
   @@index([orderItemId])
   @@map("order_item_options")
@@ -484,7 +581,7 @@ model OrderEvent {
   actorId   String?
   actorRole String?
   reason    String?
-  createdAt DateTime @default(now())
+  createdAt DateTime    @default(now())
 
   @@index([orderId, createdAt])
   @@map("order_events")
@@ -525,8 +622,8 @@ model Payment {
   attestNote   String?
 
   confirmedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   refunds Refund[]
 
@@ -654,12 +751,12 @@ model Promotion {
   label        String
   discountType DiscountType
   value        Int
-  minimumOrder Int      @default(0)
+  minimumOrder Int          @default(0)
   startsAt     DateTime?
   endsAt       DateTime?
   maxUses      Int?
-  usedCount    Int      @default(0)
-  isActive     Boolean  @default(true)
+  usedCount    Int          @default(0)
+  isActive     Boolean      @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -721,7 +818,7 @@ model Notification {
   body      String
   data      Json?
   readAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime         @default(now())
 
   @@index([userId, createdAt])
   @@map("notifications")

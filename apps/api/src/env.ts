@@ -18,6 +18,15 @@ const schema = z.object({
   PUBLIC_CLIENT_URL: z.string().default('http://localhost:5173'),
   PAYMENT_PROVIDER: z.enum(['declared', 'sandbox', 'cinetpay', 'ligdicash']).default('declared'),
   PAYMENT_WEBHOOK_SECRET: z.string().default('dev-webhook-secret'),
+
+  // --- Plateforme (commission, ADR 009) ---------------------------------------------------------
+  /// Nom affiché sur le relevé du restaurant.
+  PLATFORM_NAME: z.string().default('BaraBite'),
+  /// Numéro qui reçoit le reversement de la commission.
+  PLATFORM_MOMO_NUMBER: z.string().default(''),
+  PLATFORM_MOMO_OPERATOR: z.enum(['ORANGE_MONEY', 'MOOV_MONEY']).default('ORANGE_MONEY'),
+  /// Modèle USSD du transfert. Réglable, parce qu'un code d'opérateur change sans prévenir.
+  PLATFORM_MOMO_USSD: z.string().default('*144*2*1*{NUM}*{MONTANT}#'),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -38,4 +47,12 @@ export const corsOrigins = env.CORS_ORIGINS.split(',')
 
 if (isProduction && env.JWT_SECRET.startsWith('dev-')) {
   throw new Error('JWT_SECRET de développement détecté en production. Générez-en un vrai.');
+}
+
+// Un relevé de commission sans numéro de reversement indique au restaurant une somme à payer sans
+// lui dire où l'envoyer. Mieux vaut le savoir au démarrage qu'à la première fin de mois.
+if (isProduction && !env.PLATFORM_MOMO_NUMBER) {
+  throw new Error(
+    "PLATFORM_MOMO_NUMBER est vide : le restaurant verrait sa commission due sans savoir où la reverser.",
+  );
 }

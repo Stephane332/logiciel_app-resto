@@ -179,6 +179,15 @@ export const IconWallet = ({ size = 20, className, style }: IconProps) => (
   </svg>
 );
 
+export const IconShare = ({ size = 20, className, style }: IconProps) => (
+  <svg {...base(size)} className={className} style={style}>
+    <path d="M17 1l4 4-4 4" />
+    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+    <path d="M7 23l-4-4 4-4" />
+    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+  </svg>
+);
+
 export const BurgerMark = ({ size = 32, className, style }: IconProps) => (
   <svg viewBox="0 0 64 64" width={size} height={size} className={className} style={style} aria-hidden="true">
     <rect width="64" height="64" rx="16" fill="#0E2019" />

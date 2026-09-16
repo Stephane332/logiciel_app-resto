@@ -8,6 +8,7 @@ import { restaurantRoutes } from './modules/restaurant/routes.js';
 import { statsRoutes } from './modules/stats/routes.js';
 import { employeeRoutes } from './modules/employees/routes.js';
 import { notificationRoutes } from './modules/notifications/routes.js';
+import { commissionRoutes } from './modules/commission/routes.js';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   await app.register(
@@ -21,6 +22,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       await api.register(statsRoutes);
       await api.register(employeeRoutes);
       await api.register(notificationRoutes);
+      await api.register(commissionRoutes);
     },
     { prefix: '/api/v1' },
   );

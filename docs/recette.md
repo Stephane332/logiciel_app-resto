@@ -27,6 +27,11 @@ npm test
 | A9 | Un rôle `KITCHEN` ne peut pas modifier un prix | `permissions.test.ts`, `api.test.ts` |
 | A10 | Un paiement n'est confirmé que par le serveur | `api.test.ts` (écart de total refusé) |
 | A10b | Celui qui paie ne confirme jamais son propre paiement : la déclaration du client n'est jamais `CONFIRMED` | `api.test.ts`, `mobile-money.test.ts` |
+| A18 | La commission n'est jamais facturée deux fois pour une même vente | `api.test.ts` |
+| A19 | Une vente au comptoir n'est jamais commissionnée | `api.test.ts`, `commission.test.ts` |
+| A20 | Le client ne voit jamais la commission | `api.test.ts` (route de suivi) |
+| A21 | La commission reste hors de portée de la cuisine, de la caisse et du livreur | `api.test.ts`, `permissions.test.ts` |
+| A22 | Aucun code USSD construit par le logiciel ne contient de code secret | `mobile-money.test.ts` |
 | A11 | Un jeton de table invalide ou expiré est refusé | `codes.test.ts`, `api.test.ts` |
 | A12 | Hors horaires, la création de commande est refusée | `hours.test.ts`, `api.test.ts` |
 | A13 | Aucun montant n'est représenté en flottant | `money.test.ts` |
@@ -126,3 +131,14 @@ Parcours complet, client et restaurant en parallèle, sans rechargement côté c
    rien touché — c'est la promesse faite à l'écran de paiement.
 
 Les sept points passent.
+
+## Recette de la commission *(vérifiée au navigateur)*
+
+1. Passer une commande depuis l'application et la mener jusqu'à la remise.
+2. Écran **Commission**, connecté en gérant : le taux s'affiche en clair, ainsi que l'encours.
+3. Le détail montre la commande, son assiette, le taux et la commission — le calcul se refait à la
+   main et doit tomber juste. Sur 3 500 F : **35 F**.
+4. L'écran dit ce qui **n'est pas** facturé : comptoir, livraison, remises.
+5. Connecté en caisse, l'entrée « Commission » n'apparaît pas.
+
+Les sept vérifications passent.

@@ -16,6 +16,7 @@ import {
   IconMenuBook,
   IconOrders,
   IconRegister,
+  IconShare,
   IconWallet,
   IconSettings,
   IconTable,
@@ -46,6 +47,7 @@ const NAV: NavEntry[] = [
   { to: '/menu', label: 'Menu', icon: IconMenuBook, ability: 'menu:read' },
   { to: '/statistiques', label: 'Statistiques', icon: IconChart, ability: 'stats:read' },
   { to: '/employes', label: 'Employés', icon: IconUsers, ability: 'employee:write' },
+  { to: '/commission', label: 'Commission', icon: IconShare, ability: 'commission:read' },
   { to: '/parametres', label: 'Paramètres', icon: IconSettings, ability: 'settings:write' },
 ];
 
@@ -59,6 +61,7 @@ const TITLES: Record<string, string> = {
   '/menu': 'Menu et stock',
   '/statistiques': 'Statistiques',
   '/employes': 'Employés',
+  '/commission': 'Commission de la plateforme',
   '/parametres': 'Paramètres',
 };
 

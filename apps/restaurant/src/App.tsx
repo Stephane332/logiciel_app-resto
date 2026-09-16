@@ -23,6 +23,7 @@ const MenuManage = lazy(() => import('./screens/MenuManage').then((m) => ({ defa
 const Stats = lazy(() => import('./screens/Stats').then((m) => ({ default: m.Stats })));
 const Employees = lazy(() => import('./screens/Employees').then((m) => ({ default: m.Employees })));
 const Settings = lazy(() => import('./screens/Settings').then((m) => ({ default: m.Settings })));
+const Commission = lazy(() => import('./screens/Commission').then((m) => ({ default: m.Commission })));
 
 /** Applique les couleurs enregistrées en base : la marque est une donnée (ADR 004). */
 function BrandTheme() {
@@ -92,6 +93,14 @@ export function App() {
               element={
                 <RequireAbility ability="payment:collect">
                   <PaymentsToVerify />
+                </RequireAbility>
+              }
+            />
+            <Route
+              path="/commission"
+              element={
+                <RequireAbility ability="commission:read">
+                  <Commission />
                 </RequireAbility>
               }
             />

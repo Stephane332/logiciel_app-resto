@@ -14,3 +14,4 @@ nouvelle décision qui la remplace explicitement.
 | [006](006-temps-reel-socketio.md) | Temps réel par Socket.IO avec repli | Acceptée |
 | [007](007-paiement-adaptateurs.md) | Paiement par adaptateurs, confirmation serveur | Acceptée |
 | [008](008-paiement-declare-atteste.md) | Paiement Mobile Money déclaré par le client, attesté par le restaurant | Acceptée |
+| [009](009-commission-plateforme.md) | Commission de la plateforme : accumulée, puis reversée | Acceptée |
