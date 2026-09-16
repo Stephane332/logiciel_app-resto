@@ -11,7 +11,15 @@ import { staffApi } from '@savora/api-client';
 import { OrderCard } from '../components/OrderCard';
 import { Empty, ErrorState, Loading, Stat, Tag } from '../components/ui';
 import { channelLabel, formatAmount } from '../lib/format';
-import { queryClient, refreshOrders, useActiveOrders, useRestaurant, useSetupStatus, useTodayStats } from '../lib/queries';
+import {
+  queryClient,
+  refreshOrders,
+  useActiveOrders,
+  useManageMenu,
+  useRestaurant,
+  useSetupStatus,
+  useTodayStats,
+} from '../lib/queries';
 import { useSession } from '../lib/session';
 
 export function Dashboard() {
@@ -20,6 +28,7 @@ export function Dashboard() {
   const orders = useActiveOrders();
   const restaurant = useRestaurant();
   const setup = useSetupStatus();
+  const menu = useManageMenu();
 
   const toggleOpen = useMutation({
     mutationFn: (manuallyClosed: boolean) => staffApi.updateSettings({ manuallyClosed }),
@@ -36,6 +45,18 @@ export function Dashboard() {
   const open = restaurant.data?.state.open ?? false;
   const incomplete = setup.data?.steps.filter((step) => !step.done) ?? [];
 
+  /*
+   * Plats illustrés par un dessin du logiciel, faute de photo.
+   *
+   * Ce rappel existe parce que sans lui, personne ne remplacerait jamais ces visuels : ils sont
+   * assez présentables pour qu'on les oublie, et le menu partirait en production avec des dessins
+   * à la place des plats. Le gérant ne s'en apercevrait qu'en regardant son application comme un
+   * client — c'est-à-dire trop tard.
+   */
+  const sansPhoto = (menu.data?.categories ?? [])
+    .flatMap((category) => category.products)
+    .filter((product) => product.imagePlaceholder).length;
+
   return (
     <div className="stack">
       {/* Configuration initiale : tant qu'il reste des étapes, le tableau de bord les rappelle.
@@ -50,6 +71,23 @@ export function Dashboard() {
           </div>
           <Link to="/parametres" className="btn btn--sm btn--secondary">
             Continuer
+          </Link>
+        </div>
+      )}
+
+      {sansPhoto > 0 && (
+        <div className="banner banner--info">
+          <div style={{ flex: 1 }}>
+            <strong>
+              {sansPhoto} plat{sansPhoto > 1 ? 's' : ''} sans votre photo
+            </strong>
+            <p style={{ marginTop: 4 }}>
+              {sansPhoto > 1 ? 'Ils sont illustrés' : 'Il est illustré'} par un dessin du logiciel,
+              pas par une photo de votre cuisine. Un plat photographié se commande nettement plus.
+            </p>
+          </div>
+          <Link to="/menu" className="btn btn--sm btn--ghost">
+            Ajouter mes photos
           </Link>
         </div>
       )}

@@ -391,6 +391,13 @@ model Product {
   /// Prix en francs CFA, entier (ADR 003).
   price       Int
   imageUrl    String?
+  /// Vrai tant que l'image est un visuel dessiné par le logiciel, pas une photo du restaurant.
+  ///
+  /// Sans ce drapeau, rien ne distinguerait un dessin d'attente d'une vraie photo : le logiciel
+  /// laisserait croire au restaurateur que son menu est illustré, et le menu partirait en
+  /// production avec des dessins à la place des plats. Le drapeau permet de le lui dire, et de
+  /// compter ce qui reste à photographier.
+  imagePlaceholder Boolean @default(false)
 
   isAvailable Boolean @default(true)
   /// null = pas de suivi de stock. 0 = rupture, le produit bascule en indisponible (§ 2.6).

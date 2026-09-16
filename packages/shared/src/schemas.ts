@@ -42,10 +42,28 @@ export const loginSchema = z.object({
 
 // --- Menu ------------------------------------------------------------------
 
+/**
+ * Adresse d'une image : une URL complète, ou un chemin servi par l'API.
+ *
+ * `z.string().url()` seul rejetait `/media/…`, c'est-à-dire exactement ce que renvoie le
+ * téléversement depuis le téléphone du restaurant. Le gérant aurait pris sa photo, l'aurait vue
+ * s'afficher dans le formulaire, et l'enregistrement aurait échoué sur « adresse invalide » sans
+ * qu'il puisse comprendre pourquoi.
+ *
+ * Les chemins relatifs sont d'ailleurs la forme normale ici : ils survivent à un changement de
+ * domaine, là où une adresse absolue en base devrait être réécrite ligne à ligne.
+ */
+const imageUrlSchema = z
+  .string()
+  .trim()
+  .refine((value) => value === '' || /^https?:\/\//i.test(value) || value.startsWith('/media/'), {
+    message: "Adresse d'image invalide : attendu une URL complète ou un chemin /media/…",
+  });
+
 export const categoryInputSchema = z.object({
   name: z.string().trim().min(2).max(60),
   description: z.string().trim().max(280).optional(),
-  imageUrl: z.string().trim().url().optional().or(z.literal('')),
+  imageUrl: imageUrlSchema.optional(),
   position: z.number().int().min(0).default(0),
   isActive: z.boolean().default(true),
 });
@@ -77,7 +95,7 @@ export const productInputSchema = z.object({
   name: z.string().trim().min(2).max(80),
   description: z.string().trim().max(500).optional(),
   price: amountSchema,
-  imageUrl: z.string().trim().url().optional().or(z.literal('')),
+  imageUrl: imageUrlSchema.optional(),
   isAvailable: z.boolean().default(true),
   /** `null` = pas de suivi de stock pour ce produit. */
   stock: z.number().int().min(0).nullable().optional(),

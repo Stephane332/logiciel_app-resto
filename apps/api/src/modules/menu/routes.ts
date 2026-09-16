@@ -134,7 +134,13 @@ export async function menuRoutes(app: FastifyInstance): Promise<void> {
       data: {
         ...(body.name !== undefined && { name: body.name }),
         ...(body.description !== undefined && { description: body.description ?? null }),
-        ...(body.imageUrl !== undefined && { imageUrl: body.imageUrl || null }),
+        // Dès qu'une vraie photo arrive, le visuel n'est plus provisoire. Et si le restaurant
+        // retire sa photo, le plat redevient sans image plutôt que de retomber sur un dessin :
+        // c'est son choix, le logiciel ne le contredit pas.
+        ...(body.imageUrl !== undefined && {
+          imageUrl: body.imageUrl || null,
+          imagePlaceholder: false,
+        }),
         ...(body.position !== undefined && { position: body.position }),
         ...(body.isActive !== undefined && { isActive: body.isActive }),
       },
@@ -180,6 +186,7 @@ export async function menuRoutes(app: FastifyInstance): Promise<void> {
      * illustration manquante ne doit pas empêcher un restaurateur d'enregistrer son plat.
      */
     let imageUrl = body.imageUrl || null;
+    let imagePlaceholder = false;
     if (!imageUrl) {
       try {
         const drawn = await generateIllustration(
@@ -188,6 +195,7 @@ export async function menuRoutes(app: FastifyInstance): Promise<void> {
           glyphFor(body.name, category.name),
         );
         imageUrl = drawn.url;
+        imagePlaceholder = true;
       } catch (error) {
         request.log.warn({ err: error }, 'Illustration de repli non générée');
       }
@@ -202,6 +210,7 @@ export async function menuRoutes(app: FastifyInstance): Promise<void> {
         description: body.description ?? null,
         price: body.price,
         imageUrl,
+        imagePlaceholder,
         isAvailable: body.isAvailable,
         stock: body.stock ?? null,
         position: body.position,
@@ -253,7 +262,13 @@ export async function menuRoutes(app: FastifyInstance): Promise<void> {
         ...(body.categoryId !== undefined && { categoryId: body.categoryId }),
         ...(body.description !== undefined && { description: body.description ?? null }),
         ...(body.price !== undefined && { price: body.price }),
-        ...(body.imageUrl !== undefined && { imageUrl: body.imageUrl || null }),
+        // Dès qu'une vraie photo arrive, le visuel n'est plus provisoire. Et si le restaurant
+        // retire sa photo, le plat redevient sans image plutôt que de retomber sur un dessin :
+        // c'est son choix, le logiciel ne le contredit pas.
+        ...(body.imageUrl !== undefined && {
+          imageUrl: body.imageUrl || null,
+          imagePlaceholder: false,
+        }),
         ...(body.isAvailable !== undefined && { isAvailable: body.isAvailable }),
         ...(body.stock !== undefined && { stock: body.stock ?? null }),
         ...(body.position !== undefined && { position: body.position }),

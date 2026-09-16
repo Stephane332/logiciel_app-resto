@@ -33,6 +33,8 @@ export interface Product {
   description: string | null;
   price: number;
   imageUrl: string | null;
+  /** Vrai tant que l'image est un dessin du logiciel et non une photo du restaurant. */
+  imagePlaceholder?: boolean;
   isAvailable: boolean;
   isOrderable: boolean;
   isFeatured: boolean;

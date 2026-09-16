@@ -1242,3 +1242,106 @@ describe('photos de produits', () => {
     expect(response.statusCode).toBe(401);
   });
 });
+
+// ---------------------------------------------------------------------------
+
+describe('visuel provisoire d\'un plat sans photo', () => {
+  async function createCategory(token: string) {
+    const response = await app.inject({
+      method: 'POST',
+      url: api('/menu/categories'),
+      headers: auth(token),
+      payload: { name: `Catégorie ${Date.now()}`, position: 0 },
+    });
+    return response.json().category.id as string;
+  }
+
+  it('dessine un visuel quand le restaurant n\'a pas encore de photo, et le dit', async () => {
+    const token = await asManager();
+    const categoryId = await createCategory(token);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: api('/menu/products'),
+      headers: auth(token),
+      payload: { categoryId, name: 'Poulet braisé', price: 3000, position: 0 },
+    });
+
+    expect(response.statusCode, response.body).toBe(201);
+    const product = response.json().product;
+
+    expect(product.imageUrl).toMatch(/\.webp$/);
+    // Le drapeau est ce qui empêche le logiciel de faire passer un dessin pour une photo.
+    expect(product.imagePlaceholder).toBe(true);
+  });
+
+  it('ne dessine rien quand le restaurant fournit sa photo', async () => {
+    const token = await asManager();
+    const categoryId = await createCategory(token);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: api('/menu/products'),
+      headers: auth(token),
+      payload: {
+        categoryId,
+        name: 'Riz gras',
+        price: 2000,
+        position: 0,
+        imageUrl: '/media/resto/vraie-photo.webp',
+      },
+    });
+
+    const product = response.json().product;
+    expect(product.imageUrl).toBe('/media/resto/vraie-photo.webp');
+    expect(product.imagePlaceholder).toBe(false);
+  });
+
+  it('cesse d\'être provisoire dès que la vraie photo arrive', async () => {
+    const token = await asManager();
+    const categoryId = await createCategory(token);
+
+    const created = await app.inject({
+      method: 'POST',
+      url: api('/menu/products'),
+      headers: auth(token),
+      payload: { categoryId, name: 'Attiéké poisson', price: 2500, position: 0 },
+    });
+    const id = created.json().product.id;
+    expect(created.json().product.imagePlaceholder).toBe(true);
+
+    const updated = await app.inject({
+      method: 'PATCH',
+      url: api(`/menu/products/${id}`),
+      headers: auth(token),
+      payload: { imageUrl: '/media/resto/attieke.webp' },
+    });
+
+    expect(updated.statusCode, updated.body).toBe(200);
+    expect(updated.json().product.imagePlaceholder).toBe(false);
+  });
+
+  it('redevient sans image si le restaurant retire sa photo, sans retomber sur un dessin', async () => {
+    // Retirer une photo est un choix du restaurant. Lui réimposer un dessin serait le contredire.
+    const token = await asManager();
+    const categoryId = await createCategory(token);
+
+    const created = await app.inject({
+      method: 'POST',
+      url: api('/menu/products'),
+      headers: auth(token),
+      payload: { categoryId, name: 'Salade avocat', price: 1800, position: 0, imageUrl: '/media/x/a.webp' },
+    });
+    const id = created.json().product.id;
+
+    const updated = await app.inject({
+      method: 'PATCH',
+      url: api(`/menu/products/${id}`),
+      headers: auth(token),
+      payload: { imageUrl: '' },
+    });
+
+    expect(updated.json().product.imageUrl).toBeNull();
+    expect(updated.json().product.imagePlaceholder).toBe(false);
+  });
+});

@@ -393,7 +393,7 @@ function ProductModal({
           />
         </div>
 
-        <PhotoField value={imageUrl} onChange={setImageUrl} />
+        <PhotoField value={imageUrl} onChange={setImageUrl} provisoire={Boolean(product?.imagePlaceholder)} />
 
         {/* Les options ne se définissent qu'à la création : les modifier après coup toucherait aux
             commandes passées qui les référencent. */}
@@ -575,7 +575,15 @@ function OptionGroupsEditor({
  * faut donc surtout pas décourager l'envoi d'un cliché lourd — c'est ce qui sort qui doit être
  * léger, pas ce qui entre.
  */
-function PhotoField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+function PhotoField({
+  value,
+  onChange,
+  provisoire,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  provisoire: boolean;
+}) {
   const [error, setError] = useState<string | null>(null);
 
   const upload = useMutation({
@@ -642,9 +650,19 @@ function PhotoField({ value, onChange }: { value: string; onChange: (url: string
 
       {error ? (
         <span className="field__error">{error}</span>
+      ) : provisoire && value ? (
+        /*
+         * Dire qu'un visuel est provisoire est la seule chose honnête à faire. Sans cette mention,
+         * le gérant croirait son menu illustré et le publierait avec des dessins à la place de ses
+         * plats — il ne s'en apercevrait qu'en voyant son application comme un client.
+         */
+        <span className="faint">
+          <strong>Visuel provisoire</strong> — dessiné par le logiciel à partir du nom du plat. Ce
+          n'est pas une photo de votre cuisine : remplacez-le dès que vous pouvez.
+        </span>
       ) : (
         <span className="faint">
-          Facultatif, mais un plat sans photo se commande beaucoup moins. La photo est allégée
+          Facultatif, mais un plat sans photo se commande beaucoup moins. Votre photo est allégée
           automatiquement pour vos clients.
         </span>
       )}
