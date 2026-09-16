@@ -6,7 +6,7 @@
  * complète avant de commander fait perdre la majorité des visiteurs (§ 2.2).
  */
 import type { FastifyInstance } from 'fastify';
-import { loginSchema, parseBurkinaPhone, registerSchema } from '@barabite/shared';
+import { loginSchema, parseBurkinaPhone, registerSchema } from '@savora/shared';
 import { z } from 'zod';
 import { prisma } from '../../db.js';
 import { isTest } from '../../env.js';

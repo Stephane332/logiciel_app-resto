@@ -8,7 +8,7 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { buildUssdCode, looksLikeTransactionId, ussdDialLink } from '@barabite/shared';
+import { buildUssdCode, looksLikeTransactionId, ussdDialLink } from '@savora/shared';
 import { prisma } from '../../db.js';
 import { env } from '../../env.js';
 import { currentRestaurantId } from '../../lib/context.js';

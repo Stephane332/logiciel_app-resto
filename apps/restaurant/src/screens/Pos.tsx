@@ -13,8 +13,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { computeCart, type OrderType, type PaymentMethod } from '@barabite/shared';
-import { ApiError, staffApi, type OptionGroup, type Product } from '@barabite/api-client';
+import { computeCart, type OrderType, type PaymentMethod } from '@savora/shared';
+import { ApiError, staffApi, type OptionGroup, type Product } from '@savora/api-client';
 import { IconBag, IconBike, IconMinus, IconPlus, IconQr, IconSearch, IconTrash } from '../components/Icons';
 import { Empty, ErrorState, Loading, Modal, Tag } from '../components/ui';
 import { formatAmount, formatOrderNumber } from '../lib/format';

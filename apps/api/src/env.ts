@@ -21,7 +21,7 @@ const schema = z.object({
 
   // --- Plateforme (commission, ADR 009) ---------------------------------------------------------
   /// Nom affiché sur le relevé du restaurant.
-  PLATFORM_NAME: z.string().default('BaraBite'),
+  PLATFORM_NAME: z.string().default('Savora'),
   /// Numéro qui reçoit le reversement de la commission.
   PLATFORM_MOMO_NUMBER: z.string().default(''),
   PLATFORM_MOMO_OPERATOR: z.enum(['ORANGE_MONEY', 'MOOV_MONEY']).default('ORANGE_MONEY'),

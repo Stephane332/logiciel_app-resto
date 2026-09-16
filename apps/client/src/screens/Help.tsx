@@ -1,5 +1,5 @@
 /** Aide : les questions qu'on se pose vraiment, et de quoi joindre un humain. */
-import { formatBurkinaPhone, formatMinutes, WEEKDAY_LABELS } from '@barabite/shared';
+import { formatBurkinaPhone, formatMinutes, WEEKDAY_LABELS } from '@savora/shared';
 import { IconPhone } from '../components/Icons';
 import { Header, Loading } from '../components/ui';
 import { useRestaurant } from '../lib/queries';

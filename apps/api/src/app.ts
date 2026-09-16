@@ -6,7 +6,7 @@ import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
-import { TransitionError, ForbiddenError, MoneyError, PricingError } from '@barabite/shared';
+import { TransitionError, ForbiddenError, MoneyError, PricingError } from '@savora/shared';
 import { resolve } from 'node:path';
 import { mkdirSync } from 'node:fs';
 import { corsOrigins, env, isProduction, isTest } from './env.js';

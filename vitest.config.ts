@@ -12,7 +12,7 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       DATABASE_URL:
-        process.env.TEST_DATABASE_URL ?? 'postgresql://barabite@127.0.0.1:5432/barabite_test',
+        process.env.TEST_DATABASE_URL ?? 'postgresql://savora@127.0.0.1:5432/savora_test',
       JWT_SECRET: 'secret-de-test-uniquement-pour-les-tests-automatises',
       PAYMENT_WEBHOOK_SECRET: 'test-webhook-secret',
       // Fixé explicitement : Prisma charge apps/api/.env au démarrage, et une valeur

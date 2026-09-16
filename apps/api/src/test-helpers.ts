@@ -5,7 +5,7 @@
  * derrière lui finit par mentir, dans un sens comme dans l'autre.
  */
 import argon2 from 'argon2';
-import { generateTableToken } from '@barabite/shared';
+import { generateTableToken } from '@savora/shared';
 import { prisma } from './db.js';
 import { resetRestaurantCache } from './lib/context.js';
 
@@ -56,7 +56,7 @@ export async function seedFixture(): Promise<Fixture> {
   const restaurant = await prisma.restaurant.create({
     data: {
       slug: 'test-resto',
-      name: 'Innova Group',
+      name: 'Mon restaurant',
       tagline: 'Bon goût. Sans attente.',
       city: 'Ouahigouya',
       // Ouvert en permanence : les tests d'horaires fixent leurs propres plages.

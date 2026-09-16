@@ -12,7 +12,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { looksLikeTransactionId } from '@barabite/shared';
+import { looksLikeTransactionId } from '@savora/shared';
 import { IconPhone } from '../components/Icons';
 import { ErrorState, Header, Loading } from '../components/ui';
 import { api, ApiError } from '../lib/api';

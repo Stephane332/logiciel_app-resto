@@ -1,8 +1,8 @@
 /**
- * Visuels d'attente du jeu de démarrage.
+ * Visuel de repli d'un plat sans photo.
  *
  * ┌──────────────────────────────────────────────────────────────────────────────┐
- * │  Ce ne sont pas les plats d'Innova Group. Ce sont des illustrations.          │
+ * │  Ce ne sont pas des photographies. Ce sont des illustrations.                │
  * └──────────────────────────────────────────────────────────────────────────────┘
  *
  * Une photographie inventée serait pire que rien : le client commanderait un plat qu'il a cru voir,
@@ -10,9 +10,10 @@
  * silhouette sur une lumière chaude, disent la catégorie d'un coup d'œil, et ne mentent pas sur le
  * contenu de l'assiette.
  *
- * Ils tiennent leur place jusqu'à ce que le restaurant envoie ses vraies photos depuis son
- * téléphone, ce que l'écran Menu permet désormais. Un menu sans aucune image se commande beaucoup
- * moins : c'est ce que ces visuels évitent en attendant.
+ * Quand le restaurant crée un plat sans y joindre de photo, le logiciel lui en dessine une à
+ * partir de son nom. Une case vide dans un menu donne l'impression d'un restaurant qui n'a pas
+ * fini de s'installer, et un plat sans image se commande beaucoup moins. Le restaurant remplace
+ * ce visuel par sa vraie photo quand il veut, depuis son téléphone.
  *
  * **Deux plats ne doivent jamais se ressembler.** La première version de ce fichier ne faisait
  * varier que la teinte : les quatre burgers étaient la même image en quatre couleurs, ce qui se
@@ -23,6 +24,7 @@
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import sharp from 'sharp';
+import { env } from '../../env.js';
 
 const WIDTH = 1200;
 const HEIGHT = 900;
@@ -155,12 +157,11 @@ export interface GeneratedImage {
  * d'attente sans rien changer d'autre.
  */
 export async function generateIllustration(
-  uploadDir: string,
   restaurantId: string,
   slug: string,
   glyph: Glyph,
 ): Promise<GeneratedImage> {
-  const folder = join(uploadDir, restaurantId);
+  const folder = join(env.UPLOAD_DIR, restaurantId);
   await mkdir(folder, { recursive: true });
 
   const source = Buffer.from(svg(slug, glyph));
@@ -180,18 +181,22 @@ export async function generateIllustration(
   };
 }
 
-/** Silhouette d'une catégorie du jeu de démarrage. */
-export function glyphForCategory(categorySlug: string): Glyph {
-  switch (categorySlug) {
-    case 'burgers':
-      return 'burger';
-    case 'paninis-wraps':
-      return 'wrap';
-    case 'menus':
-      return 'menu';
-    case 'accompagnements':
-      return 'fries';
-    default:
-      return 'drink';
+/**
+ * Devine la silhouette d'après ce que le restaurant a écrit — le nom du plat et celui de sa
+ * catégorie. Deviner mal n'a pas grande conséquence : c'est une silhouette, pas une étiquette. Mais
+ * deviner juste, le plus souvent, suffit à ce qu'un menu paraisse tenu.
+ */
+export function glyphFor(productName: string, categoryName = ''): Glyph {
+  const text = `${productName} ${categoryName}`.toLowerCase();
+  const has = (...words: string[]) => words.some((word) => text.includes(word));
+
+  if (has('menu', 'formule', 'combo', 'duo')) return 'menu';
+  if (has('boisson', 'jus', 'eau', 'soda', 'cola', 'fanta', 'bissap', 'thé', 'the ', 'café', 'cafe', 'lait', 'smoothie', 'bière', 'biere')) {
+    return 'drink';
   }
+  if (has('frite', 'accompagnement', 'salade', 'riz', 'attiéké', 'attieke', 'alloco', 'plantain', 'nugget', 'beignet')) {
+    return 'fries';
+  }
+  if (has('wrap', 'panini', 'sandwich', 'shawarma', 'tacos', 'crêpe', 'crepe', 'galette')) return 'wrap';
+  return 'burger';
 }

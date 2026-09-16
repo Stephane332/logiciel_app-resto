@@ -6,7 +6,7 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { generateTableToken } from '@barabite/shared';
+import { generateTableToken } from '@savora/shared';
 import { prisma } from '../../db.js';
 import { env } from '../../env.js';
 import { currentRestaurantId } from '../../lib/context.js';

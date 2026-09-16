@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { isValidBurkinaPhone, type OrderType, type PaymentMethod } from '@barabite/shared';
+import { isValidBurkinaPhone, type OrderType, type PaymentMethod } from '@savora/shared';
 import { IconBag, IconBike, IconCheck, IconQr } from '../components/Icons';
 import { Header, Tag } from '../components/ui';
 import { api, ApiError } from '../lib/api';

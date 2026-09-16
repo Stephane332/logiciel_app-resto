@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { can } from '@barabite/shared';
+import { can } from '@savora/shared';
 import {
   BurgerMark,
   IconChart,
@@ -27,7 +27,7 @@ import { refreshOrders, useActiveOrders, useRestaurant } from '../lib/queries';
 import { useRestaurantRealtime } from '../lib/realtime';
 import { signOut, useSession } from '../lib/session';
 import { playNewOrderChime, unlockSound } from '../lib/sound';
-import type { Ability } from '@barabite/shared';
+import type { Ability } from '@savora/shared';
 
 interface NavEntry {
   to: string;

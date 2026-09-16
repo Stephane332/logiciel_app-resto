@@ -35,6 +35,6 @@ export const useRecentOrders = create<RecentState>()(
         })),
       forget: (id) => set((state) => ({ orders: state.orders.filter((item) => item.id !== id) })),
     }),
-    { name: 'barabite.recent-orders' },
+    { name: 'savora.recent-orders' },
   ),
 );

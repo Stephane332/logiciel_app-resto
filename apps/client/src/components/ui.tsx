@@ -2,7 +2,7 @@
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BurgerMark, IconBack, IconWifiOff } from './Icons';
-import { mediaUrl } from '@barabite/api-client';
+import { mediaUrl } from '@savora/api-client';
 import { useOnlineStatus } from '../lib/network';
 
 export function Header({

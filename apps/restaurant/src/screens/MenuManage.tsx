@@ -7,13 +7,13 @@
  */
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { ApiError, mediaUrl, staffApi, type Category, type Product } from '@barabite/api-client';
+import { ApiError, mediaUrl, staffApi, type Category, type Product } from '@savora/api-client';
 import { IconPlus, IconTrash } from '../components/Icons';
 import { Empty, ErrorState, Loading, Modal, Switch, Tag } from '../components/ui';
 import { formatAmount } from '../lib/format';
 import { queryClient, useManageMenu } from '../lib/queries';
 import { useSession } from '../lib/session';
-import { can } from '@barabite/shared';
+import { can } from '@savora/shared';
 
 function invalidateMenu(): void {
   void queryClient.invalidateQueries({ queryKey: ['menu'] });

@@ -1,6 +1,6 @@
 /** Accès aux données. */
 import { QueryClient, useQuery } from '@tanstack/react-query';
-import { ApiError, staffApi } from '@barabite/api-client';
+import { ApiError, staffApi } from '@savora/api-client';
 
 export const queryClient = new QueryClient({
   defaultOptions: {

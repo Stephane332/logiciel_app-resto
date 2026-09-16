@@ -32,7 +32,7 @@ export const sandboxProvider: PaymentProvider = {
 
   async verifyWebhook(payload, headers) {
     const body = payload as { reference?: string; status?: string; amount?: number };
-    const signature = headers['x-barabite-signature'];
+    const signature = headers['x-savora-signature'];
 
     if (typeof signature !== 'string' || !body.reference) {
       return { valid: false, reason: 'Signature ou référence manquante.' };

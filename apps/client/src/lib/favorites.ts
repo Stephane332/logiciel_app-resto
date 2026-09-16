@@ -20,6 +20,6 @@ export const useFavorites = create<FavoritesState>()(
         })),
       has: (slug) => get().slugs.includes(slug),
     }),
-    { name: 'barabite.favorites' },
+    { name: 'savora.favorites' },
   ),
 );

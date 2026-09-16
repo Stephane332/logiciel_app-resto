@@ -1,7 +1,7 @@
 /** Connexion du personnel. */
 import { useState, type FormEvent } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { ApiError, staffApi } from '@barabite/api-client';
+import { ApiError, staffApi } from '@savora/api-client';
 import { BurgerMark } from '../components/Icons';
 import { useSession } from '../lib/session';
 import { unlockSound } from '../lib/sound';

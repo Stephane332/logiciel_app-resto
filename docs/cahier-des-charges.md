@@ -1,7 +1,7 @@
-# Cahier des charges — Plateforme BaraBite
+# Cahier des charges — Plateforme Savora
 
 > **Plateforme de commande et de gestion pour la restauration rapide**
-> Premier client : **Innova Group** — Ouahigouya, Burkina Faso
+> Premier client : **Mon restaurant** — Ouahigouya, Burkina Faso
 >
 > | | |
 > |---|---|
@@ -16,7 +16,7 @@
 
 Les deux cahiers des charges antérieurs ont été rédigés avant que le contexte réel du projet soit connu :
 ils décrivent un fast-food générique à Ouagadougou, sans client identifié. Le projet sert en réalité
-**Innova Group, à Ouahigouya**. Cette version réécrit donc le document sur trois plans : le contexte,
+**Mon restaurant, à Ouahigouya**. Cette version réécrit donc le document sur trois plans : le contexte,
 l'architecture produit, et la stratégie de diffusion.
 
 ### 0.1 Les trois changements structurels
@@ -24,11 +24,11 @@ l'architecture produit, et la stratégie de diffusion.
 | | Avant | **Maintenant** | Pourquoi |
 |---|---|---|---|
 | **Ville** | Ouagadougou, 2,4 M hab. | **Ouahigouya**, ~125 000 hab., 182 km au nord-ouest | Marché, logistique et réseau totalement différents (§ 1) |
-| **Marque** | « à définir » / « Green Louie » | **Donnée de configuration**, par défaut *Innova Group* | Le logiciel doit pouvoir habiller un second restaurant sans une ligne de code (§ 2.7) |
+| **Marque** | « à définir » / « Green Louie » | **Donnée de configuration**, par défaut *Mon restaurant* | Le logiciel doit pouvoir habiller un second restaurant sans une ligne de code (§ 2.7) |
 | **Canaux de commande** | Application seule | **Application + comptoir + téléphone/WhatsApp**, une seule file | Sans cela, le logiciel ne voit qu'une fraction de l'activité (§ 2.1) |
 
-**Nommage retenu :** *BaraBite* est le nom de la **plateforme logicielle** — le produit que construit et
-pourra revendre le concepteur. *Innova Group* est la **marque affichée** au client final. Les deux ne se
+**Nommage retenu :** *Savora* est le nom de la **plateforme logicielle** — le produit que construit et
+pourra revendre le concepteur. *Mon restaurant* est la **marque affichée** au client final. Les deux ne se
 confondent pas : le nom, le logo, les couleurs et le menu sont des données, pas du code.
 
 ### 0.2 Divergences arbitrées entre les deux anciens documents
@@ -36,7 +36,7 @@ confondent pas : le nom, le logo, les couleurs et le menu sont des données, pas
 | Sujet | V1.0 *Green Louie* | V2.0 *Complet* | **V3.0 — retenu** |
 |---|---|---|---|
 | Périmètre | mobile seul | mobile + restaurant + backend | **mobile + restaurant + backend** |
-| Nom commercial | Green Louie | « à définir » | **configurable, défaut Innova Group** |
+| Nom commercial | Green Louie | « à définir » | **configurable, défaut Mon restaurant** |
 | Application livreur | V2 | V2 | **remplacée par une page livreur web en V1** (§ 2.5) |
 
 ### 0.3 Corrections techniques apportées
@@ -65,7 +65,7 @@ confondent pas : le nom, le logo, les couleurs et le menu sont des données, pas
 
 ## 1. Contexte réel
 
-**Innova Group** exploite un fast-food à **Ouahigouya**, chef-lieu de la province du Yatenga, dans la
+**Mon restaurant** exploite un fast-food à **Ouahigouya**, chef-lieu de la province du Yatenga, dans la
 région du Nord — environ 125 000 habitants, à 182 km au nord-ouest de Ouagadougou. Le commerce est déjà
 présent sur **TikTok et Facebook**.
 
@@ -111,7 +111,7 @@ crée silencieusement autour de ce numéro et le mot de passe devient optionnel.
 sera activée quand le budget SMS le justifiera.
 
 ### 2.3 Le menu est un lien, et c'est la stratégie d'acquisition
-Innova Group a déjà une audience sur TikTok et Facebook. Le produit doit en tirer parti au lieu de
+Mon restaurant a déjà une audience sur TikTok et Facebook. Le produit doit en tirer parti au lieu de
 construire une audience de zéro :
 
 - chaque produit et chaque catégorie possède une **URL propre et partageable** ;
@@ -145,7 +145,7 @@ présente dès la V1, cela transforme un logiciel sur mesure en **produit revend
 restaurateurs burkinabè — sans surcoût aujourd'hui.
 
 ### 2.8 Le restaurant renseigne lui-même son catalogue
-Aucun menu n'est codé en dur. Le logiciel livré contient un **jeu de démarrage minimal**, et Innova Group
+Aucun menu n'est codé en dur. Le logiciel livré contient un **jeu de démarrage minimal**, et Mon restaurant
 saisit ensuite ses propres catégories, produits, descriptions, photos, options, suppléments, prix, tables
 et zones de livraison depuis le logiciel restaurant — sans développeur, sans redéploiement, sans ticket.
 
@@ -561,7 +561,7 @@ est affiné, non remplacé : contraste relevé pour la lecture en plein soleil, 
 échelle typographique régulière, états de chargement et d'erreur dessinés — c'est-à-dire tout ce qu'une
 planche de maquettes ne montre jamais mais qu'une application réelle doit assumer.
 
-- **Marque affichée :** configurable ; par défaut **Innova Group**, Ouahigouya.
+- **Marque affichée :** configurable ; par défaut **Mon restaurant**, Ouahigouya.
 - **Couleurs par défaut :** vert nuit profond (fond), or lumineux (action), blanc cassé (texte), vert vif
   (disponibilité), rouge (refus et alerte). Modifiables en base sans redéploiement.
 - Interface moderne, sombre, très visuelle : les produits occupent l'espace, les prix en FCFA sont
@@ -660,20 +660,20 @@ restauration ; APK Android.
 
 | Décision | Requise avant | Responsable |
 |---|---|---|
-| Menu, prix et suppléments réels d'Innova Group | pilote | Innova Group |
-| Logo, couleurs et comptes sociaux réels | publication de l'APK | Innova Group |
-| Numéros marchands Orange Money / Moov Money | activation du paiement en ligne | Innova Group |
-| Taux de commission accepté par écrit | première facturation | Innova Group et Concepteur |
-| Horaires réels et zones de livraison de Ouahigouya | activation de la livraison | Innova Group |
+| Menu, prix et suppléments réels d'Mon restaurant | pilote | Mon restaurant |
+| Logo, couleurs et comptes sociaux réels | publication de l'APK | Mon restaurant |
+| Numéros marchands Orange Money / Moov Money | activation du paiement en ligne | Mon restaurant |
+| Taux de commission accepté par écrit | première facturation | Mon restaurant et Concepteur |
+| Horaires réels et zones de livraison de Ouahigouya | activation de la livraison | Mon restaurant |
 | Hébergement et nom de domaine | mise en production | Concepteur |
-| Matériel : tablette, imprimante thermique | pilote | Innova Group |
+| Matériel : tablette, imprimante thermique | pilote | Mon restaurant |
 
 ---
 
 ## 24. Conclusion
 
-BaraBite est une plateforme indépendante, propriétaire de ses données et de ses règles métier, servant
-d'abord **Innova Group à Ouahigouya**. Elle est conçue pour fonctionner réellement là-bas : sur des
+Savora est une plateforme indépendante, propriétaire de ses données et de ses règles métier, servant
+d'abord **Mon restaurant à Ouahigouya**. Elle est conçue pour fonctionner réellement là-bas : sur des
 téléphones modestes, des réseaux capricieux et des données comptées — en encaissant **toutes** les
 commandes du restaurant, pas seulement celles qui viennent de l'application. Sa marque étant une donnée et
 non du code, elle peut ensuite servir un deuxième restaurant sans être réécrite.

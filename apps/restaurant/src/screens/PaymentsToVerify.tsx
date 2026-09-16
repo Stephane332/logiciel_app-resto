@@ -14,7 +14,7 @@
  */
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { staffApi, type PaymentToVerify, type SmsReadResult } from '@barabite/api-client';
+import { staffApi, type PaymentToVerify, type SmsReadResult } from '@savora/api-client';
 import { IconCheck, IconClose, IconSearch } from '../components/Icons';
 import { Empty, ErrorState, Loading, Tag } from '../components/ui';
 import { formatAmount, formatOrderNumber, formatTime } from '../lib/format';

@@ -6,8 +6,8 @@
  */
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { ROLES, type Role } from '@barabite/shared';
-import { ApiError, staffApi, type Employee } from '@barabite/api-client';
+import { ROLES, type Role } from '@savora/shared';
+import { ApiError, staffApi, type Employee } from '@savora/api-client';
 import { IconPlus } from '../components/Icons';
 import { Empty, ErrorState, Loading, Modal, Switch, Tag } from '../components/ui';
 import { roleLabel } from '../components/Shell';

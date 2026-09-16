@@ -1,5 +1,5 @@
 /** Points d'entrée utilisés par le logiciel restaurant. */
-import type { OrderStatus, PaymentMethod, RejectionReason, Role } from '@barabite/shared';
+import type { OrderStatus, PaymentMethod, RejectionReason, Role } from '@savora/shared';
 import { request } from './http.js';
 import type {
   Category,

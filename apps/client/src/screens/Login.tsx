@@ -7,7 +7,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { isValidBurkinaPhone } from '@barabite/shared';
+import { isValidBurkinaPhone } from '@savora/shared';
 import { Header } from '../components/ui';
 import { api, ApiError } from '../lib/api';
 import { useSession } from '../lib/session';

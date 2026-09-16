@@ -7,7 +7,7 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { computeCart, type CartLine, type CartTotals, type OrderType } from '@barabite/shared';
+import { computeCart, type CartLine, type CartTotals, type OrderType } from '@savora/shared';
 import type { Product } from './api';
 
 export interface CartItem {
@@ -103,7 +103,7 @@ export const useCart = create<CartState>()(
       setMode: (mode) => set({ mode }),
       setTable: (table) => set({ table, ...(table ? { mode: 'DINE_IN' as OrderType } : {}) }),
     }),
-    { name: 'barabite.cart' },
+    { name: 'savora.cart' },
   ),
 );
 

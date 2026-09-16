@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "bf.barabite.client"
+    namespace = "app.savora.client"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "bf.barabite.client"
+        applicationId "app.savora.client"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

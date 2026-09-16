@@ -1,5 +1,5 @@
 {
-  "name": "@barabite/api-client",
+  "name": "@savora/api-client",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -7,5 +7,5 @@
   "types": "./src/index.ts",
   "exports": { ".": "./src/index.ts" },
   "scripts": { "typecheck": "tsc --noEmit" },
-  "dependencies": { "@barabite/shared": "*" }
+  "dependencies": { "@savora/shared": "*" }
 }

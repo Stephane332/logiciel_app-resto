@@ -5,7 +5,7 @@
  * commandé sans s'inscrire. Aucun client ne doit perdre la trace de sa commande.
  */
 import { Link } from 'react-router-dom';
-import { isTerminal, statusLabel, type OrderStatus } from '@barabite/shared';
+import { isTerminal, statusLabel, type OrderStatus } from '@savora/shared';
 import { IconChevron, IconReceipt } from '../components/Icons';
 import { EmptyState, Header, Loading, Tag } from '../components/ui';
 import { formatAmount, formatOrderNumber, formatRelative } from '../lib/format';

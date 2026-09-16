@@ -9,13 +9,14 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { categoryInputSchema, productInputSchema } from '@barabite/shared';
+import { categoryInputSchema, productInputSchema } from '@savora/shared';
 import { prisma } from '../../db.js';
 import { currentRestaurantId } from '../../lib/context.js';
 import { badRequest, notFound } from '../../lib/errors.js';
 import { requireAbility, requireStaff } from '../../lib/guards.js';
 import { audit } from '../../lib/audit.js';
 import { emitToRestaurant } from '../../lib/realtime.js';
+import { generateIllustration, glyphFor } from '../uploads/illustrations.js';
 
 function slugify(value: string): string {
   return value
@@ -170,6 +171,28 @@ export async function menuRoutes(app: FastifyInstance): Promise<void> {
     });
     if (!category) throw notFound('Catégorie introuvable.');
 
+    /*
+     * Un plat sans photo reçoit un visuel dessiné à partir de son nom.
+     *
+     * Une case vide dans un menu donne l'impression d'un restaurant qui n'a pas fini de
+     * s'installer, et un plat sans image se commande beaucoup moins. Le restaurant remplace ce
+     * visuel par sa vraie photo quand il veut. Si le dessin échoue, la création se poursuit : une
+     * illustration manquante ne doit pas empêcher un restaurateur d'enregistrer son plat.
+     */
+    let imageUrl = body.imageUrl || null;
+    if (!imageUrl) {
+      try {
+        const drawn = await generateIllustration(
+          restaurantId,
+          slugify(body.name),
+          glyphFor(body.name, category.name),
+        );
+        imageUrl = drawn.url;
+      } catch (error) {
+        request.log.warn({ err: error }, 'Illustration de repli non générée');
+      }
+    }
+
     const product = await prisma.product.create({
       data: {
         restaurantId,
@@ -178,7 +201,7 @@ export async function menuRoutes(app: FastifyInstance): Promise<void> {
         slug: await uniqueSlug('product', restaurantId, slugify(body.name)),
         description: body.description ?? null,
         price: body.price,
-        imageUrl: body.imageUrl || null,
+        imageUrl,
         isAvailable: body.isAvailable,
         stock: body.stock ?? null,
         position: body.position,

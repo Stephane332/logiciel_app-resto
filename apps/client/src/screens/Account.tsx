@@ -11,7 +11,7 @@ import {
   IconUser,
 } from '../components/Icons';
 import { Header } from '../components/ui';
-import { formatBurkinaPhone } from '@barabite/shared';
+import { formatBurkinaPhone } from '@savora/shared';
 import { signOut, useSession } from '../lib/session';
 import { useRestaurant } from '../lib/queries';
 

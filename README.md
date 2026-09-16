@@ -1,7 +1,7 @@
-# BaraBite
+# Savora
 
 > Plateforme de commande et de gestion pour la restauration rapide.
-> Premier client : **Innova Group** — Ouahigouya, Burkina Faso.
+> Premier client : **Mon restaurant** — Ouahigouya, Burkina Faso.
 
 Une application cliente (PWA installable + APK Android), un logiciel restaurant (caisse, cuisine,
 tables, menu, statistiques) et un backend unique qui porte toutes les règles métier.

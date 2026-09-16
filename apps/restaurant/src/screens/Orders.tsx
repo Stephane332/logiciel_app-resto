@@ -6,8 +6,8 @@
  */
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { normalizePickupCode, REJECTION_REASONS, type RejectionReason } from '@barabite/shared';
-import { staffApi, type Order } from '@barabite/api-client';
+import { normalizePickupCode, REJECTION_REASONS, type RejectionReason } from '@savora/shared';
+import { staffApi, type Order } from '@savora/api-client';
 import { IconSearch } from '../components/Icons';
 import { OrderCard } from '../components/OrderCard';
 import { Empty, ErrorState, Loading, Modal } from '../components/ui';

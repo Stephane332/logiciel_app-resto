@@ -7,7 +7,7 @@
  */
 import { Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { staffApi } from '@barabite/api-client';
+import { staffApi } from '@savora/api-client';
 import { OrderCard } from '../components/OrderCard';
 import { Empty, ErrorState, Loading, Stat, Tag } from '../components/ui';
 import { channelLabel, formatAmount } from '../lib/format';

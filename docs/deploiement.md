@@ -95,14 +95,14 @@ Puis, dans un navigateur :
 ```bash
 mkdir -p infra/backups
 crontab -e
-# 0 3 * * * /chemin/vers/logiciel_app-resto/infra/backup.sh >> /var/log/barabite-backup.log 2>&1
+# 0 3 * * * /chemin/vers/logiciel_app-resto/infra/backup.sh >> /var/log/savora-backup.log 2>&1
 ```
 
 Restauration :
 
 ```bash
 docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod \
-  exec -T db pg_restore -U barabite -d barabite --clean --if-exists < infra/backups/barabite_AAAA-MM-JJ_HHMM.dump
+  exec -T db pg_restore -U savora -d savora --clean --if-exists < infra/backups/savora_AAAA-MM-JJ_HHMM.dump
 
 # Puis les photos, sans lesquelles le catalogue reviendrait sans aucune image :
 gunzip -c infra/backups/photos_AAAA-MM-JJ_HHMM.tar.gz | docker compose -f infra/docker-compose.prod.yml \

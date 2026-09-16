@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'],
       manifest: {
-        name: 'BaraBite — Commander',
-        short_name: 'BaraBite',
+        name: 'Savora — Commander',
+        short_name: 'Savora',
         description: 'Commandez, payez et suivez votre commande. Livraison, retrait ou sur place.',
         lang: 'fr',
         dir: 'ltr',
@@ -46,7 +46,7 @@ export default defineConfig({
               url.pathname.startsWith('/api/v1/menu') || url.pathname.startsWith('/api/v1/restaurant'),
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'barabite-menu',
+              cacheName: 'savora-menu',
               networkTimeoutSeconds: 4,
               expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 7 },
               cacheableResponse: { statuses: [0, 200] },
@@ -58,7 +58,7 @@ export default defineConfig({
             urlPattern: ({ request }) => request.destination === 'image',
             handler: 'CacheFirst',
             options: {
-              cacheName: 'barabite-images',
+              cacheName: 'savora-images',
               expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 },
               cacheableResponse: { statuses: [0, 200] },
             },

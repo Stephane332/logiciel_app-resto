@@ -1,7 +1,7 @@
 /** Employés et rôles. Réservé à l'administrateur : distribuer des accès est une décision sensible. */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { employeeInputSchema, parseBurkinaPhone, ROLES } from '@barabite/shared';
+import { employeeInputSchema, parseBurkinaPhone, ROLES } from '@savora/shared';
 import { prisma } from '../../db.js';
 import { currentRestaurantId } from '../../lib/context.js';
 import { badRequest, conflict, notFound } from '../../lib/errors.js';

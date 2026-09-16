@@ -3,7 +3,7 @@
 **Statut :** acceptée — Septembre 2026
 
 ## Contexte
-Le premier client est Innova Group, à Ouahigouya. Le restaurant doit pouvoir saisir lui-même ses produits,
+Le premier client est Mon restaurant, à Ouahigouya. Le restaurant doit pouvoir saisir lui-même ses produits,
 ses prix et ses photos. Un second restaurant est envisageable.
 
 ## Décision

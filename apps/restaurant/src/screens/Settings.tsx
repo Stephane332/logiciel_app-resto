@@ -9,8 +9,8 @@
  */
 import { useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { formatMinutes, WEEKDAY_LABELS } from '@barabite/shared';
-import { staffApi, type DeliveryZone, type OpeningHour } from '@barabite/api-client';
+import { formatMinutes, WEEKDAY_LABELS } from '@savora/shared';
+import { staffApi, type DeliveryZone, type OpeningHour } from '@savora/api-client';
 import { IconCheck, IconPlus, IconTrash } from '../components/Icons';
 import { ErrorState, Loading, Modal, Switch, Tag } from '../components/ui';
 import { formatAmount } from '../lib/format';

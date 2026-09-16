@@ -12,7 +12,7 @@ import {
   openingHourInputSchema,
   openingState,
   parseBurkinaPhone,
-} from '@barabite/shared';
+} from '@savora/shared';
 import { prisma } from '../../db.js';
 import { currentRestaurantId } from '../../lib/context.js';
 import { notFound } from '../../lib/errors.js';

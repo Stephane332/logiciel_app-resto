@@ -20,7 +20,7 @@ import {
   type CartLine,
   type CreateOrderInput,
   type DiscountInput,
-} from '@barabite/shared';
+} from '@savora/shared';
 import { prisma } from '../../db.js';
 import { badRequest, conflict, notFound, unprocessable } from '../../lib/errors.js';
 import { emitToOrder, emitToRestaurant } from '../../lib/realtime.js';

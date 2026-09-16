@@ -1,13 +1,13 @@
 /**
  * Accès à l'API pour l'application cliente.
  *
- * Le noyau HTTP et les types vivent dans `@barabite/api-client`, partagé avec le logiciel
+ * Le noyau HTTP et les types vivent dans `@savora/api-client`, partagé avec le logiciel
  * restaurant : une seule implémentation du jeton, du renouvellement de session et de la traduction
  * des erreurs.
  */
-import { configureApi as configureCore, customerApi } from '@barabite/api-client';
+import { configureApi as configureCore, customerApi } from '@savora/api-client';
 
-export { ApiError, request } from '@barabite/api-client';
+export { ApiError, request } from '@savora/api-client';
 export type {
   Address,
   Category,
@@ -21,10 +21,10 @@ export type {
   RestaurantInfo,
   SessionUser,
   OrderItemView,
-} from '@barabite/api-client';
+} from '@savora/api-client';
 
 /** L'application cliente ne voit que la vue restreinte des commandes. */
-export type { CustomerOrder as OrderView } from '@barabite/api-client';
+export type { CustomerOrder as OrderView } from '@savora/api-client';
 
 /**
  * En web, l'API répond sur le même domaine. Dans l'APK, il n'y a pas de « même domaine » :

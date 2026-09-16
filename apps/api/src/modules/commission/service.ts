@@ -24,7 +24,7 @@ import {
   periodBounds,
   periodKey,
   periodLabel,
-} from '@barabite/shared';
+} from '@savora/shared';
 import { prisma } from '../../db.js';
 
 /** Le contrat en vigueur pour ce restaurant, tel qu'il figure dans ses réglages. */

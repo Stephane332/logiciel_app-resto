@@ -46,7 +46,7 @@ jobs:
         env:
           VITE_API_URL: ${{ inputs.api_url || vars.API_URL }}
           VITE_REALTIME_URL: ${{ vars.REALTIME_URL }}
-        run: npm run build --workspace @barabite/client
+        run: npm run build --workspace @savora/client
 
       - name: Synchroniser Capacitor
         working-directory: apps/client
@@ -61,7 +61,7 @@ jobs:
       - name: Publier l'APK
         uses: actions/upload-artifact@v4
         with:
-          name: barabite-apk
+          name: savora-apk
           path: apps/client/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
@@ -85,6 +85,6 @@ jobs:
         if: env.HAS_KEYSTORE == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: barabite-apk-signe
+          name: savora-apk-signe
           path: apps/client/android/app/build/outputs/apk/release/*.apk
           retention-days: 90

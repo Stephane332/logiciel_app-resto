@@ -5,7 +5,7 @@
  * le masquage dans l'interface est une politesse, jamais une sécurité (§ 12 du cahier des charges).
  */
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { type Ability, can } from '@barabite/shared';
+import { type Ability, can } from '@savora/shared';
 import type { Role } from '@prisma/client';
 import { forbidden, unauthorized } from './errors.js';
 import { verifyAccessToken } from './auth.js';

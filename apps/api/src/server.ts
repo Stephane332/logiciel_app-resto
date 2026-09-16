@@ -8,7 +8,7 @@ const app = await buildApp();
 try {
   await app.listen({ port: env.PORT, host: env.HOST });
   initRealtime(app.server);
-  app.log.info(`BaraBite API — temps réel actif sur /realtime`);
+  app.log.info(`Savora API — temps réel actif sur /realtime`);
 } catch (error) {
   app.log.error(error);
   process.exit(1);

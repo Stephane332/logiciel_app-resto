@@ -1,4 +1,4 @@
-# API BaraBite.
+# API Savora.
 #
 # Construction en deux temps : les dépendances complètes servent à compiler, puis seul le nécessaire
 # passe dans l'image finale. Sur un VPS modeste — le cas attendu — chaque centaine de mégaoctets
@@ -13,14 +13,14 @@ COPY packages/shared/package.json ./packages/shared/
 COPY packages/api-client/package.json ./packages/api-client/
 COPY apps/api/package.json ./apps/api/
 
-RUN npm ci --workspace @barabite/api --include-workspace-root
+RUN npm ci --workspace @savora/api --include-workspace-root
 
 COPY packages/shared ./packages/shared
 COPY packages/api-client ./packages/api-client
 COPY apps/api ./apps/api
 
 RUN npx prisma generate --schema apps/api/prisma/schema.prisma \
- && npm run build --workspace @barabite/api
+ && npm run build --workspace @savora/api
 
 # ---------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ COPY packages/shared/package.json ./packages/shared/
 COPY packages/api-client/package.json ./packages/api-client/
 COPY apps/api/package.json ./apps/api/
 
-RUN npm ci --omit=dev --workspace @barabite/api --include-workspace-root \
+RUN npm ci --omit=dev --workspace @savora/api --include-workspace-root \
  && npm cache clean --force
 
 COPY packages/shared ./packages/shared

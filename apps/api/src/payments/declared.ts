@@ -14,7 +14,7 @@
  *
  * Approche reprise de Resto Papou Service (Ouahigouya) — voir ADR 008.
  */
-import { buildUssdCode, ussdDialLink } from '@barabite/shared';
+import { buildUssdCode, ussdDialLink } from '@savora/shared';
 import { prisma } from '../db.js';
 import { badRequest } from '../lib/errors.js';
 import type { PaymentProvider } from './provider.js';

@@ -6,7 +6,7 @@ import type {
   PaymentMethod,
   Role,
   TableStatus,
-} from '@barabite/shared';
+} from '@savora/shared';
 
 export interface OptionItem {
   id: string;

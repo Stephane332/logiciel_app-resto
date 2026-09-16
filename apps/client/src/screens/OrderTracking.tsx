@@ -7,7 +7,7 @@
 import { useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { isTerminal, statusLabel, trackingSteps, type OrderStatus } from '@barabite/shared';
+import { isTerminal, statusLabel, trackingSteps, type OrderStatus } from '@savora/shared';
 import { IconBag, IconBike, IconCheck, IconClock, IconQr } from '../components/Icons';
 import { ErrorState, Header, Loading, Tag } from '../components/ui';
 import { api } from '../lib/api';

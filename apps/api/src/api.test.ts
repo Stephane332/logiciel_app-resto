@@ -1152,7 +1152,7 @@ describe('photos de produits', () => {
   }
 
   function multipart(buffer: Buffer, filename: string, contentType: string) {
-    const boundary = '----barabite-test-boundary';
+    const boundary = '----savora-test-boundary';
     const head = Buffer.from(
       `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\n` +
         `Content-Type: ${contentType}\r\n\r\n`,

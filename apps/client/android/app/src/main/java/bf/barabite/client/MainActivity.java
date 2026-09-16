@@ -1,4 +1,4 @@
-package bf.barabite.client;
+package app.savora.client;
 
 import com.getcapacitor.BridgeActivity;
 

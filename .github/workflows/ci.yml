@@ -14,21 +14,21 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: barabite
-          POSTGRES_PASSWORD: barabite
-          POSTGRES_DB: barabite_test
+          POSTGRES_USER: savora
+          POSTGRES_PASSWORD: savora
+          POSTGRES_DB: savora_test
         ports:
           - 5432:5432
         # Sans ce contrôle de santé, les tests démarrent avant que la base accepte les connexions.
         options: >-
-          --health-cmd "pg_isready -U barabite"
+          --health-cmd "pg_isready -U savora"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://barabite:barabite@localhost:5432/barabite_test
-      TEST_DATABASE_URL: postgresql://barabite:barabite@localhost:5432/barabite_test
+      DATABASE_URL: postgresql://savora:savora@localhost:5432/savora_test
+      TEST_DATABASE_URL: postgresql://savora:savora@localhost:5432/savora_test
       JWT_SECRET: secret-de-test-uniquement-pour-integration-continue
       PAYMENT_WEBHOOK_SECRET: test-webhook-secret
 
@@ -43,10 +43,10 @@ jobs:
       - run: npm ci
 
       - name: Générer le client Prisma
-        run: npm run db:generate --workspace @barabite/api
+        run: npm run db:generate --workspace @savora/api
 
       - name: Appliquer les migrations
-        run: npm run db:deploy --workspace @barabite/api
+        run: npm run db:deploy --workspace @savora/api
 
       - name: Vérification des types
         run: npm run typecheck
@@ -65,6 +65,6 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Générer le client Prisma
-        run: npm run db:generate --workspace @barabite/api
+        run: npm run db:generate --workspace @savora/api
       - name: Construire
         run: npm run build

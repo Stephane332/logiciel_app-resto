@@ -4,8 +4,8 @@
  * Lisible à un mètre : numéro énorme, minuteur visible, produits et options en clair. C'est la seule
  * chose qu'un cuisinier regarde, souvent en passant.
  */
-import { statusLabel, type OrderStatus } from '@barabite/shared';
-import type { Order } from '@barabite/api-client';
+import { statusLabel, type OrderStatus } from '@savora/shared';
+import type { Order } from '@savora/api-client';
 import { IconBag, IconBike, IconClock, IconQr } from './Icons';
 import { Tag } from './ui';
 import { channelLabel, formatAmount, formatOrderNumber, minutesSince, typeLabel } from '../lib/format';

@@ -1,5 +1,5 @@
 /**
- * Client d'API BaraBite.
+ * Client d'API Savora.
  *
  * Un noyau HTTP unique, deux jeux de points d'entrée : `customerApi` pour l'application cliente,
  * `staffApi` pour le logiciel restaurant. Les types des réponses sont partagés, ce qui garantit que

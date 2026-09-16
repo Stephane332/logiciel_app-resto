@@ -3,7 +3,7 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { looksLikeTransactionId, matchSmsToPayment } from '@barabite/shared';
+import { looksLikeTransactionId, matchSmsToPayment } from '@savora/shared';
 import { prisma } from '../../db.js';
 import { isTest } from '../../env.js';
 import { currentRestaurantId } from '../../lib/context.js';

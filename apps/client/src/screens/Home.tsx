@@ -5,7 +5,7 @@
  * mange. Tout le reste vient après.
  */
 import { Link } from 'react-router-dom';
-import { formatMinutes, WEEKDAY_LABELS } from '@barabite/shared';
+import { formatMinutes, WEEKDAY_LABELS } from '@savora/shared';
 import { IconBag, IconBell, IconBike, IconClock, IconQr, IconSearch } from '../components/Icons';
 import { ProductCard, ProductCardCompact } from '../components/ProductCard';
 import { ErrorState, Loading, Tag } from '../components/ui';

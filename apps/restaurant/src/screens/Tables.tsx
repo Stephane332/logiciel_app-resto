@@ -6,7 +6,7 @@
  */
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { staffApi, type RestaurantTable } from '@barabite/api-client';
+import { staffApi, type RestaurantTable } from '@savora/api-client';
 import { IconPlus, IconQr, IconRefresh } from '../components/Icons';
 import { Empty, ErrorState, Loading, Modal, Tag } from '../components/ui';
 import { formatAmount, formatOrderNumber } from '../lib/format';

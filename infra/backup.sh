@@ -6,7 +6,7 @@
 # photographie du restaurant serait perdu sans que la sauvegarde ait jamais signalé un problème.
 #
 # À planifier sur l'hôte :
-#   0 3 * * * /chemin/vers/infra/backup.sh >> /var/log/barabite-backup.log 2>&1
+#   0 3 * * * /chemin/vers/infra/backup.sh >> /var/log/savora-backup.log 2>&1
 #
 # Une sauvegarde jamais restaurée n'est pas une sauvegarde : testez la restauration une fois par
 # trimestre, sur une base jetable.
@@ -23,7 +23,7 @@ RETENTION_DAYS="${RETENTION_DAYS:-30}"
 
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T db \
   pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom \
-  > "$(dirname "$0")/backups/barabite_${STAMP}.dump"
+  > "$(dirname "$0")/backups/savora_${STAMP}.dump"
 
 # Photos du catalogue, prises depuis le volume monté dans le conteneur d'API.
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T api \
@@ -31,7 +31,7 @@ docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T api \
   | gzip > "$(dirname "$0")/backups/photos_${STAMP}.tar.gz"
 
 # Purge des sauvegardes trop anciennes, pour ne pas saturer le disque du VPS.
-find "$(dirname "$0")/backups" -name 'barabite_*.dump' -mtime "+${RETENTION_DAYS}" -delete
+find "$(dirname "$0")/backups" -name 'savora_*.dump' -mtime "+${RETENTION_DAYS}" -delete
 find "$(dirname "$0")/backups" -name 'photos_*.tar.gz' -mtime "+${RETENTION_DAYS}" -delete
 
-echo "Sauvegarde terminée : barabite_${STAMP}.dump + photos_${STAMP}.tar.gz"
+echo "Sauvegarde terminée : savora_${STAMP}.dump + photos_${STAMP}.tar.gz"

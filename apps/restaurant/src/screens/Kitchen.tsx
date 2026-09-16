@@ -6,7 +6,7 @@
  * ne serve pas à préparer le plat.
  */
 import { useMutation } from '@tanstack/react-query';
-import { staffApi, type Order } from '@barabite/api-client';
+import { staffApi, type Order } from '@savora/api-client';
 import { IconClock } from '../components/Icons';
 import { Empty, ErrorState, Loading, Tag } from '../components/ui';
 import { formatOrderNumber, minutesSince, typeLabel } from '../lib/format';

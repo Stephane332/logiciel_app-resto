@@ -8,8 +8,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'bf.barabite.client',
-  appName: 'BaraBite',
+  appId: 'app.savora.client',
+  appName: 'Savora',
   webDir: 'dist',
 
   android: {
@@ -36,7 +36,7 @@ const config: CapacitorConfig = {
     // Requis pour que les liens profonds du QR de table (https://<domaine>/t/<jeton>) ouvrent
     // l'application plutôt qu'un navigateur, quand elle est installée.
     androidScheme: 'https',
-    hostname: process.env.CAPACITOR_HOSTNAME ?? 'app.barabite.bf',
+    hostname: process.env.CAPACITOR_HOSTNAME ?? 'app.savora.bf',
   },
 };
 

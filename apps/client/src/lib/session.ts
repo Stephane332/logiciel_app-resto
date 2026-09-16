@@ -37,7 +37,7 @@ export const useSession = create<SessionState>()(
       clear: () => set({ user: null, accessToken: null, refreshToken: null }),
     }),
     {
-      name: 'barabite.session',
+      name: 'savora.session',
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,

@@ -1,8 +1,8 @@
 {
-  "name": "barabite",
+  "name": "savora",
   "private": true,
   "version": "1.0.0",
-  "description": "Plateforme de commande et de gestion pour la restauration rapide — Innova Group, Ouahigouya",
+  "description": "Plateforme de commande et de gestion pour la restauration rapide — Mon restaurant, Ouahigouya",
   "author": "Ange Stephane Sawadogo",
   "license": "UNLICENSED",
   "type": "module",
@@ -18,12 +18,12 @@
     "format": "prettier --write .",
     "db:up": "docker compose -f infra/docker-compose.yml up -d",
     "db:down": "docker compose -f infra/docker-compose.yml down",
-    "db:migrate": "npm run db:migrate --workspace @barabite/api",
-    "db:seed": "npm run db:seed --workspace @barabite/api",
-    "db:studio": "npm run db:studio --workspace @barabite/api",
-    "dev": "npm run dev --workspace @barabite/api",
-    "dev:client": "npm run dev --workspace @barabite/client",
-    "dev:restaurant": "npm run dev --workspace @barabite/restaurant"
+    "db:migrate": "npm run db:migrate --workspace @savora/api",
+    "db:seed": "npm run db:seed --workspace @savora/api",
+    "db:studio": "npm run db:studio --workspace @savora/api",
+    "dev": "npm run dev --workspace @savora/api",
+    "dev:client": "npm run dev --workspace @savora/client",
+    "dev:restaurant": "npm run dev --workspace @savora/restaurant"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

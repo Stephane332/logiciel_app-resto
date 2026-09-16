@@ -6,7 +6,7 @@
  */
 import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { can, type Ability } from '@barabite/shared';
+import { can, type Ability } from '@savora/shared';
 import { Shell } from './components/Shell';
 import { Loading } from './components/ui';
 import { useSession } from './lib/session';
@@ -32,7 +32,7 @@ function BrandTheme() {
     if (!data) return;
     const root = document.documentElement;
     root.style.setProperty('--brand-primary', data.restaurant.primaryColor);
-    root.style.setProperty('--bg', data.restaurant.backgroundColor);
+    root.style.setProperty('--brand-ink', data.restaurant.backgroundColor);
   }, [data]);
   return null;
 }

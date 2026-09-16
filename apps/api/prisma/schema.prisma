@@ -1,4 +1,4 @@
-// Schéma de la base BaraBite.
+// Schéma de la base Savora.
 //
 // Deux règles structurent ce fichier :
 //   1. Tout montant est un entier de francs CFA (ADR 003) — jamais un Decimal, jamais un Float.

@@ -47,12 +47,15 @@ function BrandTheme() {
   useEffect(() => {
     if (!data) return;
     const root = document.documentElement;
+    // Seules les deux couleurs de marque sont surchargées. Le fond, lui, reste le papier de
+    // Savora : laisser un restaurant repeindre l'arrière-plan de l'application, c'est lui laisser
+    // la possibilité de rendre son propre menu illisible — et le texte, les ombres et les états
+    // sont accordés à ce papier, pas à une couleur arbitraire.
     root.style.setProperty('--brand-primary', data.restaurant.primaryColor);
-    root.style.setProperty('--brand-bg', data.restaurant.backgroundColor);
-    root.style.setProperty('--bg', data.restaurant.backgroundColor);
+    root.style.setProperty('--brand-ink', data.restaurant.backgroundColor);
 
     const themeColor = document.querySelector('meta[name="theme-color"]');
-    themeColor?.setAttribute('content', data.restaurant.backgroundColor);
+    themeColor?.setAttribute('content', '#fbf8f3');
   }, [data]);
 
   return null;

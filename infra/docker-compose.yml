@@ -1,21 +1,21 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: barabite-db
+    container_name: savora-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: barabite
-      POSTGRES_PASSWORD: barabite
-      POSTGRES_DB: barabite
+      POSTGRES_USER: savora
+      POSTGRES_PASSWORD: savora
+      POSTGRES_DB: savora
     ports:
       - '5432:5432'
     volumes:
-      - barabite-db-data:/var/lib/postgresql/data
+      - savora-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U barabite -d barabite']
+      test: ['CMD-SHELL', 'pg_isready -U savora -d savora']
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  barabite-db-data:
+  savora-db-data:

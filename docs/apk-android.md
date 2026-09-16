@@ -12,7 +12,7 @@ source, deux canaux de diffusion (voir [ADR 001](adr/001-pwa-avant-natif.md)).
 
 1. Sur GitHub, ouvrez **Actions → APK Android → Run workflow**.
 2. Renseignez éventuellement l'URL de l'API (sinon la variable de dépôt `API_URL` est utilisée).
-3. Au bout de quelques minutes, téléchargez l'artefact **`barabite-apk`**.
+3. Au bout de quelques minutes, téléchargez l'artefact **`savora-apk`**.
 4. Transférez le fichier `.apk` sur un téléphone Android et ouvrez-le.
    Android demandera d'autoriser l'installation depuis cette source : c'est normal pour un APK
    distribué hors magasin.
@@ -46,8 +46,8 @@ la précédente.
 ### 1. Créer un magasin de clés
 
 ```bash
-keytool -genkey -v -keystore barabite.keystore \
-  -alias barabite -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkey -v -keystore savora.keystore \
+  -alias savora -keyalg RSA -keysize 2048 -validity 10000
 ```
 
 > **Conservez ce fichier et ses mots de passe.** Les perdre signifie ne plus jamais pouvoir mettre à
@@ -60,9 +60,9 @@ Dans **Settings → Secrets and variables → Actions → Secrets** :
 
 | Secret | Contenu |
 |---|---|
-| `ANDROID_KEYSTORE_BASE64` | `base64 -w0 barabite.keystore` |
+| `ANDROID_KEYSTORE_BASE64` | `base64 -w0 savora.keystore` |
 | `ANDROID_KEYSTORE_PASSWORD` | mot de passe du magasin |
-| `ANDROID_KEY_ALIAS` | `barabite` |
+| `ANDROID_KEY_ALIAS` | `savora` |
 | `ANDROID_KEY_PASSWORD` | mot de passe de la clé |
 
 Le magasin de clés n'est **jamais** commis dans le dépôt : qui le lit peut publier une mise à jour au
@@ -70,7 +70,7 @@ nom du restaurant.
 
 ### 3. Relancer le workflow
 
-L'artefact **`barabite-apk-signe`** apparaît en plus de la version de débogage.
+L'artefact **`savora-apk-signe`** apparaît en plus de la version de débogage.
 
 ---
 
@@ -84,7 +84,7 @@ Pour qu'un QR Code de table scanné ouvre l'application installée plutôt que l
    signature :
 
 ```bash
-keytool -list -v -keystore barabite.keystore -alias barabite | grep SHA256
+keytool -list -v -keystore savora.keystore -alias savora | grep SHA256
 ```
 
 ```json
@@ -93,7 +93,7 @@ keytool -list -v -keystore barabite.keystore -alias barabite | grep SHA256
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "bf.barabite.client",
+      "package_name": "app.savora.client",
       "sha256_cert_fingerprints": ["VOTRE:EMPREINTE:SHA256"]
     }
   }

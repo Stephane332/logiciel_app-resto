@@ -11,8 +11,8 @@
  */
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { formatRate, looksLikeTransactionId } from '@barabite/shared';
-import { staffApi, type CommissionSettlement } from '@barabite/api-client';
+import { formatRate, looksLikeTransactionId } from '@savora/shared';
+import { staffApi, type CommissionSettlement } from '@savora/api-client';
 import { IconCheck, IconWallet } from '../components/Icons';
 import { Empty, ErrorState, Loading, Tag } from '../components/ui';
 import { formatAmount, formatOrderNumber } from '../lib/format';

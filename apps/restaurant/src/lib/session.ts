@@ -6,7 +6,7 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { configureApi, staffApi, type SessionUser } from '@barabite/api-client';
+import { configureApi, staffApi, type SessionUser } from '@savora/api-client';
 
 const BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
@@ -27,7 +27,7 @@ export const useSession = create<SessionState>()(
       setSession: ({ user, accessToken, refreshToken }) => set({ user, accessToken, refreshToken }),
       clear: () => set({ user: null, accessToken: null, refreshToken: null }),
     }),
-    { name: 'barabite.staff-session' },
+    { name: 'savora.staff-session' },
   ),
 );
 

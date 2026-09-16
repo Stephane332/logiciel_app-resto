@@ -116,7 +116,7 @@ Aucune de ces limites n'affecte les règles métier, qui sont, elles, entièreme
 **Une limite en moins.** Ce document annonçait que le paiement en ligne resterait simulé faute
 d'agrégateur. Ce n'est plus vrai : Orange Money et Moov Money fonctionnent par code USSD, la preuve
 étant faite par le restaurant sur le SMS reçu sur son propre téléphone
-([ADR 008](adr/008-paiement-declare-atteste.md)). Il ne manque que les numéros marchands d'Innova Group.
+([ADR 008](adr/008-paiement-declare-atteste.md)). Il ne manque que les numéros marchands d'Mon restaurant.
 
 ## Recette du paiement Mobile Money *(vérifiée au navigateur)*
 

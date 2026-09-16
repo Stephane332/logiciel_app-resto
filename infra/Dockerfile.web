@@ -15,7 +15,7 @@ COPY packages/ui/package.json ./packages/ui/
 COPY packages/api-client/package.json ./packages/api-client/
 COPY apps/${APP}/package.json ./apps/${APP}/
 
-RUN npm ci --workspace @barabite/${APP} --include-workspace-root
+RUN npm ci --workspace @savora/${APP} --include-workspace-root
 
 COPY packages ./packages
 COPY apps/${APP} ./apps/${APP}
@@ -23,7 +23,7 @@ COPY apps/${APP} ./apps/${APP}
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_REALTIME_URL=${VITE_REALTIME_URL}
 
-RUN npm run build --workspace @barabite/${APP}
+RUN npm run build --workspace @savora/${APP}
 
 # ---------------------------------------------------------------------------
 

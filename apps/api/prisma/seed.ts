@@ -1,33 +1,38 @@
 /**
  * Jeu de démarrage.
  *
- * Ce n'est PAS le menu d'Innova Group : c'est un point de départ pour que la plateforme soit
- * utilisable et démontrable dès la première minute. Le restaurant saisit ensuite son propre
- * catalogue depuis le logiciel restaurant, sans développeur (§ 2.8 du cahier des charges).
+ * Crée ce qui relève de la configuration — le restaurant, ses comptes, ses horaires, ses tables,
+ * ses zones de livraison — et **rien du catalogue**.
+ *
+ * Aucun plat n'est créé ici. Tout ce qui apparaît dans l'application cliente doit avoir été saisi
+ * par le restaurant depuis son logiciel : c'est la seule façon que le menu en ligne dise la vérité
+ * sur ce qui sort réellement de la cuisine.
  *
  * Relancer ce script est sans danger : il met à jour au lieu de dupliquer.
  */
 import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
-import { generateTableToken } from '@barabite/shared';
-import { generateIllustration, glyphForCategory } from './illustrations.js';
+import { generateTableToken } from '@savora/shared';
 
 const prisma = new PrismaClient();
 
-const DEMO_PASSWORD = 'barabite2026';
+const DEMO_PASSWORD = 'savora2026';
 
 async function main() {
-  console.log('Amorçage de la base BaraBite…\n');
+  console.log('Amorçage de la base Savora…\n');
 
   const restaurant = await prisma.restaurant.upsert({
-    where: { slug: 'innova-group' },
-    update: {},
+    where: { slug: 'mon-restaurant' },
+    // Les couleurs de marque sont réalignées à chaque amorçage. Sans cela, un restaurant créé sous
+    // une ancienne palette garderait indéfiniment des couleurs qui jurent avec l'interface, et le
+    // défaut serait invisible en développement puisque la base n'est jamais recréée.
+    update: { primaryColor: '#D95C14', backgroundColor: '#14342A' },
     create: {
-      slug: 'innova-group',
-      name: 'Innova Group',
+      slug: 'mon-restaurant',
+      name: 'Mon restaurant',
       tagline: 'Bon goût. Sans attente.',
-      primaryColor: '#F2B705',
-      backgroundColor: '#0B1F17',
+      primaryColor: '#D95C14',
+      backgroundColor: '#14342A',
       city: 'Ouahigouya',
       country: 'Burkina Faso',
       address: 'Ouahigouya, Burkina Faso',
@@ -65,126 +70,24 @@ async function main() {
   }
   console.log(`Comptes : ${staff.length} employés (mot de passe : ${DEMO_PASSWORD})`);
 
-  // --- Catalogue de démarrage ------------------------------------------------
-  const catalogue = [
-    {
-      name: 'Burgers',
-      slug: 'burgers',
-      products: [
-        { name: 'Double Cheese', slug: 'double-cheese', price: 3500, description: 'Steak haché, cheddar, salade, tomate, oignon, sauce maison.', featured: true },
-        { name: 'Chicken Burger', slug: 'chicken-burger', price: 2800, description: 'Poulet grillé, crudités, sauce.' },
-        { name: 'Beef Burger', slug: 'beef-burger', price: 2500, description: 'Steak haché, salade, tomate, oignon.' },
-        { name: 'Fish Burger', slug: 'fish-burger', price: 2500, description: 'Poisson pané, salade, sauce tartare.' },
-      ],
-    },
-    {
-      name: 'Paninis & Wraps',
-      slug: 'paninis-wraps',
-      products: [
-        { name: 'Chicken Wrap', slug: 'chicken-wrap', price: 2900, description: 'Poulet, crudités, sauce au choix.' },
-        { name: 'Panini Poulet', slug: 'panini-poulet', price: 2000, description: 'Pain panini, poulet, fromage fondu.' },
-      ],
-    },
-    {
-      name: 'Menus',
-      slug: 'menus',
-      products: [
-        { name: 'Menu XL', slug: 'menu-xl', price: 6500, description: 'Double Cheese + frites + boisson.', featured: true },
-        { name: 'Menu Poulet', slug: 'menu-poulet', price: 5500, description: 'Chicken Burger + frites + boisson.' },
-        { name: 'Menu du moment', slug: 'menu-du-moment', price: 3500, description: 'Burger + frites + boisson.', featured: true },
-      ],
-    },
-    {
-      name: 'Accompagnements',
-      slug: 'accompagnements',
-      products: [
-        { name: 'Frites', slug: 'frites', price: 1500, description: 'Frites maison, portion généreuse.' },
-        { name: 'Frites Cheese', slug: 'frites-cheese', price: 2000, description: 'Frites nappées de cheddar fondu.' },
-      ],
-    },
-    {
-      name: 'Boissons',
-      slug: 'boissons',
-      products: [
-        { name: 'Coca-Cola', slug: 'coca-cola', price: 1000, description: 'Canette 33 cl, bien fraîche.' },
-        { name: 'Fanta', slug: 'fanta', price: 1000, description: 'Canette 33 cl.' },
-        { name: 'Eau minérale', slug: 'eau-minerale', price: 500, description: 'Bouteille 50 cl.' },
-        { name: 'Jus de bissap', slug: 'jus-de-bissap', price: 750, description: 'Préparation maison, servie fraîche.' },
-      ],
-    },
-  ];
-
-  const uploadDir = process.env.UPLOAD_DIR ?? './uploads';
-  let productCount = 0;
-  for (const [categoryIndex, group] of catalogue.entries()) {
-    const category = await prisma.category.upsert({
-      where: { restaurantId_slug: { restaurantId: restaurant.id, slug: group.slug } },
-      update: { position: categoryIndex },
-      create: { restaurantId: restaurant.id, name: group.name, slug: group.slug, position: categoryIndex },
-    });
-
-    for (const [productIndex, item] of group.products.entries()) {
-      const existing = await prisma.product.findUnique({
-        where: { restaurantId_slug: { restaurantId: restaurant.id, slug: item.slug } },
-      });
-      if (existing) {
-        productCount += 1;
-        continue;
-      }
-
-      // Visuel d'attente : une illustration, jamais une fausse photographie. Un menu sans aucune
-      // image se commande beaucoup moins, mais une photo inventée ferait commander un plat que le
-      // client ne recevra pas.
-      const illustration = await generateIllustration(
-        uploadDir,
-        restaurant.id,
-        item.slug,
-        glyphForCategory(group.slug),
-      );
-
-      const product = await prisma.product.create({
-        data: {
-          restaurantId: restaurant.id,
-          categoryId: category.id,
-          name: item.name,
-          slug: item.slug,
-          description: item.description,
-          price: item.price,
-          imageUrl: illustration.url,
-          position: productIndex,
-          isFeatured: 'featured' in item ? Boolean(item.featured) : false,
-        },
-      });
-      productCount += 1;
-
-      // Sauces et suppléments sur les produits qui s'y prêtent.
-      if (group.slug === 'burgers' || group.slug === 'paninis-wraps' || group.slug === 'menus') {
-        const sauces = await prisma.optionGroup.create({
-          data: { productId: product.id, name: 'Choisissez une sauce', minChoices: 1, maxChoices: 1, position: 0 },
-        });
-        await prisma.optionItem.createMany({
-          data: [
-            { groupId: sauces.id, name: 'Sauce maison', priceDelta: 0, position: 0 },
-            { groupId: sauces.id, name: 'Mayonnaise', priceDelta: 0, position: 1 },
-            { groupId: sauces.id, name: 'Ketchup', priceDelta: 0, position: 2 },
-            { groupId: sauces.id, name: 'Piment', priceDelta: 0, position: 3 },
-          ],
-        });
-
-        const extras = await prisma.optionGroup.create({
-          data: { productId: product.id, name: 'Suppléments', minChoices: 0, maxChoices: 4, position: 1 },
-        });
-        await prisma.optionItem.createMany({
-          data: [
-            { groupId: extras.id, name: 'Fromage supplémentaire', priceDelta: 500, position: 0 },
-            { groupId: extras.id, name: 'Œuf', priceDelta: 300, position: 1 },
-            { groupId: extras.id, name: 'Bacon', priceDelta: 500, position: 2 },
-          ],
-        });
-      }
-    }
-  }
-  console.log(`Catalogue de démarrage : ${catalogue.length} catégories, ${productCount} produits`);
+  // --- Catalogue : volontairement vide ----------------------------------------
+  //
+  // Aucun produit n'est créé ici, et c'est une règle, pas un oubli.
+  //
+  // Tout ce qui apparaît dans l'application cliente doit avoir été saisi par le restaurant depuis
+  // son logiciel. Un catalogue de démonstration livré d'avance donne une première impression
+  // flatteuse et coûte cher ensuite : l'équipe ne sait plus ce qui vient d'elle, des plats qu'elle
+  // ne fait pas restent en ligne, et un client finit par commander un produit qui n'existe pas.
+  //
+  // L'assistant de configuration prend le relais : le logiciel s'ouvre sur « ajoutez votre premier
+  // plat », et l'application cliente affiche un menu vide tant que ce n'est pas fait. C'est la
+  // vérité de l'état du restaurant, et c'est ce qu'il faut montrer.
+  const productCount = await prisma.product.count({ where: { restaurantId: restaurant.id } });
+  console.log(
+    productCount === 0
+      ? 'Catalogue : vide — à saisir depuis le logiciel restaurant.'
+      : `Catalogue : ${productCount} produits déjà saisis par le restaurant, laissés intacts.`,
+  );
 
   // --- Tables ----------------------------------------------------------------
   for (let index = 1; index <= 9; index += 1) {

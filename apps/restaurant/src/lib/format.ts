@@ -1,5 +1,5 @@
 /** Formats d'affichage. */
-import { formatAmount } from '@barabite/shared';
+import { formatAmount } from '@savora/shared';
 
 export { formatAmount };
 

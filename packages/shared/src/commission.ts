@@ -1,7 +1,7 @@
 /**
  * Commission de la plateforme.
  *
- * BaraBite prélève un pourcentage sur les ventes passées par l'application. C'est le modèle
+ * Savora prélève un pourcentage sur les ventes passées par l'application. C'est le modèle
  * économique du logiciel : le restaurant ne paie pas d'abonnement, il paie à l'usage, et seulement
  * quand l'application lui a réellement apporté une vente.
  *

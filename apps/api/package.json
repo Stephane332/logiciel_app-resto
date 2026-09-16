@@ -1,5 +1,5 @@
 {
-  "name": "@barabite/api",
+  "name": "@savora/api",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -21,7 +21,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@barabite/shared": "*",
+    "@savora/shared": "*",
     "@fastify/cookie": "^11.0.1",
     "@fastify/cors": "^10.0.1",
     "@fastify/helmet": "^13.0.0",

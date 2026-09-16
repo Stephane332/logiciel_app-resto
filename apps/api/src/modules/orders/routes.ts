@@ -12,7 +12,7 @@ import {
   rejectOrderSchema,
   type OrderStatus,
   type OrderType,
-} from '@barabite/shared';
+} from '@savora/shared';
 import type { Role } from '@prisma/client';
 import { prisma } from '../../db.js';
 import { isTest } from '../../env.js';

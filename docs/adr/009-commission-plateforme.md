@@ -5,7 +5,7 @@
 
 ## Contexte
 
-BaraBite doit se financer. Le modèle retenu est un pourcentage sur les ventes que l'application
+Savora doit se financer. Le modèle retenu est un pourcentage sur les ventes que l'application
 apporte — **1 %** — et non un abonnement. Le restaurant ne paie donc rien tant que le logiciel ne
 lui rapporte rien, ce qui est le bon sens commercial face à un restaurateur qui n'a jamais utilisé
 de logiciel de caisse.

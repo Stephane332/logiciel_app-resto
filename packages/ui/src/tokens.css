@@ -1,56 +1,81 @@
 /**
- * Jetons de design BaraBite.
+ * Jetons de design Savora.
  *
- * L'univers visuel est celui de la maquette validée : fond vert nuit, accents or, grandes cartes
- * produits. Il est affiné pour l'usage réel — contraste relevé pour la lecture en plein soleil,
- * cibles tactiles généreuses, échelle typographique régulière.
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  Le plat est le héros. Tout le reste s'efface.                               │
+ * └──────────────────────────────────────────────────────────────────────────────┘
  *
- * Les couleurs de marque (--brand-primary, --brand-bg) sont surchargées à l'exécution par les
- * valeurs enregistrées en base : la marque est une donnée, pas du code (ADR 004).
+ * La version précédente posait les photos sur un vert nuit saturé. C'était une erreur : un fond
+ * sombre et coloré entre en concurrence avec la nourriture, ternit les bruns et les dorés, et tire
+ * toute l'image vers le vert. Les cartes des restaurants qui vendent sont claires — c'est le papier
+ * qui met l'assiette en valeur, jamais l'inverse.
+ *
+ * Trois principes tiennent l'ensemble :
+ *
+ *   1. **Un fond papier, jamais blanc pur.** Le blanc d'écran est clinique et fatigue en plein
+ *      soleil ; un crème très légèrement chaud se lit mieux dehors et flatte la nourriture.
+ *   2. **Une seule couleur qui appelle à l'action.** L'ambre sert au bouton principal et au prix,
+ *      nulle part ailleurs. Une couleur qui signale tout ne signale plus rien.
+ *   3. **De la profondeur par l'ombre, jamais par le trait.** La bordure découpe, l'ombre soulève.
+ *      Les cartes flottent sur le papier.
+ *
+ * `--brand-primary` et `--brand-ink` sont surchargées à l'exécution par les valeurs enregistrées en
+ * base : la marque du restaurant est une donnée, pas du code (ADR 004).
  */
 :root {
-  /* --- Fonds : du plus profond au plus clair --- */
-  --bg: #07130f;
-  --surface: #0e2019;
-  --surface-2: #143026;
-  --surface-3: #1c4133;
-  --overlay: rgba(3, 10, 8, 0.72);
+  /* --- Papier et surfaces --------------------------------------------------------
+     Progression volontairement resserrée : trois niveaux hiérarchisent, davantage produit une
+     purée de gris que l'œil ne distingue plus. */
+  --paper: #fbf8f3;
+  --surface: #ffffff;
+  --surface-2: #f4efe7;
+  --surface-3: #ebe4d9;
+  --overlay: rgba(22, 17, 12, 0.55);
 
-  /* --- Marque --- */
-  --brand-primary: #f2b705;
-  --brand-primary-soft: #ffd34d;
-  --brand-primary-dark: #c79400;
-  --brand-bg: #07130f;
-  /* Le texte posé sur l'or : toujours sombre, jamais blanc — le contraste serait insuffisant. */
-  --on-brand: #1a1205;
+  /* --- Encre ---------------------------------------------------------------------
+     Jamais de noir pur : sur un fond chaud, il vibre et durcit le texte. */
+  --ink: #1a1510;
+  --ink-2: #5c534a;
+  --ink-3: #8f857a;
+  --on-brand: #ffffff;
+  --on-dark: #fdfaf5;
 
-  /* --- Texte --- */
-  --text: #f4f7f4;
-  --text-muted: #a6bcb0;
-  --text-faint: #6f877c;
+  /* --- Marque --------------------------------------------------------------------
+     L'ambre profond appelle l'action, le vert d'encre porte l'identité. Complémentaires, ils se
+     renforcent au lieu de se battre. */
+  --brand-primary: #d95c14;
+  --brand-primary-soft: #fdeee3;
+  --brand-primary-dark: #b34710;
+  --brand-ink: #14342a;
+  --brand-ink-soft: #1d4636;
 
-  /* --- États --- */
-  --success: #35c877;
-  --success-bg: rgba(53, 200, 119, 0.14);
-  --warning: #f5a524;
-  --warning-bg: rgba(245, 165, 36, 0.14);
-  --danger: #f4544d;
-  --danger-bg: rgba(244, 84, 77, 0.14);
-  --info: #4aa8e0;
-  --info-bg: rgba(74, 168, 224, 0.14);
+  --accent: #b8860b;
+  --accent-soft: #fdf3dc;
 
-  /* --- Traits --- */
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  /* --- États ---------------------------------------------------------------------
+     Désaturés : sur fond clair, une couleur pleine hurle. Le fond porte le message, le texte
+     reste sombre et lisible. */
+  --success: #1c7a4b;
+  --success-bg: #e6f4ec;
+  --warning: #9a6207;
+  --warning-bg: #fdf1dc;
+  --danger: #c2331f;
+  --danger-bg: #fdeae6;
+  --info: #1f5f8b;
+  --info-bg: #e7f1f8;
 
-  /* --- Rayons --- */
-  --radius-sm: 8px;
-  --radius: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  /* --- Traits : ils délimitent quand l'ombre ne suffit pas, ils ne dessinent pas. --- */
+  --line: #e9e1d5;
+  --line-strong: #d8cdbc;
+
+  /* --- Rayons : généreux, mais pas ronds — au-delà, une carte devient un galet. --- */
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
   --radius-full: 999px;
 
-  /* --- Espacements --- */
+  /* --- Espacements : échelle de 4 --- */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -58,25 +83,41 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-7: 48px;
+  --space-8: 64px;
 
-  /* --- Typographie --- */
-  --font: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  /* --- Typographie ---------------------------------------------------------------
+     Pile système : aucune police à télécharger. Sur un forfait compté, faire payer 200 Ko de
+     fonte avant le premier plat serait indéfendable — et la pile système est excellente. */
+  --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
   --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.375rem;
-  --text-2xl: 1.75rem;
-  --text-3xl: 2.25rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.3125rem;
+  --text-2xl: 1.625rem;
+  --text-3xl: 2.125rem;
+  --text-4xl: 2.75rem;
 
-  /* --- Ombres --- */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.45);
+  /* Les titres se resserrent, le corps respire : c'est ce qui donne une page tenue. */
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading: 1.55;
+  --tracking-tight: -0.02em;
+  --tracking-tighter: -0.035em;
+
+  /* --- Ombres --------------------------------------------------------------------
+     Deux couches : un contact net et serré, puis une diffusion large. Une seule couche donne
+     toujours ce halo gris mou qui trahit l'interface bâclée. */
+  --shadow-xs: 0 1px 2px rgba(26, 21, 16, 0.06);
+  --shadow-sm: 0 1px 2px rgba(26, 21, 16, 0.06), 0 2px 6px rgba(26, 21, 16, 0.05);
+  --shadow: 0 1px 3px rgba(26, 21, 16, 0.07), 0 6px 18px rgba(26, 21, 16, 0.08);
+  --shadow-lg: 0 2px 6px rgba(26, 21, 16, 0.08), 0 18px 44px rgba(26, 21, 16, 0.12);
+  --shadow-brand: 0 4px 14px rgba(217, 92, 20, 0.28);
 
   /* --- Dimensions --- */
   --tap-target: 48px;
-  --bottom-nav-height: 64px;
+  --bottom-nav-height: 68px;
   --header-height: 60px;
-  --max-width: 560px;
+  --max-width: 600px;
 }
