@@ -37,6 +37,27 @@ let config: ApiConfig = {
   refreshSession: async () => null,
 };
 
+/**
+ * Adresse complète d'un média servi par l'API.
+ *
+ * Les chemins enregistrés en base sont relatifs (`/media/…`) et c'est délibéré : ils survivent à un
+ * changement de domaine, de sous-domaine ou de port, ce qu'une adresse absolue en base ne ferait
+ * pas — il faudrait réécrire chaque ligne le jour d'un déménagement.
+ *
+ * Mais relatifs, ils se résoudraient contre l'origine de l'interface, alors que les fichiers sont
+ * servis par l'API, qui vit sur un autre sous-domaine en production. D'où cette résolution, faite
+ * au moment de l'affichage et à un seul endroit.
+ */
+export function mediaUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  // Une adresse déjà absolue (photo hébergée ailleurs, saisie à la main) passe telle quelle.
+  if (/^(https?:)?\/\//i.test(path) || path.startsWith('data:')) return path;
+
+  // Le média est une ressource de l'API, servie sous le même préfixe : il suit donc le même
+  // chemin qu'un appel ordinaire, quel que soit l'environnement.
+  return `${config.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
 export function configureApi(next: Partial<ApiConfig>): void {
   config = { ...config, ...next };
 }
@@ -44,6 +65,11 @@ export function configureApi(next: Partial<ApiConfig>): void {
 export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   body?: unknown;
+  /**
+   * Corps envoyé tel quel, sans sérialisation JSON ni en-tête `content-type` : le navigateur doit
+   * poser lui-même la frontière du multipart, qu'il est seul à connaître.
+   */
+  formData?: FormData;
   /** Interdit le renouvellement automatique, pour éviter une boucle sur la route de rafraîchissement. */
   skipRefresh?: boolean;
   signal?: AbortSignal;
@@ -60,6 +86,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
         ...(options.body ? { 'content-type': 'application/json' } : {}),
         ...(token ? { authorization: `Bearer ${token}` } : {}),
       },
+      ...(options.formData ? { body: options.formData } : {}),
       ...(options.body ? { body: JSON.stringify(options.body) } : {}),
       ...(options.signal ? { signal: options.signal } : {}),
     });

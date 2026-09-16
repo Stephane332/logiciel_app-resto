@@ -601,6 +601,7 @@ planche de maquettes ne montre jamais mais qu'une application réelle doit assum
 | Paiement espèces + simulateur | ✔ |
 | **Mobile Money réel (USSD déclaré, attesté)** | ✔ *(nouveau — plus d'agrégateur requis)* |
 | **Commission de la plateforme (1 %, accumulée puis reversée)** | ✔ *(nouveau)* |
+| **Photos envoyées par le restaurant, allégées automatiquement** | ✔ *(nouveau)* |
 | Notifications | ✔ |
 | **Fidélité par points** | ✔ *(remonté de V2)* |
 | **Page livreur web** | ✔ *(remplace l'application livreur V2)* |

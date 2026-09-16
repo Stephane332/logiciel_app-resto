@@ -10,6 +10,7 @@
 import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
 import { generateTableToken } from '@barabite/shared';
+import { generateIllustration, glyphForCategory } from './illustrations.js';
 
 const prisma = new PrismaClient();
 
@@ -113,6 +114,7 @@ async function main() {
     },
   ];
 
+  const uploadDir = process.env.UPLOAD_DIR ?? './uploads';
   let productCount = 0;
   for (const [categoryIndex, group] of catalogue.entries()) {
     const category = await prisma.category.upsert({
@@ -130,6 +132,16 @@ async function main() {
         continue;
       }
 
+      // Visuel d'attente : une illustration, jamais une fausse photographie. Un menu sans aucune
+      // image se commande beaucoup moins, mais une photo inventée ferait commander un plat que le
+      // client ne recevra pas.
+      const illustration = await generateIllustration(
+        uploadDir,
+        restaurant.id,
+        item.slug,
+        glyphForCategory(group.slug),
+      );
+
       const product = await prisma.product.create({
         data: {
           restaurantId: restaurant.id,
@@ -138,6 +150,7 @@ async function main() {
           slug: item.slug,
           description: item.description,
           price: item.price,
+          imageUrl: illustration.url,
           position: productIndex,
           isFeatured: 'featured' in item ? Boolean(item.featured) : false,
         },

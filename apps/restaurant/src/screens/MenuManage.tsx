@@ -7,7 +7,7 @@
  */
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { staffApi, type Category, type Product } from '@barabite/api-client';
+import { ApiError, mediaUrl, staffApi, type Category, type Product } from '@barabite/api-client';
 import { IconPlus, IconTrash } from '../components/Icons';
 import { Empty, ErrorState, Loading, Modal, Switch, Tag } from '../components/ui';
 import { formatAmount } from '../lib/format';
@@ -393,21 +393,7 @@ function ProductModal({
           />
         </div>
 
-        <div className="field">
-          <label className="field__label" htmlFor="product-image">
-            Adresse de la photo
-          </label>
-          <input
-            id="product-image"
-            className="input"
-            value={imageUrl}
-            onChange={(event) => setImageUrl(event.target.value)}
-            placeholder="https://…"
-          />
-          <span className="faint">
-            Facultatif. Sans photo, un visuel sobre est affiché à la place.
-          </span>
-        </div>
+        <PhotoField value={imageUrl} onChange={setImageUrl} />
 
         {/* Les options ne se définissent qu'à la création : les modifier après coup toucherait aux
             commandes passées qui les référencent. */}
@@ -575,5 +561,93 @@ function OptionGroupsEditor({
         </div>
       ))}
     </section>
+  );
+}
+
+/**
+ * Photo du produit : prise à l'instant, ou choisie dans la galerie.
+ *
+ * `capture="environment"` fait ouvrir l'appareil photo arrière directement sur un téléphone. C'est
+ * le geste attendu — le gérant est devant son plat, pas devant un ordinateur avec un dossier
+ * d'images bien rangé.
+ *
+ * Le serveur redimensionne et compresse ce qu'il reçoit : une photo de 6 Mo devient 80 Ko. Il ne
+ * faut donc surtout pas décourager l'envoi d'un cliché lourd — c'est ce qui sort qui doit être
+ * léger, pas ce qui entre.
+ */
+function PhotoField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const [error, setError] = useState<string | null>(null);
+
+  const upload = useMutation({
+    mutationFn: (file: File) => staffApi.uploadImage(file),
+    onSuccess: (image) => {
+      onChange(image.url);
+      setError(null);
+    },
+    onError: (err) => setError(err instanceof ApiError ? err.message : "L'envoi a échoué. Réessayez."),
+  });
+
+  return (
+    <div className="field">
+      <span className="field__label">Photo du plat</span>
+
+      {value ? (
+        <div className="row" style={{ gap: 'var(--space-3)', alignItems: 'flex-start' }}>
+          <img
+            src={mediaUrl(value) ?? value}
+            alt=""
+            style={{
+              width: 96,
+              height: 96,
+              objectFit: 'cover',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--surface-2)',
+            }}
+          />
+          <div className="stack" style={{ gap: 'var(--space-2)', flex: 1 }}>
+            <label className="btn btn--ghost" style={{ cursor: 'pointer' }}>
+              Remplacer la photo
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                hidden
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) upload.mutate(file);
+                }}
+              />
+            </label>
+            <button type="button" className="btn btn--ghost" onClick={() => onChange('')}>
+              Retirer
+            </button>
+          </div>
+        </div>
+      ) : (
+        <label className="btn btn--ghost btn--block" style={{ cursor: 'pointer' }}>
+          {upload.isPending ? 'Envoi de la photo…' : 'Prendre ou choisir une photo'}
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            hidden
+            disabled={upload.isPending}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) upload.mutate(file);
+            }}
+          />
+        </label>
+      )}
+
+      {error ? (
+        <span className="field__error">{error}</span>
+      ) : (
+        <span className="faint">
+          Facultatif, mais un plat sans photo se commande beaucoup moins. La photo est allégée
+          automatiquement pour vos clients.
+        </span>
+      )}
+    </div>
   );
 }

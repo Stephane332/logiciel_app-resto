@@ -103,6 +103,10 @@ Restauration :
 ```bash
 docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod \
   exec -T db pg_restore -U barabite -d barabite --clean --if-exists < infra/backups/barabite_AAAA-MM-JJ_HHMM.dump
+
+# Puis les photos, sans lesquelles le catalogue reviendrait sans aucune image :
+gunzip -c infra/backups/photos_AAAA-MM-JJ_HHMM.tar.gz | docker compose -f infra/docker-compose.prod.yml \
+  exec -T api tar -xf - -C /data
 ```
 
 > **Une sauvegarde jamais restaurée n'est pas une sauvegarde.** Testez la restauration une fois par
@@ -172,6 +176,10 @@ Rien d'autre ne bouge : le reste du système ignore quel fournisseur encaisse.
 - [ ] Numéros marchands Mobile Money saisis et vérifiés par un paiement réel de 100 F
 - [ ] Équipe formée à l'écran « Paiements à vérifier »
 - [ ] `PLATFORM_MOMO_NUMBER` renseigné — le serveur refuse de démarrer sans, en production
+- [ ] `UPLOAD_DIR` monté sur un **volume persistant** — stocké dans le conteneur, tout le catalogue
+      photographique du restaurant disparaîtrait au premier redéploiement
+- [ ] Le dossier des photos est inclus dans la sauvegarde quotidienne (la base seule ne suffit pas :
+      elle ne contient que les adresses des images, pas les images)
 - [ ] Taux de commission confirmé avec le restaurant, par écrit, avant la première facturation
 - [ ] QR Codes imprimés et collés sur les tables
 - [ ] Comptes créés pour chaque employé, avec le bon rôle

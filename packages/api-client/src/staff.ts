@@ -7,6 +7,7 @@ import type {
   CommissionSettlement,
   CommissionSummary,
   CommissionTransfer,
+  UploadedImage,
   PaymentToVerify,
   SmsReadResult,
   DeliveryZone,
@@ -150,6 +151,14 @@ export const staffApi = {
     request<{ products: { name: string; quantity: number; revenue: number }[] }>(
       `/stats/top-products?days=${days}`,
     ),
+
+  // --- Photos ------------------------------------------------------------------
+
+  uploadImage: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return request<UploadedImage>('/uploads/image', { method: 'POST', formData: form });
+  },
 
   // --- Commission de la plateforme (ADR 009) ---------------------------------
 

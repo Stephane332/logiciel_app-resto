@@ -36,3 +36,6 @@ packages/*/src/**/*.jsx
 packages/*/src/**/*.d.ts
 packages/*/src/**/*.js.map
 packages/*/src/**/*.d.ts.map
+
+# Photos envoyées par le restaurant en développement : des données, pas du code.
+apps/api/uploads/

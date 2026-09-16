@@ -405,3 +405,12 @@ export interface CommissionTransfer {
   ussdCode: string;
   dialLink: string;
 }
+
+/** Photo enregistrée par le serveur, déjà redimensionnée et compressée. */
+export interface UploadedImage {
+  url: string;
+  thumbUrl: string;
+  width: number;
+  height: number;
+  bytes: number;
+}

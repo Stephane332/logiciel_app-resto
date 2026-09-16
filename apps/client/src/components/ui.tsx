@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BurgerMark, IconBack, IconWifiOff } from './Icons';
+import { mediaUrl } from '@barabite/api-client';
 import { useOnlineStatus } from '../lib/network';
 
 export function Header({
@@ -39,6 +40,8 @@ export function Header({
  * mieux qu'un carré vide ou une icône d'image cassée.
  */
 export function ProductImage({ src, alt }: { src: string | null; alt: string }) {
+  // Les chemins en base sont relatifs et servis par l'API, qui vit ailleurs en production.
+  src = mediaUrl(src);
   if (!src) {
     return (
       <div className="image-fallback">

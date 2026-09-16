@@ -418,6 +418,80 @@ ol {
   opacity: 0.5;
 }
 
+/* --- Carte en vedette : l'image porte la carte --------------------------------- */
+
+.feature-card {
+  position: relative;
+  display: block;
+  width: 190px;
+  flex: 0 0 auto;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  isolation: isolate;
+  transition: transform 0.18s ease;
+}
+
+.feature-card:active {
+  transform: scale(0.98);
+}
+
+.feature-card img,
+.feature-card .image-fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/*
+ * Le voile ne couvre que le bas de la carte, là où se pose le texte. Assombrir l'image entière
+ * ternirait le plat — or c'est lui qu'on est venu regarder.
+ */
+.feature-card__veil {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 62%;
+  background: linear-gradient(to top, rgba(4, 12, 9, 0.94) 12%, rgba(4, 12, 9, 0.72) 42%, transparent);
+  pointer-events: none;
+}
+
+.feature-card__body {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+}
+
+.feature-card__name {
+  font-weight: 700;
+  font-size: var(--text-base);
+  line-height: 1.25;
+  color: #fff;
+  /* Une ombre portée discrète : la lisibilité ne doit dépendre d'aucune photo en particulier. */
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+}
+
+.feature-card__price {
+  font-weight: 800;
+  color: var(--brand-primary);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+}
+
+.feature-card__badge {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+}
+
+.feature-card--unavailable img {
+  filter: grayscale(0.7);
+  opacity: 0.6;
+}
+
 .product-hero {
   position: relative;
   width: 100%;

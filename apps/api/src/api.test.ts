@@ -1137,3 +1137,108 @@ describe('commission de la plateforme (ADR 009)', () => {
     expect(response.body).not.toMatch(/commission/i);
   });
 });
+
+// ---------------------------------------------------------------------------
+
+describe('photos de produits', () => {
+  /** Une vraie photo, assez grande pour que la compression ait quelque chose à faire. */
+  async function photoJpeg(width = 2400, height = 1800): Promise<Buffer> {
+    const sharp = (await import('sharp')).default;
+    return sharp({
+      create: { width, height, channels: 3, background: { r: 200, g: 120, b: 40 } },
+    })
+      .jpeg({ quality: 100 })
+      .toBuffer();
+  }
+
+  function multipart(buffer: Buffer, filename: string, contentType: string) {
+    const boundary = '----barabite-test-boundary';
+    const head = Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\n` +
+        `Content-Type: ${contentType}\r\n\r\n`,
+    );
+    const tail = Buffer.from(`\r\n--${boundary}--\r\n`);
+    return {
+      payload: Buffer.concat([head, buffer, tail]),
+      headers: { 'content-type': `multipart/form-data; boundary=${boundary}` },
+    };
+  }
+
+  it('accepte une photo et la rend beaucoup plus légère', async () => {
+    const original = await photoJpeg();
+    const token = await asManager();
+    const { payload, headers } = multipart(original, 'plat.jpg', 'image/jpeg');
+
+    const response = await app.inject({
+      method: 'POST',
+      url: api('/uploads/image'),
+      headers: { ...headers, ...auth(token) },
+      payload,
+    });
+
+    expect(response.statusCode, response.body).toBe(200);
+    const stored = response.json();
+
+    // Ramenée à la largeur d'affichage : au-delà, l'œil ne gagne rien sur un téléphone.
+    expect(stored.width).toBe(1200);
+    expect(stored.url).toMatch(/^\/media\/.+\.webp$/);
+    expect(stored.thumbUrl).toMatch(/-vignette\.webp$/);
+
+    // Le point qui compte à Ouahigouya : ce qui est servi doit être une fraction de l'original.
+    expect(stored.bytes).toBeLessThan(original.byteLength / 4);
+    expect(stored.bytes).toBeLessThan(250_000);
+  });
+
+  it('sert la photo enregistrée', async () => {
+    const token = await asManager();
+    const { payload, headers } = multipart(await photoJpeg(800, 600), 'plat.jpg', 'image/jpeg');
+    const upload = await app.inject({
+      method: 'POST',
+      url: api('/uploads/image'),
+      headers: { ...headers, ...auth(token) },
+      payload,
+    });
+
+    // L'adresse enregistrée est relative à l'API — les interfaces la résolvent avec `mediaUrl`,
+    // qui lui préfixe la base. Un chemin absolu en base ne survivrait pas à un changement de
+    // domaine.
+    const response = await app.inject({ method: 'GET', url: api(upload.json().url) });
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.headers['content-type']).toContain('image/webp');
+  });
+
+  it('refuse un fichier qui n\'est pas une image, quelle que soit son extension', async () => {
+    // Le type déclaré ne prouve rien : c'est le décodage qui tranche.
+    const { payload, headers } = multipart(Buffer.from('#!/bin/sh\nrm -rf /\n'), 'plat.jpg', 'image/jpeg');
+    const token = await asManager();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: api('/uploads/image'),
+      headers: { ...headers, ...auth(token) },
+      payload,
+    });
+
+    expect([400, 422]).toContain(response.statusCode);
+  });
+
+  it('n\'ouvre pas le disque à qui ne tient pas le menu', async () => {
+    const original = await photoJpeg(400, 300);
+    for (const token of [await asKitchen(), await asClient()]) {
+      const { payload, headers } = multipart(original, 'plat.jpg', 'image/jpeg');
+      const response = await app.inject({
+        method: 'POST',
+        url: api('/uploads/image'),
+        headers: { ...headers, ...auth(token) },
+        payload,
+      });
+      expect(response.statusCode).toBe(403);
+    }
+  });
+
+  it('refuse un envoi sans authentification', async () => {
+    const { payload, headers } = multipart(await photoJpeg(400, 300), 'plat.jpg', 'image/jpeg');
+    const response = await app.inject({ method: 'POST', url: api('/uploads/image'), headers, payload });
+    expect(response.statusCode).toBe(401);
+  });
+});

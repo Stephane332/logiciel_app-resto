@@ -27,6 +27,10 @@ const schema = z.object({
   PLATFORM_MOMO_OPERATOR: z.enum(['ORANGE_MONEY', 'MOOV_MONEY']).default('ORANGE_MONEY'),
   /// Modèle USSD du transfert. Réglable, parce qu'un code d'opérateur change sans prévenir.
   PLATFORM_MOMO_USSD: z.string().default('*144*2*1*{NUM}*{MONTANT}#'),
+
+  /// Dossier des photos envoyées par le restaurant. Doit être un volume persistant en production :
+  /// stocké dans le conteneur, le catalogue photographique disparaîtrait au premier redéploiement.
+  UPLOAD_DIR: z.string().default('./uploads'),
 });
 
 const parsed = schema.safeParse(process.env);

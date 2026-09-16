@@ -2,9 +2,13 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import multipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
 import { TransitionError, ForbiddenError, MoneyError, PricingError } from '@barabite/shared';
+import { resolve } from 'node:path';
+import { mkdirSync } from 'node:fs';
 import { corsOrigins, env, isProduction, isTest } from './env.js';
 import { AppError } from './lib/errors.js';
 import { attachAuth } from './lib/guards.js';
@@ -31,6 +35,28 @@ export async function buildApp(): Promise<FastifyInstance> {
     errorResponseBuilder: () => ({
       error: { code: 'RATE_LIMITED', message: 'Trop de requêtes. Réessayez dans un instant.' },
     }),
+  });
+
+  // Photos des produits : réception, puis service en lecture.
+  await app.register(multipart, { limits: { fileSize: 12 * 1024 * 1024, files: 1 } });
+
+  const uploadRoot = resolve(env.UPLOAD_DIR);
+  mkdirSync(uploadRoot, { recursive: true });
+  await app.register(fastifyStatic, {
+    root: uploadRoot,
+    // Sous le préfixe de l'API, et non à la racine : les médias empruntent ainsi exactement le
+    // chemin déjà emprunté par les requêtes d'API — même proxy en développement, même sous-domaine
+    // en production. Servis à la racine, ils tombaient dans le repli SPA de l'interface, qui
+    // renvoyait sa page HTML à la place de l'image, sans la moindre erreur pour le signaler.
+    prefix: '/api/v1/media/',
+    // Le nom du fichier contient l'empreinte de son contenu : une photo remplacée porte un autre
+    // nom, donc l'ancienne peut être gardée indéfiniment. C'est ce qui rend le menu léger à la
+    // deuxième visite, et consultable hors ligne.
+    maxAge: '365d',
+    immutable: true,
+    index: false,
+    // Les images sont servies à la PWA depuis une autre origine en développement.
+    setHeaders: (res) => res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'),
   });
 
   app.addHook('onRequest', attachAuth);

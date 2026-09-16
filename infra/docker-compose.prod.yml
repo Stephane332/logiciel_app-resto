@@ -40,8 +40,17 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGINS: ${CORS_ORIGINS}
       PUBLIC_CLIENT_URL: ${PUBLIC_CLIENT_URL}
-      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-sandbox}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-declared}
       PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET}
+      # Plateforme : reversement de la commission (ADR 009).
+      PLATFORM_NAME: ${PLATFORM_NAME:-BaraBite}
+      PLATFORM_MOMO_NUMBER: ${PLATFORM_MOMO_NUMBER}
+      PLATFORM_MOMO_OPERATOR: ${PLATFORM_MOMO_OPERATOR:-ORANGE_MONEY}
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      # Les photos du catalogue vivent hors du conteneur. Stockées dedans, elles disparaîtraient au
+      # premier redéploiement — et avec elles tout le travail de photographie du restaurant.
+      - uploads:/data/uploads
     ports:
       - '127.0.0.1:4000:4000'
 
@@ -70,4 +79,5 @@ services:
       - '127.0.0.1:8081:80'
 
 volumes:
+  uploads:
   db-data:

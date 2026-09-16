@@ -26,24 +26,33 @@ export function ProductCard({ product }: { product: Product }) {
   );
 }
 
+/**
+ * Carte en vedette : l'image occupe toute la carte, le texte se pose dessus.
+ *
+ * Reléguer le nom et le prix sous une vignette revenait à donner autant de place à un rectangle
+ * d'étiquette qu'au plat lui-même. Ici, l'image porte la carte et un dégradé sombre vient sous le
+ * texte — juste sous le texte, pas sur toute l'image — pour que le nom reste lisible quelle que
+ * soit la photo envoyée par le restaurant, y compris une photo claire prise en plein soleil.
+ */
 export function ProductCardCompact({ product }: { product: Product }) {
   const orderable = product.isOrderable !== false && product.isAvailable;
 
   return (
     <Link
       to={`/produit/${product.slug}`}
-      className="card card--flush"
-      style={{ width: 168, flex: '0 0 auto', opacity: orderable ? 1 : 0.5 }}
+      className={`feature-card${orderable ? '' : ' feature-card--unavailable'}`}
     >
-      <div style={{ aspectRatio: '4 / 3', background: 'var(--surface-2)' }}>
-        <ProductImage src={product.imageUrl} alt={product.name} />
+      <ProductImage src={product.imageUrl} alt={product.name} />
+      <div className="feature-card__veil" />
+      <div className="feature-card__body">
+        <span className="feature-card__name">{product.name}</span>
+        <span className="feature-card__price">{formatAmount(product.price)}</span>
       </div>
-      <div style={{ padding: 'var(--space-3)' }}>
-        <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)' }}>{product.name}</p>
-        <p className="price" style={{ marginTop: 4 }}>
-          {formatAmount(product.price)}
-        </p>
-      </div>
+      {!orderable && (
+        <span className="feature-card__badge">
+          <Tag variant="danger">Épuisé</Tag>
+        </span>
+      )}
     </Link>
   );
 }

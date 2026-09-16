@@ -34,12 +34,16 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: '/index.html',
-        // Ne jamais servir une page mise en cache à la place d'une réponse d'API.
+        // Ne jamais servir une page mise en cache à la place d'une réponse d'API. Les photos sont
+        // servies sous ce même préfixe, et sont donc couvertes par la même exclusion : sans elle,
+        // une image demandée hors ligne recevrait le HTML de l'application, et le navigateur
+        // afficherait une image cassée sans rien dire de plus.
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           {
             // Le menu reste consultable sans réseau après une première visite (critère A14).
-            urlPattern: ({ url }) => url.pathname.startsWith('/api/v1/menu') || url.pathname.startsWith('/api/v1/restaurant'),
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith('/api/v1/menu') || url.pathname.startsWith('/api/v1/restaurant'),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'barabite-menu',

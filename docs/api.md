@@ -164,6 +164,26 @@ Un produit déjà commandé n'est jamais supprimé : il est retiré du menu et c
 
 ---
 
+## Photos des produits
+
+| Route | Rôle | Accès |
+|---|---|---|
+| `POST /uploads/image` | Envoie une photo, renvoie son adresse et celle de sa vignette | `menu:write` |
+| `GET /api/v1/media/:restaurant/:fichier` | Sert une photo | public |
+
+Le fichier reçu est **toujours décodé et réencodé**, jamais servi tel quel. L'image est ramenée à
+1 200 px de large en WebP (60 à 120 Ko), avec une vignette de 400 px : un menu de trente plats passe
+de 150 Mo à moins de 3 Mo, ce qui n'est pas un détail sur un forfait compté. Le réencodage écarte au
+passage ce qui se cacherait derrière une extension, et efface les métadonnées EXIF — donc les
+coordonnées GPS que le téléphone glisse dans chaque cliché.
+
+Les adresses enregistrées sont **relatives** (`/media/…`) pour survivre à un changement de domaine ;
+les interfaces les résolvent avec `mediaUrl()`. Les médias sont servis **sous le préfixe de l'API**,
+et non à la racine : servis à la racine, ils tombaient dans le repli SPA de l'interface, qui
+renvoyait sa page HTML à la place de l'image, sans la moindre erreur pour le signaler.
+
+---
+
 ## Commission de la plateforme
 
 | Route | Rôle | Accès |

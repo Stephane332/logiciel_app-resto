@@ -32,6 +32,9 @@ npm test
 | A20 | Le client ne voit jamais la commission | `api.test.ts` (route de suivi) |
 | A21 | La commission reste hors de portée de la cuisine, de la caisse et du livreur | `api.test.ts`, `permissions.test.ts` |
 | A22 | Aucun code USSD construit par le logiciel ne contient de code secret | `mobile-money.test.ts` |
+| A23 | Une photo envoyée est décodée puis réencodée, et divisée par quatre au moins | `api.test.ts` |
+| A24 | Un fichier qui n'est pas une image est refusé, quelle que soit son extension | `api.test.ts` |
+| A25 | L'envoi de photos n'est pas ouvert à qui ne tient pas le menu | `api.test.ts` |
 | A11 | Un jeton de table invalide ou expiré est refusé | `codes.test.ts`, `api.test.ts` |
 | A12 | Hors horaires, la création de commande est refusée | `hours.test.ts`, `api.test.ts` |
 | A13 | Aucun montant n'est représenté en flottant | `money.test.ts` |
