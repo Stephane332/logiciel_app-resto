@@ -1,14 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Savora">
-  <title>Savora</title>
-  <!-- Version pleine page pour les icônes masquables Android : le motif tient dans la zone sûre
-       centrale de 80 %, quelle que soit la forme découpée par le système. -->
-  <rect width="64" height="64" fill="#0E2019"/>
-  <g transform="translate(32 32) scale(0.76) translate(-32 -32)">
-    <path d="M12 32a20 20 0 0 1 40 0Z" fill="#F2B705"/>
-    <circle cx="24" cy="24.5" r="1.9" fill="#0E2019" opacity="0.75"/>
-    <circle cx="32" cy="21" r="1.9" fill="#0E2019" opacity="0.75"/>
-    <circle cx="40" cy="24.5" r="1.9" fill="#0E2019" opacity="0.75"/>
-    <rect x="12" y="35" width="40" height="6.5" rx="3.25" fill="#35C877"/>
-    <path d="M12 44h40v4a5 5 0 0 1-5 5H17a5 5 0 0 1-5-5Z" fill="#F2B705"/>
+<!--
+  Version masquable, pour l'icône Android.
+
+  Android rogne l'icône selon la forme choisie par le constructeur — cercle, goutte, carré arrondi.
+  Le dessin est donc réduit au cercle central de sécurité : sans cette marge, la cuillère serait
+  amputée sur la moitié des téléphones, et personne ne saurait pourquoi.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108">
+  <rect width="108" height="108" fill="#14342A"/>
+  <g transform="translate(22 22) scale(1.0)">
+    <ellipse cx="32" cy="22" rx="10.5" ry="12.5" fill="#D95C14"/>
+    <ellipse cx="32" cy="21" rx="6" ry="7.5" fill="#FBF8F3" fill-opacity="0.22"/>
+    <path d="M32 34c0 6-7 6-7 11s7 5 7 10" stroke="#D95C14" stroke-width="5.5" stroke-linecap="round" fill="none"/>
   </g>
 </svg>

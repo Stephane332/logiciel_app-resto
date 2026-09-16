@@ -175,9 +175,17 @@ a {
   gap: var(--space-3);
   overflow-x: auto;
   scroll-snap-type: x proximity;
+  /*
+   * Bord à bord, avec une marge intérieure.
+   *
+   * La tentation est de poser une marge négative pour « sortir » du conteneur parent. Mais ces
+   * rangées ne sont pas dans un conteneur : elles sont posées directement dans la page. La marge
+   * négative les faisait donc dépasser de seize pixels à droite, et c'est toute la page qui
+   * défilait latéralement — le défaut se voit à peine et se ressent tout de suite, l'écran
+   * « glisse » sous le doigt à chaque geste vertical.
+   */
   padding-inline: var(--space-4);
   padding-block: var(--space-2);
-  margin-inline: calc(var(--space-4) * -1);
   scrollbar-width: none;
 }
 
@@ -648,8 +656,8 @@ a {
   display: flex;
   gap: var(--space-2);
   overflow-x: auto;
+  /* Même raison que pour .scroller : pas de marge négative, ces rangées ne sont pas encadrées. */
   padding-inline: var(--space-4);
-  margin-inline: calc(var(--space-4) * -1);
   padding-block: var(--space-1);
   scrollbar-width: none;
 }

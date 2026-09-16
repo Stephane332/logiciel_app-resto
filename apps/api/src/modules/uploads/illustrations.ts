@@ -72,9 +72,19 @@ function svg(name: string, glyph: Glyph): string {
   // tons qui donnent faim.
   const hue = glyph === 'drink' ? 148 + Math.round(rand() * 64) : 6 + Math.round(rand() * 40);
 
-  const deep = `hsl(${hue} 58% 14%)`;
-  const mid = `hsl(${hue} 64% 30%)`;
-  const warm = `hsl(${(hue + 14) % 360} 82% 56%)`;
+  /*
+   * Des tons clairs, pas des carrés sombres.
+   *
+   * La première version posait un sujet crème sur un fond très sombre. Sur l'ancienne interface en
+   * vert nuit, cela passait ; sur le papier clair d'aujourd'hui, chaque vignette devient un bloc
+   * lourd qui écrase la carte qui la porte. On inverse donc : un lavis chaud et lumineux, et le
+   * sujet dessiné dans une teinte profonde. La vignette respire avec la page au lieu d'y faire un
+   * trou.
+   */
+  const pale = `hsl(${hue} 62% 88%)`;
+  const mid = `hsl(${(hue + 6) % 360} 70% 74%)`;
+  const warm = `hsl(${(hue + 14) % 360} 88% 82%)`;
+  const encre = `hsl(${hue} 58% 32%)`;
 
   // Ce qui distingue deux plats voisins : où tombe la lumière, comment la silhouette est posée.
   const lightX = (0.3 + rand() * 0.42).toFixed(3);
@@ -100,31 +110,31 @@ function svg(name: string, glyph: Glyph): string {
     const ax = (26 + rand() * 68).toFixed(1);
     const ay = (14 + rand() * 58).toFixed(1);
     const ar = (0.8 + rand() * 1.5).toFixed(2);
-    return `<circle cx="${ax}" cy="${ay}" r="${ar}" fill="#FFF3D6" fill-opacity="${0.1 + i * 0.05}"/>`;
+    return `<circle cx="${ax}" cy="${ay}" r="${ar}" fill="#FFFFFF" fill-opacity="${0.28 + i * 0.08}"/>`;
   }).join('');
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 120 90">
   <defs>
     <linearGradient id="fond" x1="0.1" y1="0" x2="0.9" y2="1">
-      <stop offset="0%" stop-color="${mid}"/>
-      <stop offset="100%" stop-color="${deep}"/>
+      <stop offset="0%" stop-color="${warm}"/>
+      <stop offset="100%" stop-color="${mid}"/>
     </linearGradient>
     <radialGradient id="lumiere" cx="${lightX}" cy="${lightY}" r="0.72">
-      <stop offset="0%" stop-color="${warm}" stop-opacity="0.62"/>
-      <stop offset="55%" stop-color="${warm}" stop-opacity="0.12"/>
-      <stop offset="100%" stop-color="${warm}" stop-opacity="0"/>
+      <stop offset="0%" stop-color="${pale}" stop-opacity="0.9"/>
+      <stop offset="60%" stop-color="${pale}" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="${pale}" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="ombre" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0%" stop-color="#000" stop-opacity="0.38"/>
+      <stop offset="0%" stop-color="#000" stop-opacity="0.18"/>
       <stop offset="100%" stop-color="#000" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="matiere" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FFFBF0"/>
-      <stop offset="100%" stop-color="#F0D9A8"/>
+      <stop offset="0%" stop-color="${encre}"/>
+      <stop offset="100%" stop-color="${encre}"/>
     </linearGradient>
     <radialGradient id="vignette" cx="0.5" cy="0.5" r="0.78">
-      <stop offset="60%" stop-color="#000" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#000" stop-opacity="0.34"/>
+      <stop offset="62%" stop-color="#7a4a1a" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#7a4a1a" stop-opacity="0.16"/>
     </radialGradient>
   </defs>
 
@@ -136,7 +146,7 @@ function svg(name: string, glyph: Glyph): string {
   <ellipse cx="${cx}" cy="${cy + (box.h * scale) / 2 + 5}" rx="${(box.w * scale) / 1.8}" ry="4.5" fill="url(#ombre)"/>
 
   <g transform="translate(${cx} ${cy}) rotate(${tilt}) scale(${scale.toFixed(3)}) translate(${-box.w / 2} ${-box.h / 2})">
-    <g fill="url(#matiere)" stroke="#5A3410" stroke-opacity="0.28" stroke-width="0.9"
+    <g fill="url(#matiere)" stroke="#FFFFFF" stroke-opacity="0.34" stroke-width="0.9"
        stroke-linejoin="round" stroke-linecap="round">
       <path d="${PATHS[glyph]}"/>
     </g>

@@ -188,11 +188,32 @@ export const IconShare = ({ size = 20, className, style }: IconProps) => (
   </svg>
 );
 
-export const BurgerMark = ({ size = 32, className, style }: IconProps) => (
+export const SavoraMark = ({ size = 32, className, style }: IconProps) => (
+  /*
+   * La marque Savora : une cuillère dont le manche trace le « S ».
+   *
+   * Un burger disait « ce logiciel sert des burgers » — or il en servira aussi des wraps, du riz
+   * gras et du bissap, et il se vendra à d'autres restaurants que celui-ci. La cuillère, elle,
+   * dit la table sans rien dire du menu.
+   *
+   * Dessinée en aplats : elle doit rester lisible à seize pixels dans une barre latérale, où un
+   * dégradé ne serait plus qu'une tache.
+   */
   <svg viewBox="0 0 64 64" width={size} height={size} className={className} style={style} aria-hidden="true">
-    <rect width="64" height="64" rx="16" fill="#0E2019" />
-    <path d="M12 32a20 20 0 0 1 40 0Z" fill="#F2B705" />
-    <rect x="12" y="35" width="40" height="6.5" rx="3.25" fill="#35C877" />
-    <path d="M12 44h40v4a5 5 0 0 1-5 5H17a5 5 0 0 1-5-5Z" fill="#F2B705" />
+    <rect width="64" height="64" rx="16" fill="#14342A" />
+    {/* Le cuilleron */}
+    <ellipse cx="32" cy="22" rx="10.5" ry="12.5" fill="#D95C14" />
+    <ellipse cx="32" cy="21" rx="6" ry="7.5" fill="#FBF8F3" fillOpacity="0.22" />
+    {/* Le manche, courbé en S */}
+    <path
+      d="M32 34c0 6-7 6-7 11s7 5 7 10"
+      stroke="#D95C14"
+      strokeWidth="5.5"
+      strokeLinecap="round"
+      fill="none"
+    />
   </svg>
 );
+
+/** Ancien nom, conservé le temps que les appels migrent. */
+export const BurgerMark = SavoraMark;

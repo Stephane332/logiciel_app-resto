@@ -1,0 +1,11 @@
+<!-- Logo complet : la marque et le nom, pour un en-tête ou un document. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 72" width="320" height="72">
+  <g>
+    <rect width="72" height="72" rx="18" fill="#14342A"/>
+    <ellipse cx="36" cy="25" rx="11.8" ry="14" fill="#D95C14"/>
+    <ellipse cx="36" cy="23.5" rx="6.7" ry="8.4" fill="#FBF8F3" fill-opacity="0.22"/>
+    <path d="M36 38c0 6.7-7.9 6.7-7.9 12.4s7.9 5.6 7.9 11.2" stroke="#D95C14" stroke-width="6.2" stroke-linecap="round" fill="none"/>
+  </g>
+  <text x="92" y="47" font-family="ui-sans-serif, system-ui, 'Segoe UI', Roboto, Arial, sans-serif"
+        font-size="34" font-weight="800" letter-spacing="-1.1" fill="#1A1510">Savora</text>
+</svg>
