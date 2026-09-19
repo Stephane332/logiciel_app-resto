@@ -3,8 +3,15 @@
 #   cp infra/.env.prod.example infra/.env.prod   # puis renseignez les valeurs
 #   docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d
 #
-# Le reverse proxy et le certificat TLS restent à la charge de l'hébergement (Caddy, Traefik ou
-# nginx + certbot) : ils dépendent du domaine et ne se devinent pas ici.
+# Il n'y a rien d'autre à faire. Caddy obtient les certificats HTTPS au premier démarrage et les
+# renouvelle ensuite tout seul ; deux adresses sont en service dans la minute :
+#
+#   https://VOTRE-DOMAINE       →  l'application des clients (installable depuis Chrome Android)
+#   https://pro.VOTRE-DOMAINE   →  le logiciel de l'équipe
+#
+# Prérequis : les deux noms pointent sur l'IP du serveur (un enregistrement A chacun), et les ports
+# 80 et 443 sont ouverts. Let's Encrypt vérifie le domaine par le port 80 — fermé, aucun certificat
+# ne sera délivré.
 
 services:
   db:
@@ -51,20 +58,21 @@ services:
       # Les photos du catalogue vivent hors du conteneur. Stockées dedans, elles disparaîtraient au
       # premier redéploiement — et avec elles tout le travail de photographie du restaurant.
       - uploads:/data/uploads
-    ports:
-      - '127.0.0.1:4000:4000'
+    # Pas de port publié sur l'hôte : seul Caddy l'atteint, par le réseau interne de Compose.
+    expose:
+      - '4000'
 
+  # Les deux interfaces se construisent sans adresse d'API : Caddy sert chacune sous son propre
+  # domaine, API comprise, donc une adresse relative suffit et ne peut pas devenir fausse.
   client:
     build:
       context: ..
       dockerfile: infra/Dockerfile.web
       args:
         APP: client
-        VITE_API_URL: ${PUBLIC_API_URL}
-        VITE_REALTIME_URL: ${PUBLIC_REALTIME_URL}
     restart: unless-stopped
-    ports:
-      - '127.0.0.1:8080:80'
+    expose:
+      - '80'
 
   restaurant:
     build:
@@ -72,12 +80,31 @@ services:
       dockerfile: infra/Dockerfile.web
       args:
         APP: restaurant
-        VITE_API_URL: ${PUBLIC_API_URL}
-        VITE_REALTIME_URL: ${PUBLIC_REALTIME_URL}
     restart: unless-stopped
+    expose:
+      - '80'
+
+  # ── La façade HTTPS ──
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [api, client, restaurant]
+    environment:
+      DOMAINE: ${DOMAINE}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
     ports:
-      - '127.0.0.1:8081:80'
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Les certificats survivent aux redéploiements. Sans ce volume, chaque `up -d` en redemanderait
+      # de nouveaux à Let's Encrypt, qui limite le nombre de demandes par semaine et par domaine :
+      # quelques redéploiements suffiraient à se retrouver sans certificat pendant des jours.
+      - caddy-data:/data
+      - caddy-config:/config
 
 volumes:
   uploads:
   db-data:
+  caddy-data:
+  caddy-config:

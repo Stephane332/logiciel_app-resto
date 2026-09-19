@@ -4,7 +4,11 @@ build/
 coverage/
 .env
 .env.*
+# Les fichiers d'exemple sont de la documentation, pas des secrets : ils décrivent quoi renseigner,
+# sans jamais contenir de valeur réelle. `.env.*` les emportait — et le dépôt ne contenait donc pas
+# `infra/.env.prod.example`, que le guide de déploiement demande de copier à sa première commande.
 !.env.example
+!.env.*.example
 *.log
 .DS_Store
 .vite/
@@ -49,6 +53,13 @@ apps/api/uploads/
 # Application Windows : interface copiée à la construction, et sortie de l'empaqueteur.
 apps/desktop/web/
 apps/desktop/release/
+
+# Exception à `build/` ci-dessus. `apps/desktop/build/` n'est pas une sortie de construction mais le
+# dossier de ressources d'electron-builder : l'icône de l'installateur y vit, et elle doit être
+# versionnée pour que l'intégration continue la trouve. Sans cette exception, electron-builder ne
+# s'arrête pas — il retombe sur l'icône d'Electron, et le logiciel s'installe sous un logo étranger.
+!apps/desktop/build/
+!apps/desktop/build/**
 
 # Configurations compilées à la racine d'un espace de travail : Vite préfère le .js au .ts et
 # lirait une configuration périmée sans que rien ne le signale.

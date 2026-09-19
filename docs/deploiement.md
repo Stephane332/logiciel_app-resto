@@ -10,17 +10,30 @@ Un VPS modeste suffit — 2 Go de mémoire vive tiennent largement la charge d'u
 | Élément | Nécessaire pour |
 |---|---|
 | Un VPS Linux avec Docker | Héberger les trois briques |
-| Un nom de domaine | Les QR Codes de table et l'installation de la PWA |
-| Un certificat TLS | Obligatoire : sans HTTPS, ni service worker ni PWA installable |
+| Un nom de domaine | Les QR Codes de table, et l'installation de la PWA |
 | Un numéro marchand Orange Money ou Moov Money | Encaisser en Mobile Money — **aucun agrégateur n'est nécessaire** ([ADR 008](adr/008-paiement-declare-atteste.md)) |
 
-Trois sous-domaines suffisent, par exemple :
+**Le certificat TLS n'est plus à votre charge.** Caddy l'obtient au premier démarrage et le
+renouvelle ensuite tout seul. C'est la dernière marche du déploiement, et c'était celle sur laquelle
+tout s'arrêtait : les trois produits étaient construits, testés et installables, mais il n'existait
+aucune adresse à ouvrir.
 
-| Sous-domaine | Sert |
-|---|---|
-| `app.exemple.bf` | Application cliente (PWA) |
-| `resto.exemple.bf` | Logiciel restaurant |
-| `api.exemple.bf` | API et temps réel |
+### Deux noms, dérivés d'un seul
+
+Une seule valeur décide de tout : `DOMAINE`. Avec `DOMAINE=monresto.bf` :
+
+| Adresse | Sert | Qui l'ouvre |
+|---|---|---|
+| `https://monresto.bf` | Application cliente (PWA installable) | Les clients |
+| `https://pro.monresto.bf` | Logiciel restaurant | L'équipe |
+
+**L'API n'a pas de sous-domaine** : chaque interface la sert sous son propre nom, en `/api`. Ce choix
+supprime d'un coup le CORS à régler, l'adresse d'API à figer à la construction, et la ressaisie de
+trois valeurs le jour d'un changement de domaine. Une adresse relative ne peut pas devenir fausse.
+
+Avant de lancer quoi que ce soit : les **deux** noms doivent pointer sur l'IP du serveur — un
+enregistrement `A` chacun, `monresto.bf` et `pro.monresto.bf` — et les ports **80 et 443** être
+ouverts. Let's Encrypt vérifie le domaine par le port 80 ; fermé, aucun certificat ne sera délivré.
 
 ---
 
@@ -48,27 +61,17 @@ docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod \
 > **Changez immédiatement le mot de passe des comptes créés par l'amorçage.** Ils sont publics : ils
 > figurent dans le code source du dépôt.
 
-Les trois services écoutent sur la boucle locale (`127.0.0.1:4000`, `:8080`, `:8081`). Il reste à
-placer devant eux un reverse proxy qui termine le TLS.
+Aucune des briques n'est exposée sur l'hôte : seul Caddy écoute sur 80 et 443, et atteint les autres
+par le réseau interne de Compose. Les certificats vivent dans un volume — sans lui, chaque
+redéploiement en redemanderait de nouveaux à Let's Encrypt, qui limite le nombre de demandes par
+semaine et par domaine, et quelques mises à jour suffiraient à se retrouver sans certificat pendant
+des jours.
 
-### Exemple avec Caddy
+Suivre l'obtention du premier certificat :
 
-Caddy obtient et renouvelle les certificats tout seul, ce qui évite une tâche planifiée de plus.
-
-```caddyfile
-app.exemple.bf {
-    reverse_proxy 127.0.0.1:8080
-}
-
-resto.exemple.bf {
-    reverse_proxy 127.0.0.1:8081
-}
-
-api.exemple.bf {
-    # Le temps réel passe par la même origine : Caddy relaie WebSocket sans configuration
-    # supplémentaire.
-    reverse_proxy 127.0.0.1:4000
-}
+```bash
+docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod logs -f caddy
+# certificate obtained successfully  →  les deux adresses sont en service
 ```
 
 ---
@@ -76,17 +79,28 @@ api.exemple.bf {
 ## Vérifier que tout fonctionne
 
 ```bash
-curl https://api.exemple.bf/health
+curl https://monresto.bf/api/v1/../health   # ou, depuis le serveur :
+docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod exec api wget -qO- localhost:4000/health
 # {"status":"ok","env":"production",...}
 ```
 
 Puis, dans un navigateur :
 
-1. Ouvrir `https://resto.exemple.bf`, se connecter, terminer l'assistant de configuration.
-2. Ouvrir `https://app.exemple.bf`, passer une commande de retrait.
-3. Vérifier qu'elle apparaît **immédiatement** dans le logiciel restaurant, avec son alerte sonore.
-4. Scanner un QR Code de table depuis un téléphone : le menu doit s'ouvrir sans installation.
-5. Couper les données mobiles, recharger : le menu doit rester consultable.
+1. Ouvrir `https://pro.monresto.bf`, se connecter, terminer l'assistant de configuration.
+2. Y ajouter un plat avec sa photo — c'est le logiciel qui pilote l'application cliente.
+3. Ouvrir `https://monresto.bf` : le plat doit y être. Passer une commande de retrait.
+4. Vérifier qu'elle apparaît **immédiatement** côté restaurant, avec son alerte sonore.
+5. Scanner un QR Code de table depuis un téléphone : le menu doit s'ouvrir sans installation.
+6. Couper les données mobiles, recharger : le menu doit rester consultable.
+7. Dans Chrome Android, menu ⋮ : **« Installer l'application »** doit être proposé. Si l'entrée
+   n'apparaît pas, c'est que le certificat n'est pas en place — rien d'autre ne provoque cela.
+
+Enfin, depuis un poste de développement branché sur ce serveur, tout se rejoue d'un coup :
+
+```bash
+API_URL=https://monresto.bf/api/v1 CLIENT_URL=https://monresto.bf RESTO_URL=https://pro.monresto.bf \
+  node scripts/verifier-parcours.mjs
+```
 
 ---
 
@@ -159,7 +173,7 @@ Quand le volume rend la vérification manuelle pesante, l'automatisation se bran
 2. L'enregistrer dans `apps/api/src/payments/index.ts`.
 3. Renseigner `PAYMENT_PROVIDER` et `PAYMENT_WEBHOOK_SECRET` dans `infra/.env.prod`.
 4. Déclarer l'URL de webhook chez l'agrégateur :
-   `https://api.exemple.bf/api/v1/payments/webhook/<agregateur>`.
+   `https://monresto.bf/api/v1/payments/webhook/<agregateur>`.
 
 Rien d'autre ne bouge : le reste du système ignore quel fournisseur encaisse.
 
@@ -169,7 +183,7 @@ Rien d'autre ne bouge : le reste du système ignore quel fournisseur encaisse.
 
 - [ ] Mots de passe de l'amorçage changés
 - [ ] `JWT_SECRET` et `PAYMENT_WEBHOOK_SECRET` réellement aléatoires
-- [ ] HTTPS actif sur les trois sous-domaines
+- [ ] HTTPS actif sur les deux adresses, et « Installer l’application » proposé par Chrome Android
 - [ ] Menu, prix et photos réels saisis par le restaurant
 - [ ] Horaires réels renseignés
 - [ ] Zones de livraison réelles et leurs forfaits

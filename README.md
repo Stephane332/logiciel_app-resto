@@ -67,11 +67,11 @@ Comptes de démonstration — **à changer avant toute mise en production** :
 
 | Rôle | Téléphone | Mot de passe |
 |---|---|---|
-| Administrateur | 70 00 00 01 | `barabite2026` |
-| Gérant | 70 00 00 02 | `barabite2026` |
-| Caisse | 70 00 00 03 | `barabite2026` |
-| Cuisine | 70 00 00 04 | `barabite2026` |
-| Livreur | 70 00 00 05 | `barabite2026` |
+| Administrateur | 70 00 00 01 | `savora2026` |
+| Gérant | 70 00 00 02 | `savora2026` |
+| Caisse | 70 00 00 03 | `savora2026` |
+| Cuisine | 70 00 00 04 | `savora2026` |
+| Livreur | 70 00 00 05 | `savora2026` |
 
 Pour démontrer l'application cliente sans ouvrir le logiciel restaurant, un simulateur fait avancer
 les commandes tout seul :

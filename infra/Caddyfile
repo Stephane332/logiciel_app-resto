@@ -1,0 +1,74 @@
+# Façade HTTPS de la production.
+#
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │  Sans HTTPS, il n'y a pas de PWA. Android ne propose « Installer » que sur    │
+# │  une adresse sécurisée, et une page en https ne peut appeler une API en http. │
+# └──────────────────────────────────────────────────────────────────────────────┘
+#
+# Le déploiement renvoyait jusqu'ici le certificat à « l'hébergement ». C'était la dernière marche,
+# et c'est celle sur laquelle tout s'arrêtait : les trois produits étaient construits, testés,
+# installables — et il n'existait aucune adresse à ouvrir. Caddy obtient et renouvelle les
+# certificats Let's Encrypt tout seul ; il ne lui manque que le nom de domaine.
+#
+# Deux hôtes, et une seule règle qui décide de tout : **chaque application sert son API sous son
+# propre domaine**, en /api. Il n'y a donc aucun appel entre origines, donc aucun CORS à régler,
+# aucune adresse d'API à figer à la construction, et rien à ressaisir le jour d'un changement de
+# domaine.
+{
+	# Une adresse valide est exigée par Let's Encrypt pour les avis d'expiration.
+	email {$ADMIN_EMAIL}
+}
+
+# ── L'application cliente : ce que le client de Ouahigouya ouvre ──
+{$DOMAINE} {
+	encode gzip zstd
+
+	# L'API et les photos, sous le même domaine que l'application.
+	handle /api/* {
+		reverse_proxy api:4000
+	}
+
+	# Le canal temps réel. Sans cette section, la commande n'atteint pas la cuisine en direct :
+	# le websocket serait traité comme une page et la mise à niveau échouerait en silence.
+	handle /realtime/* {
+		reverse_proxy api:4000
+	}
+
+	handle {
+		reverse_proxy client:80
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Supprime l'annonce du serveur : elle ne renseigne que d'éventuels attaquants.
+		-Server
+	}
+}
+
+# ── Le logiciel de l'équipe ──
+pro.{$DOMAINE} {
+	encode gzip zstd
+
+	handle /api/* {
+		reverse_proxy api:4000
+	}
+
+	handle /realtime/* {
+		reverse_proxy api:4000
+	}
+
+	handle {
+		reverse_proxy restaurant:80
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		# Le logiciel n'a rien à faire dans le cadre d'un autre site.
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
