@@ -9,6 +9,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { can } from '@savora/shared';
 import {
   BurgerMark,
+  IconBike,
   IconChart,
   IconDashboard,
   IconKitchen,
@@ -38,10 +39,13 @@ interface NavEntry {
 }
 
 const NAV: NavEntry[] = [
-  { to: '/', label: 'Tableau de bord', icon: IconDashboard, ability: 'order:read:all' },
+  // `dashboard:read` et non `order:read:all` : voir les commandes et voir les résultats de
+  // l'entreprise sont deux droits distincts. La cuisine a besoin du premier, pas du second.
+  { to: '/', label: 'Tableau de bord', icon: IconDashboard, ability: 'dashboard:read' },
   { to: '/caisse', label: 'Caisse', icon: IconRegister, ability: 'cashier:register' },
   { to: '/commandes', label: 'Commandes', icon: IconOrders, ability: 'order:read:all', badge: 'pending' },
   { to: '/cuisine', label: 'Cuisine', icon: IconKitchen, ability: 'order:prepare' },
+  { to: '/livraisons', label: 'Ma tournée', icon: IconBike, ability: 'order:deliver' },
   { to: '/paiements', label: 'Paiements', icon: IconWallet, ability: 'payment:collect' },
   { to: '/tables', label: 'Tables', icon: IconTable, ability: 'table:read' },
   { to: '/menu', label: 'Menu', icon: IconMenuBook, ability: 'menu:read' },
@@ -56,6 +60,7 @@ const TITLES: Record<string, string> = {
   '/caisse': 'Caisse',
   '/commandes': 'Commandes',
   '/cuisine': 'Cuisine',
+  '/livraisons': 'Ma tournée',
   '/paiements': 'Paiements à vérifier',
   '/tables': 'Tables',
   '/menu': 'Menu et stock',
@@ -70,7 +75,10 @@ export function Shell() {
   const navigate = useNavigate();
   const location = useLocation();
   const restaurant = useRestaurant();
-  const orders = useActiveOrders();
+  // Le livreur n'a pas le droit de lire la file du restaurant : lui faire demander quand même
+  // produirait un 403 à chaque ouverture, et une alerte sonore qui ne se déclencherait jamais.
+  const suitLaFile = Boolean(user && can(user.role, 'order:read:all'));
+  const orders = useActiveOrders(suitLaFile);
 
   const pending = (orders.data?.orders ?? []).filter((order) => order.status === 'PENDING').length;
   // Référence plutôt qu'état : on compare sans provoquer de rendu supplémentaire.

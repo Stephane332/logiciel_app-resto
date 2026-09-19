@@ -6,7 +6,7 @@
  */
 import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { can, type Ability } from '@savora/shared';
+import { can, homeFor, type Ability } from '@savora/shared';
 import { Shell } from './components/Shell';
 import { Loading } from './components/ui';
 import { useSession } from './lib/session';
@@ -24,6 +24,7 @@ const Stats = lazy(() => import('./screens/Stats').then((m) => ({ default: m.Sta
 const Employees = lazy(() => import('./screens/Employees').then((m) => ({ default: m.Employees })));
 const Settings = lazy(() => import('./screens/Settings').then((m) => ({ default: m.Settings })));
 const Commission = lazy(() => import('./screens/Commission').then((m) => ({ default: m.Commission })));
+const Deliveries = lazy(() => import('./screens/Deliveries').then((m) => ({ default: m.Deliveries })));
 
 /** Applique les couleurs enregistrées en base : la marque est une donnée (ADR 004). */
 function BrandTheme() {
@@ -37,10 +38,18 @@ function BrandTheme() {
   return null;
 }
 
+/**
+ * Un écran interdit ne renvoie pas vers l'accueil, mais vers l'accueil **de ce rôle**.
+ *
+ * La nuance a une histoire : le tableau de bord n'était protégé par rien, et toutes les
+ * redirections y menaient. La cuisine et le livreur y arrivaient donc — et y lisaient le chiffre
+ * d'affaires du restaurant. Renvoyer vers `homeFor` évite aussi le pire cas : être expédié sur un
+ * écran qui vous refuse à son tour.
+ */
 function RequireAbility({ ability, children }: { ability: Ability; children: React.ReactNode }) {
   const user = useSession((state) => state.user);
   if (!user) return <Navigate to="/connexion" replace />;
-  if (!can(user.role, ability)) return <Navigate to="/" replace />;
+  if (!can(user.role, ability)) return <Navigate to={homeFor(user.role)} replace />;
   return <>{children}</>;
 }
 
@@ -61,9 +70,24 @@ export function App() {
       <BrandTheme />
       <Suspense fallback={<div className="content"><Loading /></div>}>
         <Routes>
-          <Route path="/connexion" element={<Navigate to="/" replace />} />
+          <Route path="/connexion" element={<Navigate to={homeFor(user.role)} replace />} />
           <Route element={<Shell />}>
-            <Route path="/" element={<Dashboard />} />
+            <Route
+              path="/"
+              element={
+                <RequireAbility ability="dashboard:read">
+                  <Dashboard />
+                </RequireAbility>
+              }
+            />
+            <Route
+              path="/livraisons"
+              element={
+                <RequireAbility ability="order:deliver">
+                  <Deliveries />
+                </RequireAbility>
+              }
+            />
             <Route
               path="/caisse"
               element={
@@ -144,7 +168,7 @@ export function App() {
                 </RequireAbility>
               }
             />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to={homeFor(user.role)} replace />} />
           </Route>
         </Routes>
       </Suspense>

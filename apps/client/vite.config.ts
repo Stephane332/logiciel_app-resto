@@ -18,8 +18,16 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#07130f',
-        theme_color: '#07130f',
+        /*
+         * Les couleurs de l'écran de démarrage et de la barre d'état.
+         *
+         * Elles portaient encore le vert nuit de l'ancienne direction visuelle : l'application
+         * s'ouvrait sur un écran sombre avant d'afficher une interface claire, et la barre d'état
+         * Android restait foncée par-dessus. Un clignotement sombre au lancement fait croire à un
+         * défaut d'affichage, et c'est la première chose que voit un client.
+         */
+        background_color: '#fbf8f3',
+        theme_color: '#fbf8f3',
         categories: ['food', 'shopping'],
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },

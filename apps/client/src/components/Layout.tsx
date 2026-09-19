@@ -16,6 +16,20 @@ const TABS = [
 const FULLSCREEN = ['/commander', '/produit/', '/t/', '/compte/connexion', '/compte/inscription'];
 const FULLSCREEN_SUFFIX = ['/paiement'];
 
+/**
+ * Écrans dont le bouton principal est posé dans une barre fixée en bas (`.action-bar`).
+ *
+ * Il faut le dire ici parce que la coquille doit réserver la hauteur de cette barre : sans cela, le
+ * dernier élément de la page se termine derrière elle. Trois de ces écrans masquent la navigation,
+ * le panier la garde — la barre se pose alors au-dessus, jamais dessous.
+ *
+ * Un écran ajouté ici et pas dans son composant, ou l'inverse, se voit immédiatement : le test de
+ * parcours vérifie sur chaque écran de cette liste que le bouton principal répond réellement au
+ * doigt en 390 px de large.
+ */
+const ACTION_BAR = ['/panier', '/commander', '/produit/'];
+const ACTION_BAR_SUFFIX = ['/paiement'];
+
 export function Layout() {
   const location = useLocation();
   const items = useCart((state) => state.items);
@@ -25,10 +39,14 @@ export function Layout() {
     FULLSCREEN.some((path) => location.pathname.startsWith(path)) ||
     FULLSCREEN_SUFFIX.some((suffix) => location.pathname.endsWith(suffix));
 
+  const hasActionBar =
+    ACTION_BAR.some((path) => location.pathname.startsWith(path)) ||
+    ACTION_BAR_SUFFIX.some((suffix) => location.pathname.endsWith(suffix));
+
   return (
-    <div className="app">
+    <div className={hideNav ? 'app' : 'app app--nav'}>
       <OfflineBanner />
-      <main className={hideNav ? 'page page--flush' : 'page'}>
+      <main className={hasActionBar ? 'page page--action' : 'page'}>
         <Outlet />
       </main>
 

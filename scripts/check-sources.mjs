@@ -10,6 +10,13 @@
  *
  * Un garde-fou dans .gitignore empêche de les committer ; celui-ci les fait voir tout de
  * suite, y compris quand ils ne sont que sur la machine du développeur.
+ *
+ * **La première version ne regardait que `src/`, et c'était insuffisant.** Un `vite.config.js`
+ * compilé traînait à la racine de l'application cliente : Vite préférant le `.js` au `.ts`, toute
+ * la configuration lue était périmée — le manifeste de la PWA sortait avec les couleurs de
+ * l'ancienne direction visuelle, et une reconstruction propre n'y changeait rien. On cherchait
+ * l'erreur dans le fichier source, qui était juste. Les fichiers de configuration à la racine des
+ * espaces de travail sont donc surveillés eux aussi.
  */
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -27,6 +34,9 @@ function walk(dir) {
   }
 }
 
+/** Fichiers de configuration compilés, à la racine d'un espace de travail. */
+const CONFIG_SUSPECT = /\.(config|conf)\.(js|cjs|mjs|d\.ts)$|\.config\.(js|d\.ts)\.map$/;
+
 for (const root of ROOTS) {
   for (const workspace of readdirSync(root)) {
     const src = join(root, workspace, 'src');
@@ -34,6 +44,15 @@ for (const root of ROOTS) {
       if (statSync(src).isDirectory()) walk(src);
     } catch {
       /* espace de travail sans src/ : rien à vérifier */
+    }
+
+    // La racine elle-même : un vite.config.js compilé y masque le vite.config.ts.
+    try {
+      for (const entry of readdirSync(join(root, workspace))) {
+        if (CONFIG_SUSPECT.test(entry)) strays.push(join(root, workspace, entry));
+      }
+    } catch {
+      /* espace de travail illisible : rien à vérifier */
     }
   }
 }

@@ -96,11 +96,19 @@ notification à chaque étape, sans que personne n'ait à l'appeler.
 
 ### 4. Le livreur emporte — *son téléphone*
 
-L'écran **Commandes**, onglet « À livrer ». Un employé **confie la commande à un livreur**. Celui-ci
-se connecte avec son propre compte et ne voit **que ses livraisons** — ni la caisse, ni les
-statistiques, ni le menu.
+Au comptoir, écran **Commandes**, onglet « À livrer » : un employé **confie la commande à un
+livreur**.
 
-Il indique son départ, puis la remise. Le client suit tout cela en direct sur son téléphone.
+Le livreur, lui, se connecte avec son propre compte et ouvre directement **Ma tournée**. Il n'y voit
+que **ses** courses — le secteur, le point de repère, le numéro du client à appeler d'un geste, et le
+montant à encaisser en grand. Ni la caisse, ni les statistiques, ni le menu, ni le chiffre
+d'affaires, et pas même la file des autres commandes : le serveur lui refuse.
+
+Ce n'est pas de la méfiance envers l'équipe. Un téléphone de livreur est celui qui circule le plus,
+se prête le plus et se perd le plus.
+
+Deux boutons pour sa journée : **Je pars livrer**, puis **Commande remise**. Le client suit tout cela
+en direct sur son téléphone.
 
 ### 5. C'est fini — *automatiquement*
 
@@ -138,13 +146,23 @@ raison.
 Chaque employé a **son propre compte**. Ce n'est pas une formalité : c'est ce qui permet de savoir
 qui a accepté, refusé, remis ou attesté un paiement.
 
-| Rôle | Ce qu'il voit |
-|---|---|
-| **Cuisine** | Les commandes à préparer, et de quoi signaler un produit épuisé. **Ne peut pas modifier un prix.** |
-| **Caisse** | La caisse, les commandes, les tables, l'encaissement, les paiements à vérifier |
-| **Livreur** | Ses livraisons du jour. Rien d'autre |
-| **Gérant** | Tout le service, plus le menu, les statistiques, les remboursements et la commission |
-| **Administrateur** | Tout, y compris les employés et l'identité de la marque |
+| Rôle | Ouvre sur | Ce qu'il voit |
+|---|---|---|
+| **Cuisine** | Cuisine | Les commandes à préparer, et de quoi signaler un produit épuisé. **Ni les prix, ni le chiffre d'affaires.** |
+| **Caisse** | Tableau de bord | La caisse, les commandes, les tables, l'encaissement, les paiements à vérifier |
+| **Livreur** | Ma tournée | Ses courses à lui, et rien d'autre |
+| **Gérant** | Tableau de bord | Tout le service, plus le menu, les statistiques, les remboursements et la commission |
+| **Administrateur** | Tableau de bord | Tout, y compris les employés et l'identité de la marque |
+
+**Chaque poste ouvre le logiciel sur l'écran depuis lequel il travaille.** La tablette de la cuisine
+affiche la file des plats, le téléphone du livreur sa tournée. Personne ne traverse un écran qui ne
+le concerne pas pour atteindre le sien — et personne n'est renvoyé sur un écran qui lui sera refusé à
+son tour.
+
+**Le chiffre d'affaires n'est pas une information de service.** Le tableau de bord appartient au
+comptoir et à la direction. La cuisine et le livreur ont besoin de voir des commandes ; ce n'est pas
+la même chose que voir les résultats de l'entreprise, et ce sont désormais deux droits distincts dans
+le code.
 
 Le cloisonnement est vérifié **côté serveur**, à chaque requête. Masquer un bouton n'est qu'une
 politesse : un employé qui taperait l'adresse d'un écran interdit se ferait refuser par le serveur,
@@ -159,7 +177,7 @@ pas par l'interface.
 | Comptoir | Ordinateur ou tablette | Savora Pro — écran Caisse |
 | Cuisine | Tablette au mur | Savora Pro — écran Cuisine |
 | Gérant | Ordinateur, ou son téléphone | Savora Pro — tous les écrans |
-| Livreur | Son propre téléphone | Savora Pro — ses livraisons |
+| Livreur | Son propre téléphone | Savora Pro — écran Ma tournée |
 | Client | Son propre téléphone | Savora |
 
 Savora Pro s'ouvre dans un navigateur, ou s'installe sur Windows (`Savora Pro.exe`). Les deux
@@ -195,3 +213,17 @@ Wi-Fi. Ouvrez Savora Pro sur l'ordinateur, Savora sur le téléphone, ajoutez un
 il apparaît immédiatement côté client. Commandez, et regardez la commande arriver.
 
 C'est le meilleur moyen de comprendre le reste.
+
+### Et pour tout revérifier d'un coup
+
+```bash
+npm test                              # 208 tests : règles métier, API, temps réel
+npm run build --workspace @savora/client
+npm run servir                        # sert la construction, relaie l'API
+node scripts/verifier-parcours.mjs    # rejoue chaque rôle dans un vrai navigateur
+```
+
+Le dernier commande fait ce qu'aucun test unitaire ne sait faire : il **pose un doigt** sur les
+boutons, poste par poste, et vérifie qu'ils répondent. Il existe parce que le bouton « Commander » du
+panier a été, un temps, dessiné sous la barre de navigation : visible, à moitié, et sourd. Les 202
+tests étaient verts, et l'application était inutilisable.

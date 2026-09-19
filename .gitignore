@@ -39,7 +39,22 @@ packages/*/src/**/*.d.ts.map
 
 # Photos envoyées par le restaurant en développement : des données, pas du code.
 apps/api/uploads/
+# UPLOAD_DIR vaut « ./uploads » par défaut : le dossier se crée donc là où l'API est lancée, et
+# `npm run dev` la lance depuis la racine — d'où cette seconde ligne. Sans elle, les photos
+# téléversées par un restaurant, ou fabriquées par un test, entrent dans le dépôt au premier
+# `git add -A`. C'est déjà arrivé une fois : 80 images de démonstration s'étaient glissées dans un
+# commit qui parlait d'autre chose.
+/uploads/
 
 # Application Windows : interface copiée à la construction, et sortie de l'empaqueteur.
 apps/desktop/web/
 apps/desktop/release/
+
+# Configurations compilées à la racine d'un espace de travail : Vite préfère le .js au .ts et
+# lirait une configuration périmée sans que rien ne le signale.
+apps/*/*.config.js
+apps/*/*.config.d.ts
+apps/*/*.config.js.map
+apps/*/*.config.d.ts.map
+packages/*/*.config.js
+packages/*/*.config.d.ts

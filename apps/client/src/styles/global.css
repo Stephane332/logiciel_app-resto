@@ -120,14 +120,36 @@ a {
   min-height: 100dvh;
   background: var(--paper);
   position: relative;
+
+  /*
+   * Place occupée en bas de l'écran par la navigation à cinq onglets — zéro quand elle est masquée.
+   *
+   * Deux barres sont fixées au bas de l'écran : la navigation, et la barre d'action qui porte le
+   * bouton principal de l'écran. Elles se superposaient, et la navigation gagnait : sur le panier,
+   * le bouton « Commander » était dessiné *sous* la navigation. Il restait visible, à moitié, et ne
+   * répondait pas au doigt — le client ne pouvait pas commander. Les trois autres écrans à barre
+   * d'action masquent la navigation, ce qui a caché le défaut jusqu'au parcours joué de bout en bout.
+   *
+   * Cette variable est l'unique point de vérité : la barre d'action s'appuie dessus pour se poser
+   * *au-dessus* de la navigation, et le contenu pour ne pas se terminer derrière elles.
+   */
+  --nav-space: 0px;
+  --bar-safe: env(safe-area-inset-bottom, 0px);
+}
+
+.app--nav {
+  --nav-space: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  /* La navigation gère déjà l'encoche pour tout ce qui est au-dessus d'elle. */
+  --bar-safe: 0px;
 }
 
 .page {
-  padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-5));
+  padding-bottom: calc(var(--nav-space) + env(safe-area-inset-bottom, 0px) + var(--space-5));
 }
 
-.page--flush {
-  padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 96px);
+/* Écran doté d'une barre d'action : réserver sa hauteur, sinon le dernier bouton finit dessous. */
+.page--action {
+  padding-bottom: calc(var(--nav-space) + var(--bar-safe) + 104px);
 }
 
 .container {
@@ -454,14 +476,15 @@ a {
  */
 .action-bar {
   position: fixed;
-  bottom: 0;
+  /* Posée sur la navigation quand elle est là, au bas de l'écran sinon. Jamais dessous. */
+  bottom: var(--nav-space, 0px);
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
   max-width: var(--max-width);
   z-index: 25;
   padding: var(--space-3) var(--space-4);
-  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--space-3) + var(--bar-safe, env(safe-area-inset-bottom, 0px)));
   background: linear-gradient(to top, var(--paper) 62%, transparent);
 }
 

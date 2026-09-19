@@ -30,6 +30,11 @@ const schema = z.object({
 
   /// Dossier des photos envoyées par le restaurant. Doit être un volume persistant en production :
   /// stocké dans le conteneur, le catalogue photographique disparaîtrait au premier redéploiement.
+  /**
+   * Où atterrissent les photos des plats. Chemin **relatif au dossier de lancement** de l'API : en
+   * production, donnez-lui un chemin absolu monté sur un volume, sinon les photos disparaissent avec
+   * le conteneur — et un catalogue d'images cassées est pire qu'un catalogue sans images.
+   */
   UPLOAD_DIR: z.string().default('./uploads'),
 });
 

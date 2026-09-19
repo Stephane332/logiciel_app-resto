@@ -21,11 +21,28 @@ export const queryClient = new QueryClient({
  * Rechargée régulièrement en plus du temps réel : si le WebSocket tombe sans qu'on s'en aperçoive,
  * la cuisine continue de voir arriver les commandes.
  */
-export const useActiveOrders = () =>
+export const useActiveOrders = (enabled = true) =>
   useQuery({
     queryKey: ['orders', 'active'],
     queryFn: () => staffApi.orders({ scope: 'active' }),
     refetchInterval: 20_000,
+    staleTime: 5_000,
+    // Le livreur n'a pas le droit de lire la file : on ne la demande pas plutôt que d'essuyer un
+    // refus toutes les vingt secondes.
+    enabled,
+  });
+
+/**
+ * Tournée du livreur : ses courses, filtrées par le serveur sur son identifiant.
+ *
+ * Rechargée plus souvent que le reste : un livreur regarde son téléphone entre deux courses, et une
+ * course assignée pendant qu'il roulait doit apparaître sans qu'il ait à y penser.
+ */
+export const useMyDeliveries = () =>
+  useQuery({
+    queryKey: ['deliveries', 'mine'],
+    queryFn: staffApi.myDeliveries,
+    refetchInterval: 15_000,
     staleTime: 5_000,
   });
 
@@ -63,4 +80,7 @@ export function refreshOrders(): void {
   void queryClient.invalidateQueries({ queryKey: ['orders'] });
   void queryClient.invalidateQueries({ queryKey: ['stats'] });
   void queryClient.invalidateQueries({ queryKey: ['tables'] });
+  // La tournée du livreur vit sous une autre clé : sans cette ligne, il annonce son départ et son
+  // écran ne bouge pas.
+  void queryClient.invalidateQueries({ queryKey: ['deliveries'] });
 }
