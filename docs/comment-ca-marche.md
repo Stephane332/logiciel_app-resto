@@ -219,8 +219,10 @@ C'est le meilleur moyen de comprendre le reste.
 ```bash
 npm test                              # 208 tests : règles métier, API, temps réel
 npm run build --workspace @savora/client
-npm run servir                        # sert la construction, relaie l'API
-node scripts/verifier-parcours.mjs    # rejoue chaque rôle dans un vrai navigateur
+npm run servir                        # sert la construction, relaie l'API et le temps réel
+npm run verifier:parcours             # rejoue chaque rôle dans un vrai navigateur
+npm run verifier:iphone               # rejoue le parcours client dans le moteur de Safari
+npm run verifier:pwa                  # manifeste, service worker, consultation hors ligne
 ```
 
 Le dernier commande fait ce qu'aucun test unitaire ne sait faire : il **pose un doigt** sur les

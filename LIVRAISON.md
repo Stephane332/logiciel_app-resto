@@ -37,18 +37,43 @@ immédiat : `npm run demarrer` sur ton ordinateur affiche l'adresse à saisir.
 avertissement au premier lancement. Une version signée demande un magasin de clés (secret
 `ANDROID_KEYSTORE_BASE64`) ; le workflow la construit automatiquement dès qu'il existe.
 
-### Et la PWA ?
+### La PWA — et les clients sur iPhone
 
-**Elle n'a pas encore de lien, et c'est la seule chose qui manque.** Un lien de PWA est une adresse
-en HTTPS : Chrome Android ne propose « Installer » que sur une adresse sécurisée, et une page
-sécurisée ne peut pas appeler une API en clair. Il n'y a pas de contournement.
+**Un iPhone n'installe pas d'APK. La PWA est sa seule voie**, et elle passe obligatoirement par une
+adresse en HTTPS : Safari n'installe rien depuis une adresse en clair, et n'y démarre pas le service
+worker. Il n'y a pas de contournement — c'est une règle du navigateur, pas un réglage.
 
-Ce qui bloquait est levé : la pile de production fait maintenant le HTTPS toute seule. Avec un VPS et
-un nom de domaine, une commande met en service `https://ton-domaine.bf` — et c'est ce lien-là, la
-PWA. Voir [`docs/deploiement.md`](docs/deploiement.md).
+#### Pour essayer sur un iPhone dès aujourd'hui
 
-En attendant, l'application cliente s'utilise sur le réseau local (`npm run demarrer`) : tout
-fonctionne, sauf le bouton « Installer », qui exige le certificat.
+```bash
+npm run dev                                  # dans un terminal
+npm run build --workspace @savora/client     # dans un second
+npm run partager
+```
+
+La commande affiche une vraie adresse `https://…`. Sur l'iPhone, **ouvrir dans Safari** — pas Chrome,
+sur iOS seul Safari sait installer une application — puis bouton Partager → « Sur l'écran d'accueil ».
+
+Cette adresse est un banc d'essai : elle change à chaque lancement, meurt avec le script, et tout
+passe par ton ordinateur. Elle demande `cloudflared`, une seule fois (`sudo apt install cloudflared`).
+
+#### Pour l'adresse définitive, celle qu'on donne aux clients
+
+Un nom de domaine et un serveur. La pile de production fait le HTTPS toute seule désormais :
+`DOMAINE=ton-domaine.bf` puis une commande, et `https://ton-domaine.bf` est en service, certificat
+compris. Voir [`docs/deploiement.md`](docs/deploiement.md). **C'est ce lien-là, la PWA** — le même
+pour les iPhone et les Android.
+
+#### Ce qui est déjà vérifié côté iPhone
+
+Le parcours complet a été rejoué dans **WebKit**, le moteur de Safari, aux dimensions d'un iPhone 13
+(`npm run verifier:iphone`, 14 contrôles) : commande aboutie, code de retrait, service worker actif,
+aucun débordement horizontal, aucune erreur JavaScript, et les quatre balises dont iOS se sert pour
+l'installation.
+
+Une correction en est sortie : la barre d'état était réglée sur « texte blanc » — un reste de
+l'ancienne interface sombre. Sur le fond crème actuel, l'heure et la batterie de l'iPhone étaient
+devenues blanches sur crème, donc invisibles.
 
 ---
 
@@ -94,6 +119,7 @@ l'écran d'accueil du client comme n'importe quelle autre application.
 ```bash
 npm test                              # 208 tests : règles métier, API, temps réel
 npm run verifier:pwa                  # 14 contrôles : manifeste, service worker, hors ligne
+npm run verifier:iphone               # 14 contrôles : le parcours dans le moteur de Safari
 npm run verifier:parcours             # 44 contrôles : chaque rôle, dans un vrai navigateur
 ```
 

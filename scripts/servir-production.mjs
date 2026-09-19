@@ -23,6 +23,7 @@
  *   node scripts/servir-production.mjs [port]
  */
 import { createServer } from 'node:http';
+import { connect } from 'node:net';
 import { readFile } from 'node:fs/promises';
 import { existsSync, statSync } from 'node:fs';
 import { join, extname, resolve } from 'node:path';
@@ -63,11 +64,11 @@ function lireCorps(req) {
   });
 }
 
-createServer(async (req, res) => {
+const serveur = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://interne');
 
-  // ── Relais de l'API et des médias ──
-  if (url.pathname.startsWith('/api')) {
+  // ── Relais de l'API, des médias et du canal temps réel ──
+  if (url.pathname.startsWith('/api') || url.pathname.startsWith('/realtime')) {
     try {
       const sansCorps = req.method === 'GET' || req.method === 'HEAD';
       const corps = sansCorps ? undefined : await lireCorps(req);
@@ -122,7 +123,57 @@ createServer(async (req, res) => {
   const cache = chemin.endsWith('sw.js') ? 'no-cache' : 'public, max-age=3600';
   res.writeHead(200, { 'content-type': type, 'cache-control': cache });
   res.end(await readFile(chemin));
-}).listen(PORT, '0.0.0.0', () => {
+});
+
+/**
+ * Mise à niveau websocket.
+ *
+ * Une requête `Upgrade` ne traverse pas le gestionnaire de requêtes : Node l'annonce par un
+ * événement distinct, et `fetch` ne sait pas la relayer. Sans ces quelques lignes, le canal temps
+ * réel échouait en silence et l'application retombait sur son rechargement périodique — le service
+ * marchait, donc rien ne signalait le défaut, et les commandes mettaient vingt secondes à
+ * apparaître au lieu de deux.
+ */
+serveur.on('upgrade', (req, socket, tete) => {
+  if (!req.url.startsWith('/realtime') && !req.url.startsWith('/api')) {
+    socket.destroy();
+    return;
+  }
+
+  const { hostname, port } = new URL(AMONT);
+  const amont = connect(Number(port || 80), hostname, () => {
+    const entetes = Object.entries(req.headers)
+      .filter(([nom]) => nom.toLowerCase() !== 'host')
+      .map(([nom, valeur]) => `${nom}: ${valeur}`)
+      .join('\r\n');
+
+    amont.write(`${req.method} ${req.url} HTTP/1.1\r\nHost: ${hostname}:${port}\r\n${entetes}\r\n\r\n`);
+    if (tete && tete.length) amont.write(tete);
+    amont.pipe(socket);
+    socket.pipe(amont);
+  });
+
+  // Une extrémité qui tombe emporte l'autre : un demi-tunnel laisserait la page attendre sans fin.
+  amont.on('error', () => socket.destroy());
+  socket.on('error', () => amont.destroy());
+});
+
+/*
+ * Le port déjà pris est l'erreur la plus banale : on lance ce serveur en oubliant qu'il tourne déjà
+ * dans un autre terminal. Sans ce message, Node affiche une trace de pile sur EADDRINUSE — illisible
+ * pour un défaut qui se corrige en fermant une fenêtre.
+ */
+serveur.on('error', (erreur) => {
+  if (erreur.code === 'EADDRINUSE') {
+    console.error(`\n  ⚠  Le port ${PORT} est déjà utilisé. Un autre serveur tourne-t-il déjà ?`);
+    console.error(`     Fermez-le, ou choisissez un autre port : node scripts/servir-production.mjs ${PORT + 1}\n`);
+  } else {
+    console.error(`\n  ⚠  ${erreur.message}\n`);
+  }
+  process.exit(1);
+});
+
+serveur.listen(PORT, '0.0.0.0', () => {
   if (!existsSync(RACINE)) {
     console.error(`\n  ⚠  ${RACINE} n'existe pas. Construisez d'abord : npm run build --workspace @savora/client\n`);
   }

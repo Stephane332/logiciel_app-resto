@@ -10,8 +10,24 @@
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!--
+      Installation sur iPhone.
+
+      Un iPhone n'installe pas d'APK : la PWA est la seule voie, par Safari → Partager → « Sur
+      l'écran d'accueil ». Ces trois balises décident de ce qu'il en fait, et l'une d'elles était
+      fausse.
+
+      « black-translucent » fait passer la page sous la barre d'état et en écrit le contenu — heure,
+      réseau, batterie — en blanc. C'était juste du temps où l'interface était vert nuit ; sur le
+      papier clair, l'heure devenait blanche sur crème, donc invisible. « default » rend la barre à
+      sa couleur de fond et son texte sombre.
+    -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- Sans ce titre, iOS écrit le titre de la page entier sous l'icône, et le tronque. -->
+    <meta name="apple-mobile-web-app-title" content="Savora" />
 
     <!-- Aperçu riche : un lien de menu partagé sur WhatsApp, Facebook ou TikTok doit montrer
          quelque chose d'appétissant, pas une URL nue. C'est le canal d'acquisition n° 1. -->
@@ -27,7 +43,7 @@
   <body>
     <div id="root"></div>
     <noscript>
-      <div style="padding: 24px; color: #f4f7f4; font-family: system-ui, sans-serif">
+      <div style="padding: 24px; color: #1a1510; font-family: system-ui, sans-serif">
         Cette application a besoin de JavaScript pour fonctionner. Activez-le dans votre navigateur,
         ou appelez directement le restaurant pour commander.
       </div>
