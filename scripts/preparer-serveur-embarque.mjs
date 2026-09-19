@@ -64,10 +64,36 @@ function etape(texte) {
   console.log(`\n── ${texte}`);
 }
 
+/**
+ * Le nom réel d'un outil selon la plate-forme.
+ *
+ * Sous Windows, `npm` et `npx` sont des scripts `.cmd` : `spawnSync('npm', …)` ne les trouve pas et
+ * renvoie un code `null` — un échec muet qui ne dit pas qu'il s'agit d'un nom de fichier. C'est
+ * exactement ainsi que la première construction Windows a échoué, et le message d'origine ne
+ * permettait pas de le voir.
+ *
+ * On nomme donc l'exécutable réel plutôt que de passer par un interpréteur de commandes : `shell:
+ * true` règlerait aussi le problème, mais en réintroduisant les ennuis de guillemets sur les chemins
+ * qui contiennent des espaces — et « C:\Program Files » en contient.
+ */
+function outil(nom) {
+  if (process.platform !== 'win32') return nom;
+  return ['npm', 'npx'].includes(nom) ? `${nom}.cmd` : nom;
+}
+
 function executer(commande, args, options = {}) {
-  const resultat = spawnSync(commande, args, { stdio: 'inherit', ...options });
+  const reel = outil(commande);
+  const resultat = spawnSync(reel, args, { stdio: 'inherit', ...options });
+
+  // `error` est renseigné quand le processus n'a pas pu être lancé du tout — nom introuvable, droits
+  // manquants. Sans lui, le message se réduit à « code null », qui n'apprend rien.
+  if (resultat.error) {
+    throw new Error(`${reel} n'a pas pu être lancé : ${resultat.error.message}`);
+  }
   if (resultat.status !== 0) {
-    throw new Error(`${commande} ${args.join(' ')} a échoué (code ${resultat.status}).`);
+    throw new Error(
+      `${reel} ${args.join(' ')} a échoué (code ${resultat.status}${resultat.signal ? `, signal ${resultat.signal}` : ''}).`,
+    );
   }
 }
 
