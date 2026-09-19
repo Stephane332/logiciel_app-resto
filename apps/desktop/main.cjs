@@ -23,24 +23,43 @@ const { app, BrowserWindow, ipcMain, shell, Menu } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const { demarrer } = require('./serveur-local.cjs');
+const baseEmbarquee = require('./base-embarquee.cjs');
+const apiEmbarquee = require('./api-embarquee.cjs');
 
 /** Réglages, à côté des données de l'application : ils survivent à une mise à jour. */
 const configFile = path.join(app.getPath('userData'), 'serveur.json');
 
-function lireServeur() {
+function lireReglages() {
   try {
-    const brut = fs.readFileSync(configFile, 'utf8');
-    const valeur = JSON.parse(brut).serveur;
-    return typeof valeur === 'string' && valeur ? valeur : null;
+    return JSON.parse(fs.readFileSync(configFile, 'utf8'));
   } catch {
     // Premier lancement, ou fichier abîmé : on redemande plutôt que de partir sur une valeur fausse.
-    return null;
+    return {};
   }
 }
 
-function ecrireServeur(serveur) {
+function lireServeur() {
+  const valeur = lireReglages().serveur;
+  return typeof valeur === 'string' && valeur ? valeur : null;
+}
+
+/**
+ * Ce poste est-il la caisse principale — celle qui porte la base et l'API ?
+ *
+ * Le rôle est enregistré au premier lancement et ne change plus tout seul. C'est lui qui décide si le
+ * logiciel démarre son propre serveur ou s'il va en chercher un sur le réseau.
+ */
+function estCaissePrincipale() {
+  return lireReglages().role === 'serveur';
+}
+
+function ecrireReglages(valeurs) {
   fs.mkdirSync(path.dirname(configFile), { recursive: true });
-  fs.writeFileSync(configFile, JSON.stringify({ serveur }, null, 2), 'utf8');
+  fs.writeFileSync(configFile, JSON.stringify({ ...lireReglages(), ...valeurs }, null, 2), 'utf8');
+}
+
+function ecrireServeur(serveur) {
+  ecrireReglages({ serveur, role: 'client' });
 }
 
 /**
@@ -88,6 +107,9 @@ function normaliserServeur(saisie) {
 let fenetre = null;
 /** Le serveur local qui sert l'interface et relaie le serveur du restaurant. */
 let local = null;
+/** Sur une caisse principale : la base et l'API de ce restaurant, portées par ce poste. */
+let baseLocale = null;
+let apiLocale = null;
 
 /**
  * Ouvre l'interface.
@@ -144,9 +166,75 @@ function creerFenetre() {
     return { action: 'deny' };
   });
 
+  // Caisse principale : on remonte son propre serveur avant d'ouvrir l'interface.
+  if (estCaissePrincipale()) {
+    void demarrerServeurDuResto();
+    return;
+  }
+
   const serveur = lireServeur();
   if (serveur) ouvrirLogiciel(serveur);
   else fenetre.loadFile(path.join(__dirname, 'serveur.html'));
+}
+
+/** Ce que le restaurateur voit pendant que son serveur démarre. */
+function annoncer(message) {
+  fenetre?.webContents.send('savora:avancement', message);
+}
+
+/**
+ * Démarre la base et l'API sur ce poste, puis ouvre l'interface dessus.
+ *
+ * L'ordre n'est pas négociable et le banc d'essai l'a montré : la base, le schéma, l'amorçage, puis
+ * le serveur. L'amorçage lancé avant le schéma échoue sur « la table restaurants n'existe pas ».
+ *
+ * `infos` n'est fourni qu'à la première installation ; aux démarrages suivants, l'amorçage constate
+ * que le restaurant existe et ne touche à rien.
+ */
+async function demarrerServeurDuResto(infos) {
+  const donnees = app.getPath('userData');
+
+  try {
+    annoncer('Démarrage de la base de données…');
+    baseLocale = await baseEmbarquee.demarrer({ racineDonnees: donnees, journal: () => {} });
+
+    await apiEmbarquee.appliquerSchema({
+      racineDonnees: donnees,
+      urlBase: baseLocale.url,
+      journal: annoncer,
+    });
+
+    const amorce = await apiEmbarquee.amorcer({
+      racineDonnees: donnees,
+      urlBase: baseLocale.url,
+      nomRestaurant: infos?.nom,
+      telephone: infos?.telephone,
+      motDePasse: infos?.motDePasse,
+      journal: annoncer,
+    });
+
+    apiLocale = await apiEmbarquee.demarrer({
+      racineDonnees: donnees,
+      urlBase: baseLocale.url,
+      journal: () => {},
+    });
+
+    // Le rôle n'est enregistré qu'une fois que tout a démarré : un échec en cours de route ne doit
+    // pas laisser le poste marqué « caisse principale » avec un serveur qui ne monte pas.
+    ecrireReglages({ role: 'serveur', serveur: null });
+
+    annoncer(amorce.deja ? 'Serveur prêt.' : 'Restaurant créé. Serveur prêt.');
+    ouvrirLogiciel(apiLocale.origine);
+    return { ok: true };
+  } catch (erreur) {
+    // On redescend proprement : une base laissée en marche empêcherait la prochaine tentative.
+    await apiLocale?.arreter().catch(() => {});
+    await baseLocale?.arreter().catch(() => {});
+    apiLocale = null;
+    baseLocale = null;
+    annoncer(`Échec : ${erreur.message}`);
+    return { ok: false, message: erreur.message };
+  }
 }
 
 ipcMain.handle('savora:serveur', () => lireServeur());
@@ -157,6 +245,19 @@ ipcMain.handle('savora:definir-serveur', (_evenement, saisie) => {
   ecrireServeur(serveur);
   ouvrirLogiciel(serveur);
   return { ok: true, serveur };
+});
+
+ipcMain.handle('savora:installer-serveur', async (_evenement, infos) => {
+  const nom = String(infos?.nom ?? '').trim();
+  if (!nom) return { ok: false, message: 'Indiquez le nom du restaurant.' };
+  if (String(infos?.motDePasse ?? '').length < 8) {
+    return { ok: false, message: 'Le mot de passe doit faire au moins 8 caractères.' };
+  }
+  return demarrerServeurDuResto({
+    nom,
+    telephone: String(infos?.telephone ?? '').trim(),
+    motDePasse: String(infos?.motDePasse ?? ''),
+  });
 });
 
 /** Permet de rebrancher le logiciel sur un autre serveur sans réinstaller. */
@@ -180,6 +281,23 @@ app.whenReady().then(async () => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) creerFenetre();
   });
+});
+
+/*
+ * Arrêt propre, dans l'ordre inverse du démarrage.
+ *
+ * Une base tuée brutalement rejoue son journal au démarrage suivant — quelques secondes de plus à
+ * chaque ouverture, et un risque de perte sur la dernière transaction. Sur une caisse, c'est la
+ * commande en cours.
+ */
+app.on('before-quit', async (evenement) => {
+  if (!apiLocale && !baseLocale) return;
+  evenement.preventDefault();
+  await apiLocale?.arreter().catch(() => {});
+  await baseLocale?.arreter().catch(() => {});
+  apiLocale = null;
+  baseLocale = null;
+  app.quit();
 });
 
 app.on('will-quit', () => {

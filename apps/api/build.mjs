@@ -64,8 +64,8 @@ await build({
 // Les scripts d'exploitation — amorçage, simulateur de cuisine — se compilent de la même façon :
 // ils importent eux aussi les paquets internes, et servent en production.
 await build({
-  entryPoints: ['prisma/seed.ts'],
-  outfile: 'dist/seed.js',
+  entryPoints: ['prisma/seed.ts', 'prisma/premier-demarrage.ts'],
+  outdir: 'dist',
   bundle: true,
   platform: 'node',
   target: 'node20',

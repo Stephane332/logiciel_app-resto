@@ -22,4 +22,17 @@ contextBridge.exposeInMainWorld('savora', {
   serveur: () => ipcRenderer.invoke('savora:serveur'),
   definirServeur: (adresse) => ipcRenderer.invoke('savora:definir-serveur', adresse),
   changerServeur: () => ipcRenderer.invoke('savora:changer-serveur'),
+
+  /** Installe la base et l'API sur ce PC : il devient la caisse principale du restaurant. */
+  installerServeur: (infos) => ipcRenderer.invoke('savora:installer-serveur', infos),
+
+  /**
+   * Suit l'avancement de l'installation.
+   *
+   * Elle prend quelques secondes — création de la base, schéma, démarrage — et sans retour à
+   * l'écran, le restaurateur croit que rien ne se passe et clique une deuxième fois.
+   */
+  surAvancement: (rappel) => {
+    ipcRenderer.on('savora:avancement', (_evenement, message) => rappel(message));
+  },
 });

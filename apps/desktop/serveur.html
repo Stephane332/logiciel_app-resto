@@ -62,6 +62,35 @@
       button:hover { background: var(--brand-dark); }
       .indice { font-size: 12px; color: var(--ink-3); }
       .erreur { font-size: 13px; font-weight: 600; color: #c2331f; }
+
+      /*
+       * Les deux rôles possibles de ce PC. La question est posée une seule fois dans la vie du
+       * logiciel, et elle décide de tout : autant qu'elle soit lisible d'un coup d'œil, avec la
+       * conséquence de chaque choix écrite à côté.
+       */
+      .choix {
+        display: flex; flex-direction: column; gap: 12px;
+      }
+      .choix button {
+        text-align: left; padding: 18px 20px; border-radius: 18px;
+        background: #fff; color: var(--ink); min-height: 0;
+        box-shadow: inset 0 0 0 1px var(--line);
+      }
+      .choix button:hover { background: #fdfaf6; box-shadow: inset 0 0 0 2px var(--brand); }
+      .choix strong { display: block; font-size: 15px; margin-bottom: 4px; }
+      .choix span { font-size: 13px; color: var(--ink-2); line-height: 1.5; font-weight: 400; }
+      .retour {
+        background: none; color: var(--ink-3); min-height: 0; font-size: 13px;
+        text-align: left; padding: 0; font-weight: 600;
+      }
+      .retour:hover { background: none; color: var(--brand); }
+      .etape { display: none; flex-direction: column; gap: 18px; }
+      .etape[data-visible='oui'] { display: flex; }
+      .avancement {
+        font-size: 13px; color: var(--ink-2); background: #f6f1e8;
+        border-radius: 12px; padding: 12px 14px; line-height: 1.6;
+        white-space: pre-line; max-height: 160px; overflow-y: auto;
+      }
     </style>
   </head>
   <body>
@@ -70,50 +99,182 @@
         <span class="pastille">S</span>
         <div>
           <strong style="font-size: 17px">Savora Pro</strong>
-          <div class="indice">Logiciel restaurant</div>
+          <div class="indice">Première mise en route</div>
         </div>
       </div>
 
-      <div>
-        <h1>À quelle adresse se trouve votre serveur&nbsp;?</h1>
-        <p style="margin-top: 8px">
-          C'est l'adresse que vous a donnée votre installateur. Vous ne la saisirez qu'une fois :
-          le logiciel s'en souviendra.
-        </p>
-      </div>
+      <!--
+        Étape 1 — le rôle de ce PC.
 
-      <div style="display: flex; flex-direction: column; gap: 8px">
-        <label for="adresse">Adresse du serveur</label>
-        <input id="adresse" placeholder="resto.mondomaine.bf" autocomplete="off" autofocus />
-        <span class="indice" id="indice">Inutile d'écrire « https:// », le logiciel s'en charge.</span>
-      </div>
+        Question posée une seule fois dans la vie du logiciel, et qui décide de tout le reste. Elle
+        est écrite en termes de poste, pas d'informatique : « la caisse principale » plutôt que
+        « serveur », parce que c'est ce que le restaurateur reconnaît.
+      -->
+      <section class="etape" id="etape-role" data-visible="oui">
+        <div>
+          <h1>Quel est le rôle de cet ordinateur&nbsp;?</h1>
+          <p style="margin-top: 8px">Une seule fois. Le logiciel s'en souviendra.</p>
+        </div>
 
-      <button id="valider">Se connecter</button>
+        <div class="choix">
+          <button id="choix-serveur">
+            <strong>C'est la caisse principale du restaurant</strong>
+            <span>
+              Le logiciel installe tout ici : les commandes, le menu, les clients. Les tablettes de
+              cuisine et les téléphones de l'équipe s'y connecteront.
+            </span>
+          </button>
+
+          <button id="choix-client">
+            <strong>C'est un poste secondaire</strong>
+            <span>
+              La caisse principale est un autre ordinateur, déjà installé. Ce poste va s'y connecter.
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Étape 2a — ce PC est la caisse principale : créer le restaurant. -->
+      <section class="etape" id="etape-serveur">
+        <div>
+          <h1>Le restaurant</h1>
+          <p style="margin-top: 8px">
+            Ce compte sera l'administrateur : celui qui crée les autres employés. Notez bien son mot
+            de passe, personne ne peut le retrouver à votre place.
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <label for="nom-resto">Nom du restaurant</label>
+          <input id="nom-resto" placeholder="Chez Awa" autocomplete="off" />
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <label for="tel-admin">Votre téléphone</label>
+          <input id="tel-admin" placeholder="70 11 22 33" autocomplete="off" inputmode="tel" />
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <label for="mdp-admin">Mot de passe</label>
+          <input id="mdp-admin" type="password" placeholder="8 caractères minimum" autocomplete="new-password" />
+          <span class="indice" id="indice-serveur">C'est avec ce numéro et ce mot de passe que vous ouvrirez le logiciel.</span>
+        </div>
+
+        <div class="avancement" id="avancement" style="display: none"></div>
+
+        <button id="valider-serveur">Installer et démarrer</button>
+        <button class="retour" id="retour-1">← Revenir au choix</button>
+      </section>
+
+      <!-- Étape 2b — poste secondaire : l'adresse de la caisse principale. -->
+      <section class="etape" id="etape-client">
+        <div>
+          <h1>À quelle adresse se trouve la caisse principale&nbsp;?</h1>
+          <p style="margin-top: 8px">
+            C'est l'adresse que vous a donnée votre installateur. Vous ne la saisirez qu'une fois.
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <label for="adresse">Adresse</label>
+          <input id="adresse" placeholder="192.168.1.20:4000" autocomplete="off" />
+          <span class="indice" id="indice">
+            Inutile d'écrire « https:// », le logiciel s'en charge.
+          </span>
+        </div>
+
+        <button id="valider">Se connecter</button>
+        <button class="retour" id="retour-2">← Revenir au choix</button>
+      </section>
     </main>
 
     <script>
-      const champ = document.getElementById('adresse');
+      const etapes = {
+        role: document.getElementById('etape-role'),
+        serveur: document.getElementById('etape-serveur'),
+        client: document.getElementById('etape-client'),
+      };
+
+      function montrer(nom) {
+        for (const [cle, element] of Object.entries(etapes)) {
+          element.dataset.visible = cle === nom ? 'oui' : 'non';
+        }
+        const premier = etapes[nom].querySelector('input');
+        if (premier) premier.focus();
+      }
+
+      document.getElementById('choix-serveur').onclick = () => montrer('serveur');
+      document.getElementById('choix-client').onclick = () => montrer('client');
+      document.getElementById('retour-1').onclick = () => montrer('role');
+      document.getElementById('retour-2').onclick = () => montrer('role');
+
+      // ── Poste secondaire ──
+      const champAdresse = document.getElementById('adresse');
       const indice = document.getElementById('indice');
-      const bouton = document.getElementById('valider');
+      const boutonClient = document.getElementById('valider');
 
-      window.savora?.serveur().then((existant) => {
-        if (existant) champ.value = existant;
-      });
-
-      async function valider() {
-        bouton.disabled = true;
-        const resultat = await window.savora.definirServeur(champ.value);
-        if (!resultat?.ok) {
-          indice.textContent = resultat?.message ?? 'Adresse invalide.';
+      async function connecter() {
+        if (!champAdresse.value.trim()) {
+          indice.textContent = 'Saisissez l\'adresse de la caisse principale.';
           indice.className = 'erreur';
-          bouton.disabled = false;
+          return;
+        }
+        boutonClient.disabled = true;
+        boutonClient.textContent = 'Connexion…';
+        const resultat = await window.savora.definirServeur(champAdresse.value);
+        if (!resultat.ok) {
+          indice.textContent = resultat.message;
+          indice.className = 'erreur';
+          boutonClient.disabled = false;
+          boutonClient.textContent = 'Se connecter';
         }
       }
 
-      bouton.addEventListener('click', valider);
-      champ.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') valider();
+      boutonClient.onclick = connecter;
+      champAdresse.onkeydown = (e) => { if (e.key === 'Enter') connecter(); };
+
+      // ── Caisse principale ──
+      const boutonServeur = document.getElementById('valider-serveur');
+      const indiceServeur = document.getElementById('indice-serveur');
+      const avancement = document.getElementById('avancement');
+
+      // L'installation prend quelques secondes — création de la base, schéma, démarrage. Sans ce
+      // journal, l'écran paraît figé et on clique une deuxième fois.
+      window.savora.surAvancement((message) => {
+        avancement.style.display = 'block';
+        avancement.textContent += (avancement.textContent ? '\n' : '') + message;
+        avancement.scrollTop = avancement.scrollHeight;
       });
+
+      async function installer() {
+        const nom = document.getElementById('nom-resto').value.trim();
+        const tel = document.getElementById('tel-admin').value.trim();
+        const mdp = document.getElementById('mdp-admin').value;
+
+        indiceServeur.className = 'indice';
+        if (!nom) return echouer('Indiquez le nom du restaurant.');
+        if (!tel) return echouer('Indiquez votre téléphone.');
+        if (mdp.length < 8) return echouer('Le mot de passe doit faire au moins 8 caractères.');
+
+        boutonServeur.disabled = true;
+        boutonServeur.textContent = 'Installation…';
+        avancement.textContent = '';
+
+        const resultat = await window.savora.installerServeur({ nom, telephone: tel, motDePasse: mdp });
+        if (!resultat.ok) {
+          echouer(resultat.message);
+          boutonServeur.disabled = false;
+          boutonServeur.textContent = 'Installer et démarrer';
+        }
+      }
+
+      function echouer(message) {
+        indiceServeur.textContent = message;
+        indiceServeur.className = 'erreur';
+      }
+
+      boutonServeur.onclick = installer;
+      document.getElementById('mdp-admin').onkeydown = (e) => { if (e.key === 'Enter') installer(); };
     </script>
   </body>
 </html>

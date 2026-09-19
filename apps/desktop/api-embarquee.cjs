@@ -23,8 +23,16 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 
-/** Port de l'API. Fixe et connu : c'est lui que le restaurateur saisit sur ses tablettes. */
-const PORT = 4000;
+/**
+ * Port de l'API.
+ *
+ * Fixe et connu, parce que c'est lui que le restaurateur saisit sur les tablettes de son équipe :
+ * « 192.168.1.20:4000 ». Un port tiré au hasard serait invisible et changerait à chaque démarrage.
+ *
+ * `SAVORA_API_PORT` permet de le déplacer — utile si un autre logiciel du poste occupe déjà 4000, et
+ * indispensable pour éprouver le logiciel à côté d'un serveur de développement.
+ */
+const PORT = Number(process.env.SAVORA_API_PORT ?? 4000);
 
 function secretDeSession(racineDonnees) {
   const fichier = path.join(racineDonnees, 'session.key');
@@ -81,15 +89,10 @@ function commandeNode() {
   };
 }
 
-async function demarrer({ racineDonnees, urlBase, journal = () => {} }) {
-  const api = trouverApi();
-  if (!api) {
-    throw new Error("Le serveur interne est introuvable. Le logiciel est incomplet : réinstallez-le.");
-  }
-
-  const { commande, env: envNode } = commandeNode();
-
-  const environnement = {
+/** L'environnement commun à toutes les étapes : schéma, amorçage, serveur. */
+function environnementDe({ api, racineDonnees, urlBase }) {
+  const { env: envNode } = commandeNode();
+  return {
     ...process.env,
     ...envNode,
     NODE_ENV: 'production',
@@ -102,25 +105,78 @@ async function demarrer({ racineDonnees, urlBase, journal = () => {} }) {
     // à jour du logiciel ne doit pas emporter le travail de photographie du restaurant.
     UPLOAD_DIR: path.join(racineDonnees, 'photos'),
   };
+}
 
-  // ── Le schéma, avant tout le reste ──
+/**
+ * Applique le schéma de la base.
+ *
+ * Séparé du démarrage, et c'est une leçon du banc d'essai : l'amorçage lancé avant cette étape
+ * échouait sur « la table restaurants n'existe pas ». L'ordre est donc imposé par le code plutôt que
+ * laissé à la mémoire — schéma, puis amorçage, puis serveur.
+ */
+async function appliquerSchema({ racineDonnees, urlBase, journal = () => {} }) {
+  const api = trouverApi();
+  if (!api) throw new Error("Le serveur interne est introuvable. Le logiciel est incomplet : réinstallez-le.");
+
   const prismaCli = trouverPrisma(api);
   if (!prismaCli) {
     throw new Error("L'outil de migration est introuvable. Le logiciel est incomplet : réinstallez-le.");
   }
 
   journal('Mise à jour du schéma de la base…');
+  const { commande } = commandeNode();
   const migration = spawnSync(
     commande,
     [prismaCli, 'migrate', 'deploy', '--schema', path.join(api, 'prisma', 'schema.prisma')],
-    { encoding: 'utf8', env: environnement, cwd: api },
+    { encoding: 'utf8', env: environnementDe({ api, racineDonnees, urlBase }), cwd: api },
   );
 
   if (migration.status !== 0) {
     throw new Error(`Mise à jour du schéma impossible : ${migration.stderr || migration.stdout}`);
   }
+}
 
-  // ── L'API ──
+/**
+ * Crée le restaurant et son compte administrateur, si la base est encore vide.
+ *
+ * Idempotent : sur une base déjà configurée, il ne touche à rien et renvoie `deja: true`. Le logiciel
+ * peut donc l'appeler à chaque démarrage sans se demander si c'est la première fois.
+ */
+async function amorcer({ racineDonnees, urlBase, nomRestaurant, telephone, motDePasse, journal = () => {} }) {
+  const api = trouverApi();
+  if (!api) throw new Error('Le serveur interne est introuvable.');
+
+  const { commande } = commandeNode();
+  journal('Préparation du restaurant…');
+
+  const resultat = spawnSync(commande, [path.join(api, 'dist', 'premier-demarrage.js')], {
+    encoding: 'utf8',
+    cwd: api,
+    env: {
+      ...environnementDe({ api, racineDonnees, urlBase }),
+      SAVORA_RESTO_NOM: nomRestaurant ?? '',
+      SAVORA_ADMIN_TEL: telephone ?? '',
+      SAVORA_ADMIN_MDP: motDePasse ?? '',
+    },
+  });
+
+  const sortie = `${resultat.stdout ?? ''}${resultat.stderr ?? ''}`;
+  if (sortie.includes('DEJA_CONFIGURE')) return { deja: true };
+  if (sortie.includes('CONFIGURE')) return { deja: false };
+
+  const raison = sortie.split('ECHEC ').pop()?.split('\n')[0]?.trim();
+  throw new Error(raison || 'Préparation du restaurant impossible.');
+}
+
+async function demarrer({ racineDonnees, urlBase, journal = () => {} }) {
+  const api = trouverApi();
+  if (!api) {
+    throw new Error("Le serveur interne est introuvable. Le logiciel est incomplet : réinstallez-le.");
+  }
+
+  const { commande } = commandeNode();
+  const environnement = environnementDe({ api, racineDonnees, urlBase });
+
   journal(`Démarrage du serveur sur le port ${PORT}…`);
   const processus = spawn(commande, [path.join(api, 'dist', 'server.js')], {
     env: environnement,
@@ -131,9 +187,26 @@ async function demarrer({ racineDonnees, urlBase, journal = () => {} }) {
   processus.stdout.on('data', (d) => journal(String(d).trim().slice(0, 200)));
   processus.stderr.on('data', (d) => journal(String(d).trim().slice(0, 200)));
 
+  /*
+   * Le port déjà occupé est le cas qu'il faut nommer.
+   *
+   * Sans cela, l'attente expirait et le message disait « le serveur n'a pas démarré » — vrai, et
+   * inutile. Sur un poste de caisse où un autre logiciel écoute déjà sur 4000, c'est une demi-heure
+   * de recherche pour une phrase manquante.
+   */
+  let portOccupe = false;
+  processus.stderr.on('data', (d) => {
+    if (String(d).includes('EADDRINUSE')) portOccupe = true;
+  });
+
   const pret = await attendreSante();
   if (!pret) {
     processus.kill();
+    if (portOccupe) {
+      throw new Error(
+        `Le port ${PORT} est déjà utilisé sur cet ordinateur par un autre logiciel. Fermez-le, ou contactez votre installateur.`,
+      );
+    }
     throw new Error("Le serveur interne n'a pas démarré. Consultez les journaux du logiciel.");
   }
 
@@ -162,4 +235,4 @@ async function attendreSante() {
   return false;
 }
 
-module.exports = { demarrer, PORT };
+module.exports = { appliquerSchema, amorcer, demarrer, PORT };

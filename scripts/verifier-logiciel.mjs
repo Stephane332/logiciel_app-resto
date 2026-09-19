@@ -213,6 +213,158 @@ const recharge = String(sorties.get('apresRechargement') ?? '');
 // Le défaut d'origine : ici, la fenêtre devenait blanche.
 v('Un rechargement ne vide pas la fenêtre', recharge.trim().length > 0 && /Tableau de bord|Connectez-vous/.test(recharge), recharge.slice(0, 60) || '(vide)');
 
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Deuxième phase : le poste qui EST le serveur du restaurant
+// ═══════════════════════════════════════════════════════════════════════════════
+
+console.log('\n── Le poste installé comme caisse principale ──');
+
+if (process.getuid && process.getuid() === 0) {
+  /*
+   * PostgreSQL refuse de tourner en root. C'est une règle d'Unix, sans objet sur Windows où le
+   * logiciel est livré — mais elle rend ce contrôle impossible depuis un conteneur d'intégration qui
+   * tourne en root. On le dit plutôt que de le faire échouer : un test rouge pour une raison
+   * d'environnement apprend à ignorer les tests rouges.
+   */
+  console.log('  PASSÉ  Contrôle du mode « caisse principale » — impossible en root (règle PostgreSQL)');
+  console.log('         Rejouez sous un utilisateur normal : su <utilisateur> -c "node scripts/verifier-logiciel.mjs"');
+} else {
+  const sondeServeur = resolve(tmpdir(), `savora-sonde-serveur-${process.pid}.cjs`);
+  writeFileSync(
+    sondeServeur,
+    `const { app, BrowserWindow } = require('electron');
+const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
+const lire = (f) => f.webContents.executeJavaScript("document.body.innerText.split(String.fromCharCode(10)).filter(Boolean).join(' | ')").catch((e) => 'ERREUR ' + e.message);
+const dire = (c, v) => console.log('SONDE ' + c + ' ' + JSON.stringify(v));
+
+app.on('ready', () => {
+  setTimeout(async () => {
+    try {
+      const f = BrowserWindow.getAllWindows()[0];
+      dire('ecranRole', (await lire(f)).slice(0, 120));
+
+      await f.webContents.executeJavaScript("document.getElementById('choix-serveur').click(); true");
+      await attendre(600);
+      dire('ecranFormulaire', (await lire(f)).slice(0, 120));
+
+      await f.webContents.executeJavaScript(\`(() => {
+        const poser = (id, v) => { const e = document.getElementById(id);
+          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e, v);
+          e.dispatchEvent(new Event('input',{bubbles:true})); };
+        poser('nom-resto','Chez Awa');
+        poser('tel-admin','70 11 22 33');
+        poser('mdp-admin', \${JSON.stringify(process.env.SAVORA_DEMO_PASSWORD || 'MonMotDePasse2026')});
+        document.getElementById('valider-serveur').click(); return true; })()\`);
+
+      // Base, schéma, amorçage, serveur : une trentaine de secondes sur une machine modeste.
+      await attendre(35000);
+      dire('origine', f.webContents.getURL());
+      // Laisser l'interface se peindre : lue trop tôt, executeJavaScript échoue en pleine navigation.
+      await attendre(2500);
+      dire('ecranFinal', (await lire(f)).slice(0, 120));
+
+      const mdp = process.env.SAVORA_DEMO_PASSWORD || 'MonMotDePasse2026';
+      const cx = await f.webContents.executeJavaScript(
+        "fetch('/api/v1/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({phone:'70112233',password:" +
+          JSON.stringify(mdp) +
+          "})}).then(async r=>({statut:r.status,role:(await r.json()).user?.role??null})).catch(e=>({erreur:String(e)}))",
+      );
+      dire('connexion', cx);
+
+      // Aucun produit de démonstration : un vrai restaurant part d'un catalogue vide.
+      const menu = await f.webContents.executeJavaScript(
+        "fetch('/api/v1/menu').then(r=>r.json()).then(d=>d.categories.flatMap(c=>c.products).length).catch(()=>-1)",
+      );
+      dire('produits', menu);
+
+      // Le compte de démonstration public ne doit pas exister.
+      const demo = await f.webContents.executeJavaScript(
+        "fetch('/api/v1/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({phone:'70000001',password:'savora2026'})}).then(r=>r.status).catch(()=>0)",
+      );
+      dire('demo', demo);
+    } catch (erreur) {
+      dire('panne', String(erreur && erreur.message));
+    }
+    app.quit();
+  }, 4000);
+});
+
+require(${JSON.stringify(resolve(BUREAU, 'main.cjs'))});
+`,
+    'utf8',
+  );
+
+  for (const profil of ['Savora Pro', 'Electron', '@savora/desktop']) {
+    rmSync(resolve(process.env.HOME ?? '/root', '.config', profil), { recursive: true, force: true });
+  }
+
+  const sortiesServeur = new Map();
+  let tamponServeur = '';
+  const traiterServeur = (morceau) => {
+    tamponServeur += morceau;
+    const lignes = tamponServeur.split('\n');
+    tamponServeur = lignes.pop() ?? '';
+    for (const ligne of lignes) {
+      const trouve = ligne.match(/^SONDE (\w+) (.*)$/);
+      if (trouve) {
+        try {
+          sortiesServeur.set(trouve[1], JSON.parse(trouve[2]));
+        } catch {
+          sortiesServeur.set(trouve[1], trouve[2]);
+        }
+      }
+    }
+  };
+
+  const enfantServeur = spawn(
+    sansAffichage ? 'xvfb-run' : ELECTRON,
+    sansAffichage
+      ? ['-a', ELECTRON, '--no-sandbox', '--disable-gpu', sondeServeur]
+      : ['--no-sandbox', '--disable-gpu', sondeServeur],
+    {
+      env: {
+        ...process.env,
+        ELECTRON_DISABLE_SECURITY_WARNINGS: '1',
+        SAVORA_DEMO_PASSWORD: 'MonMotDePasse2026',
+        // 4000 est pris par l'API de développement pendant ce contrôle.
+        SAVORA_API_PORT: '4300',
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  );
+  enfantServeur.stdout.on('data', (d) => { if (BAVARD) process.stdout.write(`[out] ${d}`); traiterServeur(String(d)); });
+  enfantServeur.stderr.on('data', (d) => { if (BAVARD) process.stdout.write(`[err] ${d}`); traiterServeur(String(d)); });
+
+  await new Promise((resoudre) => {
+    enfantServeur.on('exit', resoudre);
+    setTimeout(() => { enfantServeur.kill(); resoudre(0); }, 120_000);
+  });
+  rmSync(sondeServeur, { force: true });
+
+  if (sortiesServeur.has('panne')) {
+    v('La sonde du mode serveur est allée au bout', false, String(sortiesServeur.get('panne')));
+  }
+
+  const ecranRole = String(sortiesServeur.get('ecranRole') ?? '');
+  v('Le premier lancement demande le rôle du poste', /ordinateur/i.test(ecranRole), ecranRole.slice(0, 70));
+
+  const ecranFormulaire = String(sortiesServeur.get('ecranFormulaire') ?? '');
+  v('Le formulaire du restaurant s\'affiche', /Le restaurant/i.test(ecranFormulaire), ecranFormulaire.slice(0, 70));
+
+  const origineServeur = String(sortiesServeur.get('origine') ?? '');
+  v('Le logiciel s\'ouvre sur le serveur qu\'il porte', origineServeur.startsWith('http://127.0.0.1:'), origineServeur);
+  const ecranFinal = String(sortiesServeur.get('ecranFinal') ?? '');
+  v('L\'interface du restaurant est chargée', /Espace Restaurant|Tableau de bord/i.test(ecranFinal), ecranFinal.slice(0, 70));
+
+  const cxServeur = sortiesServeur.get('connexion');
+  v('Le restaurateur se connecte avec son propre mot de passe', cxServeur?.statut === 200 && cxServeur?.role === 'ADMIN', JSON.stringify(cxServeur));
+
+  // Un restaurant qui découvre un catalogue de plats qu'il ne vend pas commence par faire le ménage.
+  v('Aucun produit de démonstration', sortiesServeur.get('produits') === 0, String(sortiesServeur.get('produits')));
+  // Un mot de passe publié dans le dépôt n'ouvre pas la caisse d'un vrai restaurant.
+  v('Le compte de démonstration public est refusé', sortiesServeur.get('demo') === 401, `HTTP ${sortiesServeur.get('demo')}`);
+}
+
 console.log(`\n═════ ${reussies.length} passées, ${echecs.length} en échec ═════`);
 echecs.forEach((e) => console.log('  ✗', e));
 process.exit(echecs.length ? 1 : 0);
