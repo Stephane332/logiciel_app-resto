@@ -1,5 +1,9 @@
 # Savora
 
+> **Vous découvrez le projet ?** Lisez [`docs/comment-ca-marche.md`](docs/comment-ca-marche.md) :
+> qui fait quoi, sur quel appareil, et comment les morceaux se parlent.
+
+
 > Plateforme de commande et de gestion pour la restauration rapide.
 > Premier client : **Mon restaurant** — Ouahigouya, Burkina Faso.
 

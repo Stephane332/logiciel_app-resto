@@ -120,6 +120,7 @@ Le reste de la liste est dans [`docs/deploiement.md`](docs/deploiement.md).
 
 | Document | Contenu |
 |---|---|
+| [`docs/comment-ca-marche.md`](docs/comment-ca-marche.md) | **Commencez par là.** Qui fait quoi, sur quel appareil, et comment les morceaux se parlent |
 | [`docs/cahier-des-charges.md`](docs/cahier-des-charges.md) | Le besoin, corrigé et complété |
 | [`docs/adr/`](docs/adr/) | Les neuf décisions structurantes, et leurs raisons |
 | [`docs/exploitation-restaurant.md`](docs/exploitation-restaurant.md) | Guide de l'équipe, écrit pour elle |
