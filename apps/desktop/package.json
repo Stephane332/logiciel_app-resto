@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Savora Pro — logiciel restaurant installable sur Windows",
+  "author": "Savora",
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",

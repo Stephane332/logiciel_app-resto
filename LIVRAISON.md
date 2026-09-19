@@ -1,6 +1,8 @@
 # Savora — remise du projet
 
-**Branche :** `claude/gifted-brown-1tc9ma` · **202 tests au vert** · 18 800 lignes de TypeScript
+**Branche :** `claude/gifted-brown-1tc9ma`
+
+**208 tests** · **44 contrôles de parcours** (chaque rôle, vrai navigateur) · **14 contrôles PWA** — tout au vert
 
 ---
 
@@ -18,7 +20,39 @@ en ligne dit la vérité sur ce qui sort réellement de la cuisine, ou il ne dit
 
 ---
 
-## Comment récupérer les livrables
+## Les deux fichiers à télécharger, maintenant
+
+Construits sur le dernier code, le 19 septembre. Il faut être connecté à GitHub pour télécharger un
+artefact.
+
+| Quoi | Où | Taille |
+|---|---|---|
+| **APK Android** | [construction du 19/09](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35447153932) → artefact `savora-apk` | 4 Mo |
+| **Installateur Windows** | [construction du 19/09](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35447150635) → artefact `savora-pro-windows` | 82 Mo |
+
+Les deux te demanderont **l'adresse du serveur** au premier lancement, une seule fois. Pour un essai
+immédiat : `npm run demarrer` sur ton ordinateur affiche l'adresse à saisir.
+
+**L'APK est une version de débogage** — elle s'installe sans certificat, et Android affiche un
+avertissement au premier lancement. Une version signée demande un magasin de clés (secret
+`ANDROID_KEYSTORE_BASE64`) ; le workflow la construit automatiquement dès qu'il existe.
+
+### Et la PWA ?
+
+**Elle n'a pas encore de lien, et c'est la seule chose qui manque.** Un lien de PWA est une adresse
+en HTTPS : Chrome Android ne propose « Installer » que sur une adresse sécurisée, et une page
+sécurisée ne peut pas appeler une API en clair. Il n'y a pas de contournement.
+
+Ce qui bloquait est levé : la pile de production fait maintenant le HTTPS toute seule. Avec un VPS et
+un nom de domaine, une commande met en service `https://ton-domaine.bf` — et c'est ce lien-là, la
+PWA. Voir [`docs/deploiement.md`](docs/deploiement.md).
+
+En attendant, l'application cliente s'utilise sur le réseau local (`npm run demarrer`) : tout
+fonctionne, sauf le bouton « Installer », qui exige le certificat.
+
+---
+
+## Comment reconstruire les livrables
 
 ### APK Android
 
@@ -49,10 +83,28 @@ Au premier lancement, le logiciel demande **l'adresse du serveur**. Une seule fo
 souvient ensuite. Le même installateur sert tous les restaurants.
 
 ### PWA
-La PWA est l'application cliente servie par un navigateur. Son lien **dépend de l'hébergement** :
-c'est `https://votre-domaine.bf`, une fois le déploiement fait (voir `docs/deploiement.md`).
-Le client ouvre ce lien, Chrome propose « Installer », et l'application apparaît sur son écran
-d'accueil comme n'importe quelle autre.
+Rien à construire séparément : la PWA **est** l'application cliente, servie en HTTPS. Le déploiement
+la met en ligne sur `https://ton-domaine.bf`, Chrome propose « Installer », et elle apparaît sur
+l'écran d'accueil du client comme n'importe quelle autre application.
+
+---
+
+## Tout revérifier soi-même
+
+```bash
+npm test                              # 208 tests : règles métier, API, temps réel
+npm run verifier:pwa                  # 14 contrôles : manifeste, service worker, hors ligne
+npm run verifier:parcours             # 44 contrôles : chaque rôle, dans un vrai navigateur
+```
+
+Les deux derniers demandent les serveurs lancés et la construction servie :
+`npm run dev`, `npm run dev:restaurant`, puis `npm run build --workspace @savora/client` et
+`npm run servir`.
+
+`verifier:parcours` fait ce qu'aucun test unitaire ne sait faire : il **pose un doigt** sur les
+boutons. Il existe parce que le bouton « Commander » du panier a été, un temps, dessiné sous la barre
+de navigation — visible, à moitié, et sourd. Les 202 tests étaient verts, et l'application était
+inutilisable.
 
 ---
 
