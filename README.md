@@ -10,6 +10,7 @@
 Une application cliente (PWA installable + APK Android), un logiciel restaurant (caisse, cuisine,
 tables, menu, statistiques) et un backend unique qui porte toutes les règles métier.
 
+💼 [**Vendre et installer**](docs/vendre-et-installer.md) ·
 📄 [Cahier des charges](docs/cahier-des-charges.md) ·
 🏛 [Décisions d'architecture](docs/adr/) ·
 🔌 [API](docs/api.md) ·

@@ -20,6 +20,10 @@ en ligne dit la vérité sur ce qui sort réellement de la cuisine, ou il ne dit
 
 ---
 
+> **Avant tout : [`docs/vendre-et-installer.md`](docs/vendre-et-installer.md).** Ce que tu vends
+> exactement, de quoi l'acheteur a besoin, et quelle adresse se tape où. Le reste de ce document
+> suppose que tu l'as lu.
+
 ## Les deux fichiers à télécharger, maintenant
 
 Construits sur le dernier code, le 19 septembre. Il faut être connecté à GitHub pour télécharger un
