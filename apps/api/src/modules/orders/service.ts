@@ -23,7 +23,7 @@ import {
 } from '@savora/shared';
 import { prisma } from '../../db.js';
 import { badRequest, conflict, notFound, unprocessable } from '../../lib/errors.js';
-import { emitToOrder, emitToRestaurant } from '../../lib/realtime.js';
+import { emitToOrder, emitToRestaurant, emitToUser } from '../../lib/realtime.js';
 import { notify } from '../../lib/notify.js';
 import { accrueCommission } from '../commission/service.js';
 
@@ -108,7 +108,8 @@ export async function createOrder(
   // --- Livraison ------------------------------------------------------------
   let deliveryFee = 0;
   let deliveryZoneId: string | null = null;
-  let addressFields: Record<string, string | null> = {};
+  // `number` depuis que la position GPS voyage avec le secteur et le point de repère.
+  let addressFields: Record<string, string | number | null> = {};
 
   if (input.type === 'DELIVERY') {
     const resolved = await resolveDelivery(context.restaurantId, input, context.userId ?? null);
@@ -385,13 +386,16 @@ async function resolveDelivery(
   fee: number;
   zoneId: string | null;
   minimumOrder: number;
-  fields: Record<string, string | null>;
+  fields: Record<string, string | number | null>;
 }> {
   let sector: string | null = null;
   let district: string | null = null;
   let landmark: string | null = null;
   let details: string | null = null;
   let addressId: string | null = null;
+  let latitude: number | null = null;
+  let longitude: number | null = null;
+  let accuracy: number | null = null;
 
   if (input.addressId) {
     const address = await prisma.address.findFirst({
@@ -399,12 +403,18 @@ async function resolveDelivery(
     });
     if (!address) throw notFound('Adresse introuvable.');
     ({ sector, district, landmark, details } = address);
+    // Une adresse enregistrée porte la position relevée le jour où elle a été créée.
+    latitude = address.latitude;
+    longitude = address.longitude;
     addressId = address.id;
   } else if (input.address) {
     sector = input.address.sector;
     district = input.address.district ?? null;
     landmark = input.address.landmark;
     details = input.address.details ?? null;
+    latitude = input.address.latitude ?? null;
+    longitude = input.address.longitude ?? null;
+    accuracy = input.address.accuracy ?? null;
   } else {
     throw badRequest('ADDRESS_REQUIRED', 'Une adresse de livraison est requise.');
   }
@@ -440,6 +450,12 @@ async function resolveDelivery(
       deliveryDistrict: district,
       deliveryLandmark: landmark,
       deliveryDetails: details,
+      // Ces trois champs étaient validés par le schéma puis jetés : la position n'atteignait jamais
+      // la base, et le livreur ne la voyait donc jamais. Une validation qui ne mène à rien est pire
+      // que pas de validation — elle fait croire que la fonction existe.
+      deliveryLatitude: latitude ?? null,
+      deliveryLongitude: longitude ?? null,
+      deliveryAccuracy: accuracy ?? null,
     },
   };
 }
@@ -696,7 +712,54 @@ export async function transitionOrder(input: TransitionInput): Promise<OrderWith
     });
   }
 
+  /*
+   * Le livreur, prévenu sur son propre téléphone.
+   *
+   * Il ne reçoit plus la diffusion générale du restaurant — elle contenait les commandes des autres
+   * — et il fallait donc lui parler directement. Sans ces lignes, une course lui était confiée et
+   * **rien ne le lui disait** : son écran l'apprenait au rechargement suivant, jusqu'à quinze
+   * secondes plus tard, sans alerte. Un livreur qui ne regarde pas son téléphone à la seconde près
+   * ne partait pas.
+   *
+   * Chaque changement d'état de sa course lui parvient, pas seulement l'affectation : une commande
+   * annulée alors qu'il roule doit l'atteindre avant qu'il ne frappe à la porte.
+   */
+  if (updated.courierId) {
+    emitToUser(updated.courierId, 'order:updated', updated);
+
+    const message = courierMessage(updated.status as OrderStatus, updated);
+    if (message) {
+      await notify({
+        restaurantId: input.restaurantId,
+        userId: updated.courierId,
+        title: `Course n° ${updated.dailyNumber}`,
+        body: message,
+        data: { orderId: updated.id, status: updated.status },
+      });
+    }
+  }
+
   return updated;
+}
+
+/**
+ * Ce que le livreur doit lire, et seulement quand cela le concerne.
+ *
+ * Il retourne `null` pour les états qui ne changent rien pour lui : le notifier de tout finirait par
+ * lui apprendre à ignorer ses notifications, et c'est le contraire du but.
+ */
+function courierMessage(status: OrderStatus, order: { deliverySector: string | null }): string | null {
+  const ou = order.deliverySector ? ` — ${order.deliverySector}` : '';
+  switch (status) {
+    case 'ASSIGNED':
+      return `Une course vous est confiée${ou}. Ouvrez « Ma tournée ».`;
+    case 'CANCELLED':
+      return 'Cette course est annulée. Ne vous déplacez pas.';
+    case 'DELIVERED':
+      return 'Course terminée. Merci.';
+    default:
+      return null;
+  }
 }
 
 function isCompletion(status: OrderStatus): boolean {

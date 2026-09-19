@@ -120,6 +120,14 @@ export const deliveryAddressSchema = z.object({
   details: z.string().trim().max(200).optional(),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
+  /**
+   * Précision annoncée par le téléphone, en mètres.
+   *
+   * Elle voyage avec la position parce qu'une position sans sa précision est trompeuse : le
+   * navigateur rend volontiers un point à deux kilomètres près quand il n'a que le réseau mobile
+   * pour se situer, et rien dans le chiffre ne le signale.
+   */
+  accuracy: z.number().min(0).max(100_000).optional(),
 });
 
 export const createOrderSchema = z

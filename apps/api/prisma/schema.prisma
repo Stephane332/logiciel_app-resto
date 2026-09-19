@@ -497,6 +497,17 @@ model Order {
   deliveryDistrict String?
   deliveryLandmark String?
   deliveryDetails  String?
+  /// Position transmise par le téléphone du client, quand il a accepté de la partager.
+  ///
+  /// Le secteur et le point de repère restent obligatoires et **ne sont pas remplacés** : un GPS de
+  /// téléphone se trompe de cinquante mètres sous un manguier, et cinquante mètres à Ouahigouya, ce
+  /// sont trois concessions. La position aide le livreur à s'approcher ; le point de repère lui dit
+  /// où frapper.
+  deliveryLatitude  Float?
+  deliveryLongitude Float?
+  /// Précision annoncée par le téléphone, en mètres. Au-delà de quelques centaines, la position ne
+  /// vaut rien et il faut le dire au livreur plutôt que de l'envoyer au mauvais endroit.
+  deliveryAccuracy  Float?
   deliveryZoneId   String?
   deliveryZone     DeliveryZone? @relation(fields: [deliveryZoneId], references: [id], onDelete: SetNull)
   courierId        String?

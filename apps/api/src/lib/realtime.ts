@@ -5,6 +5,7 @@
  * Le temps réel est un confort, jamais une dépendance : chaque écran critique sait aussi se
  * recharger seul si la connexion tombe (ADR 006).
  */
+import { can } from '@savora/shared';
 import { Server as SocketServer } from 'socket.io';
 import type { Server as HttpServer } from 'node:http';
 import { corsOrigins } from '../env.js';
@@ -33,9 +34,17 @@ export function initRealtime(server: HttpServer): SocketServer {
       try {
         const payload = await verifyAccessToken(token);
         socket.join(`user:${payload.sub}`);
-        // Seul le personnel rejoint le salon du restaurant : c'est là que transitent toutes les
-        // commandes, donc des données de tous les clients.
-        if (payload.role !== 'CLIENT') {
+        /*
+         * Le salon du restaurant diffuse **toutes** les commandes, donc les données de tous les
+         * clients. Y entrer demande donc exactement le droit de lire toutes les commandes — et rien
+         * de moins.
+         *
+         * La condition était `role !== 'CLIENT'`, ce qui laissait entrer le livreur : son téléphone
+         * recevait chaque commande du restaurant en temps réel, y compris celles qu'il ne livre pas.
+         * La porte REST lui était fermée, cette fenêtre restait ouverte — et un cloisonnement qui ne
+         * tient que sur un chemin sur deux ne tient pas.
+         */
+        if (can(payload.role, 'order:read:all')) {
           socket.join(`restaurant:${payload.restaurantId}`);
         }
       } catch {

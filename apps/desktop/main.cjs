@@ -22,6 +22,7 @@
 const { app, BrowserWindow, ipcMain, shell, Menu } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
+const { demarrer } = require('./serveur-local.cjs');
 
 /** Réglages, à côté des données de l'application : ils survivent à une mise à jour. */
 const configFile = path.join(app.getPath('userData'), 'serveur.json');
@@ -51,7 +52,30 @@ function ecrireServeur(serveur) {
 function normaliserServeur(saisie) {
   const texte = String(saisie || '').trim();
   if (!texte) return null;
-  const avecProtocole = /^https?:\/\//i.test(texte) ? texte : `https://${texte}`;
+
+  /*
+   * Le protocole, quand il n'est pas écrit.
+   *
+   * `https://` était ajouté systématiquement. C'est juste pour un domaine — mais faux pour un
+   * serveur posé dans l'arrière-boutique, à une adresse comme « 192.168.1.20:4000 » : celui-là n'a
+   * pas de certificat, et ne peut pas en avoir. Le logiciel refusait donc de se connecter au seul
+   * montage qui ne coûte rien au restaurateur.
+   *
+   * Une adresse IP ou un nom de machine local part donc en `http://`, un nom de domaine en
+   * `https://`. Ce que l'utilisateur écrit lui-même l'emporte toujours.
+   */
+  let avecProtocole;
+  if (/^https?:\/\//i.test(texte)) {
+    avecProtocole = texte;
+  } else {
+    const hote = texte.split('/')[0].split(':')[0];
+    const local =
+      /^\d{1,3}(\.\d{1,3}){3}$/.test(hote) ||
+      hote === 'localhost' ||
+      hote.endsWith('.local') ||
+      !hote.includes('.');
+    avecProtocole = `${local ? 'http' : 'https'}://${texte}`;
+  }
   try {
     const url = new URL(avecProtocole);
     if (!url.hostname) return null;
@@ -62,11 +86,35 @@ function normaliserServeur(saisie) {
 }
 
 let fenetre = null;
+/** Le serveur local qui sert l'interface et relaie le serveur du restaurant. */
+let local = null;
 
+/**
+ * Ouvre l'interface.
+ *
+ * Elle n'est plus chargée comme un fichier mais servie par le serveur local, sur une véritable
+ * origine `http://127.0.0.1:port`. Ce détail décide de tout : c'est ce qui rend le routeur, les
+ * appels d'API et le stockage de session possibles (voir `serveur-local.cjs`).
+ */
 function ouvrirLogiciel(serveur) {
-  fenetre.webContents.session.setPreloads([path.join(__dirname, 'preload.cjs')]);
-  process.env.SAVORA_SERVER = serveur;
-  fenetre.loadFile(path.join(__dirname, 'web', 'index.html'));
+  if (!local) {
+    // Sans serveur local, rien ne peut fonctionner : le dire plutôt que d'ouvrir une fenêtre vide.
+    void afficherPanne('Le composant interne du logiciel n\'a pas démarré.');
+    return;
+  }
+  local.definirAmont(serveur);
+  fenetre.loadURL(`${local.origine}/`);
+}
+
+function afficherPanne(message) {
+  return fenetre.loadURL(
+    `data:text/html;charset=utf-8,${encodeURIComponent(
+      `<!doctype html><html lang="fr"><body style="font-family:system-ui;padding:40px;background:#fbf8f3;color:#1a1510">
+       <h1 style="font-size:20px">Savora Pro ne peut pas démarrer</h1><p>${message}</p>
+       <p style="color:#6b6257">Fermez le logiciel et relancez-le. Si cela se reproduit, prévenez votre installateur.</p>
+       </body></html>`,
+    )}`,
+  );
 }
 
 function creerFenetre() {
@@ -116,13 +164,26 @@ ipcMain.handle('savora:changer-serveur', () => {
   fenetre.loadFile(path.join(__dirname, 'serveur.html'));
 });
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
+
+  // Le serveur local démarre avant la fenêtre : celle-ci a besoin de son adresse pour s'ouvrir.
+  try {
+    local = await demarrer({ racine: path.join(__dirname, 'web') });
+  } catch (erreur) {
+    local = null;
+    console.error('[savora] serveur local non démarré :', erreur.message);
+  }
+
   creerFenetre();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) creerFenetre();
   });
+});
+
+app.on('will-quit', () => {
+  local?.arreter();
 });
 
 app.on('window-all-closed', () => {
