@@ -286,6 +286,98 @@ describe('livraison', () => {
     expect(response.json().error.code).toBe('OUT_OF_DELIVERY_AREA');
   });
 
+  it('conserve la position donnée par le client et la transmet au livreur', async () => {
+    /*
+     * Le schéma acceptait `latitude`, `longitude` et `accuracy` depuis le début — et le service les
+     * jetait. Rien ne le signalait : la commande partait en 201, la validation semblait faire son
+     * travail, et la position n'existait nulle part. Une validation qui ne mène à rien est pire que
+     * pas de validation, parce qu'elle fait croire que la fonction est là.
+     */
+    const creation = await app.inject({
+      method: 'POST',
+      url: api('/orders'),
+      payload: {
+        type: 'DELIVERY',
+        channel: 'APP',
+        paymentMethod: 'CASH',
+        customerName: 'Awa Traoré',
+        customerPhone: '+22670333555',
+        address: {
+          sector: 'Secteur 1',
+          landmark: 'Face au château d\'eau',
+          latitude: 13.5828,
+          longitude: -2.4219,
+          accuracy: 18,
+        },
+        lines: [{ productId: fixture.friesId, quantity: 2 }],
+      },
+    });
+
+    expect(creation.statusCode, creation.body).toBe(201);
+    const { order } = creation.json();
+    expect(order.deliveryLatitude).toBeCloseTo(13.5828, 4);
+    expect(order.deliveryLongitude).toBeCloseTo(-2.4219, 4);
+    expect(order.deliveryAccuracy).toBe(18);
+    // Le repère reste exigé : la position aide à s'approcher, elle ne dit pas où frapper.
+    expect(order.deliveryLandmark).toBe('Face au château d\'eau');
+  });
+
+  it('prévient le livreur sur son téléphone quand une course lui est confiée', async () => {
+    /*
+     * Le livreur ne recevait rien du tout. Il ne fait plus partie de la diffusion générale du
+     * restaurant — elle contenait les commandes des autres clients — et personne ne lui parlait
+     * directement : son écran apprenait l'affectation au rechargement suivant, jusqu'à quinze
+     * secondes plus tard, sans alerte. Un livreur qui ne fixe pas son téléphone ne partait pas.
+     */
+    const creation = await app.inject({
+      method: 'POST',
+      url: api('/orders'),
+      payload: {
+        type: 'DELIVERY',
+        channel: 'APP',
+        paymentMethod: 'CASH',
+        customerName: 'Moussa Kanté',
+        customerPhone: '+22670333666',
+        address: { sector: 'Secteur 1', landmark: 'Près du marché' },
+        lines: [{ productId: fixture.friesId, quantity: 2 }],
+      },
+    });
+    expect(creation.statusCode, creation.body).toBe(201);
+    const orderId = creation.json().order.id;
+
+    const manager = await asManager();
+    for (const etape of ['accept', 'prepare', 'ready']) {
+      const passage = await app.inject({
+        method: 'POST',
+        url: api(`/orders/${orderId}/${etape}`),
+        headers: auth(manager),
+      });
+      expect(passage.statusCode, `${etape} : ${passage.body}`).toBe(200);
+    }
+
+    const courier = await prisma.user.findFirst({
+      where: { restaurantId: fixture.restaurantId, role: 'DELIVERY' },
+    });
+    expect(courier).not.toBeNull();
+
+    const affectation = await app.inject({
+      method: 'POST',
+      url: api(`/orders/${orderId}/assign`),
+      headers: auth(manager),
+      payload: { courierId: courier!.id },
+    });
+    expect(affectation.statusCode, affectation.body).toBe(200);
+    expect(affectation.json().order.status).toBe('ASSIGNED');
+
+    const notifications = await prisma.notification.findMany({
+      where: { userId: courier!.id },
+    });
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0]!.body).toContain('course vous est confiée');
+    // Le secteur figure dans le message : le livreur sait où il va avant d'ouvrir l'écran.
+    expect(notifications[0]!.body).toContain('Secteur 1');
+  });
+
   it('fait respecter le minimum de commande de la zone', async () => {
     const response = await app.inject({
       method: 'POST',

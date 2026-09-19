@@ -211,6 +211,11 @@ export interface Order {
   deliverySector: string | null;
   deliveryLandmark: string | null;
   deliveryDetails: string | null;
+  /** Position transmise par le client, quand il a accepté de la partager. */
+  deliveryLatitude: number | null;
+  deliveryLongitude: number | null;
+  /** Rayon d'incertitude en mètres : au-delà de quelques dizaines, à annoncer comme approximatif. */
+  deliveryAccuracy: number | null;
   deliveryZone: DeliveryZone | null;
   rejectionReason: string | null;
   acceptedAt: string | null;

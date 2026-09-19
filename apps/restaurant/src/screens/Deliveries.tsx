@@ -79,6 +79,35 @@ function Course({ order }: { order: Order }) {
         </strong>
         {order.deliveryLandmark && <p>{order.deliveryLandmark}</p>}
         {order.deliveryDetails && <p className="faint">{order.deliveryDetails}</p>}
+
+        {/*
+          * La position, quand le client l'a donnée.
+          *
+          * Un lien qui ouvre l'application de navigation du téléphone, et rien de plus : embarquer
+          * une carte dans le logiciel coûterait des mégaoctets de données mobiles au livreur pour
+          * refaire, en moins bien, ce que son téléphone fait déjà.
+          *
+          * La précision est dite en clair. Une position à trois cents mètres présentée comme exacte
+          * est plus nuisible qu'une absence de position : le livreur y arrive, ne trouve personne, et
+          * cesse de faire confiance au bouton.
+          */}
+        {order.deliveryLatitude != null && order.deliveryLongitude != null && (
+          <div className="stack" style={{ gap: 2, marginTop: 'var(--space-2)' }}>
+            <a
+              className="btn btn--ghost"
+              href={`https://www.google.com/maps/dir/?api=1&destination=${order.deliveryLatitude},${order.deliveryLongitude}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Ouvrir l'itinéraire
+            </a>
+            <span className="faint">
+              {order.deliveryAccuracy != null && order.deliveryAccuracy > 50
+                ? `Position à environ ${Math.round(order.deliveryAccuracy)} m près — fiez-vous au repère en arrivant.`
+                : 'Position précise transmise par le client.'}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="stack" style={{ gap: 'var(--space-1)' }}>

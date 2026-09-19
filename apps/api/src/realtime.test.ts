@@ -198,6 +198,31 @@ describe('cloisonnement du flux restaurant', () => {
     expect(events).toHaveLength(0);
   });
 
+  it("n'admet pas le livreur dans le flux général du restaurant", async () => {
+    /*
+     * Le cloisonnement tenait sur un chemin et pas sur l'autre.
+     *
+     * Le droit de lire toutes les commandes avait été retiré au livreur côté REST — mais la
+     * condition d'entrée dans ce salon était « tout ce qui n'est pas un client ». Son téléphone
+     * recevait donc, en direct, chaque commande du restaurant, y compris celles qu'il ne livre pas.
+     *
+     * Un cloisonnement qui ne tient que sur un chemin sur deux ne tient pas. La condition est
+     * désormais exactement le droit correspondant : `order:read:all`.
+     */
+    const courierToken = await loginAs('+22670000005');
+    const socket = connect({ token: courierToken });
+    await waitForConnection(socket);
+
+    const events: unknown[] = [];
+    socket.on('order:created', (payload: unknown) => events.push(payload));
+    socket.on('order:updated', (payload: unknown) => events.push(payload));
+
+    await createOrder();
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    expect(events).toHaveLength(0);
+  });
+
   it("n'admet pas non plus une connexion sans jeton", async () => {
     const socket = connect({});
     await waitForConnection(socket);

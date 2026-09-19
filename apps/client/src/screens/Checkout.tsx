@@ -10,6 +10,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { isValidBurkinaPhone, type OrderType, type PaymentMethod } from '@savora/shared';
+import {
+  demanderPosition,
+  estDisponible,
+  PRECISION_INUTILISABLE,
+  qualite,
+  type EtatPosition,
+} from '../lib/position';
 import { IconBag, IconBike, IconCheck, IconQr } from '../components/Icons';
 import { Header, Tag } from '../components/ui';
 import { api, ApiError } from '../lib/api';
@@ -47,6 +54,7 @@ export function Checkout() {
   const [zoneId, setZoneId] = useState<string>('');
   const [sector, setSector] = useState('');
   const [landmark, setLandmark] = useState('');
+  const [position, setPosition] = useState<EtatPosition>({ etat: 'inactif' });
   const [details, setDetails] = useState('');
   const [addressId, setAddressId] = useState<string>('');
   const [payment, setPayment] = useState<PaymentMethod>('CASH');
@@ -114,6 +122,15 @@ export function Checkout() {
             sector: selectedZone?.name ?? sector,
             landmark: landmark.trim(),
             ...(details.trim() ? { details: details.trim() } : {}),
+            // La position n'est transmise que si elle vaut quelque chose : une position à deux
+            // kilomètres près enverrait le livreur ailleurs avec l'assurance d'avoir raison.
+            ...(position.etat === 'obtenue' && position.position.accuracy <= PRECISION_INUTILISABLE
+              ? {
+                  latitude: position.position.latitude,
+                  longitude: position.position.longitude,
+                  accuracy: Math.round(position.position.accuracy),
+                }
+              : {}),
           };
       }
 
@@ -313,6 +330,64 @@ export function Checkout() {
                   </select>
                   {errors.zone && <span className="field__error">{errors.zone}</span>}
                 </div>
+
+                {/*
+                  * Le bouton de position, avant le point de repère et non à sa place.
+                  *
+                  * Il fait gagner du temps au livreur — personne n'a de numéro de rue ici. Mais le
+                  * repère reste obligatoire : un GPS de téléphone se trompe de trente à cinquante
+                  * mètres, et cinquante mètres à Ouahigouya, ce sont trois concessions. Envoyé sur
+                  * un point sans repère, le livreur sonne chez le voisin puis appelle le client :
+                  * on aurait remplacé une phrase par un appel.
+                  */}
+                {estDisponible() && (
+                  <div className="field">
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--block"
+                      disabled={position.etat === 'recherche'}
+                      onClick={async () => {
+                        setPosition({ etat: 'recherche' });
+                        setPosition(await demanderPosition());
+                      }}
+                    >
+                      {position.etat === 'recherche'
+                        ? 'Recherche de votre position…'
+                        : position.etat === 'obtenue'
+                          ? 'Actualiser ma position'
+                          : 'Donner ma position'}
+                    </button>
+
+                    {position.etat === 'obtenue' &&
+                      (qualite(position.position.accuracy) === 'insuffisante' ? (
+                        <span className="field__error">
+                          Position trop imprécise pour être utile. Décrivez un point de repère.
+                        </span>
+                      ) : (
+                        <span className="field__hint">
+                          {qualite(position.position.accuracy) === 'bonne'
+                            ? 'Position transmise au livreur.'
+                            : 'Position transmise, mais approximative : votre repère reste le plus utile.'}
+                        </span>
+                      ))}
+
+                    {position.etat === 'refusee' && (
+                      <span className="field__hint">
+                        Position refusée — aucun problème. Votre point de repère suffit.
+                      </span>
+                    )}
+
+                    {position.etat === 'indisponible' && (
+                      <span className="field__hint">{position.message}</span>
+                    )}
+
+                    {position.etat === 'inactif' && (
+                      <span className="field__hint">
+                        Facultatif. Aide le livreur à s'approcher, sans remplacer votre repère.
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <div className="field">
                   <label className="field__label" htmlFor="landmark">
