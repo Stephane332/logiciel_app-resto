@@ -38,7 +38,9 @@
     "dev:client": "npm run dev --workspace @savora/client",
     "dev:restaurant": "npm run dev --workspace @savora/restaurant",
     "build:desktop": "npm run build --workspace @savora/restaurant && node scripts/preparer-desktop.mjs",
-    "icons": "node scripts/generer-icones.mjs"
+    "icons": "node scripts/generer-icones.mjs",
+    "preparer:serveur": "node scripts/preparer-serveur-embarque.mjs",
+    "build:desktop:complet": "npm run build --workspace @savora/api && npm run build:desktop && npm run preparer:serveur"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

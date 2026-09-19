@@ -118,10 +118,33 @@ if (isProduction && env.JWT_SECRET.startsWith('dev-')) {
   throw new Error('JWT_SECRET de développement détecté en production. Générez-en un vrai.');
 }
 
-// Un relevé de commission sans numéro de reversement indique au restaurant une somme à payer sans
-// lui dire où l'envoyer. Mieux vaut le savoir au démarrage qu'à la première fin de mois.
+/**
+ * Le logiciel tourne-t-il **chez** le restaurant, embarqué dans l'application installée ?
+ *
+ * La distinction n'est pas cosmétique : elle décide de ce qu'on fait d'une configuration incomplète.
+ */
+export const estEmbarque = process.env.SAVORA_EMBARQUE === '1';
+
+/*
+ * Un relevé de commission sans numéro de reversement indique au restaurant une somme à payer sans
+ * lui dire où l'envoyer. Il faut donc le signaler — mais pas de la même façon selon l'endroit.
+ *
+ * **Sur un serveur hébergé**, l'arrêt immédiat est le bon comportement : celui qui déploie voit
+ * l'erreur dans la seconde, aucun restaurant n'est concerné, et le défaut se corrige avant d'exister.
+ *
+ * **Dans le logiciel installé sur la caisse d'un restaurant**, l'arrêt serait une faute grave. Le
+ * réglage manquant appartient à la plateforme, pas au restaurant : le restaurateur n'y peut rien, et
+ * il découvrirait une caisse qui refuse de s'ouvrir un midi de service. La disproportion est totale —
+ * un relevé imprécis contre un restaurant à l'arrêt.
+ *
+ * On avertit donc bruyamment dans les journaux, et le logiciel démarre.
+ */
 if (isProduction && !env.PLATFORM_MOMO_NUMBER) {
-  throw new Error(
-    "PLATFORM_MOMO_NUMBER est vide : le restaurant verrait sa commission due sans savoir où la reverser.",
-  );
+  const message =
+    'PLATFORM_MOMO_NUMBER est vide : le restaurant verrait sa commission due sans savoir où la reverser.';
+  if (estEmbarque) {
+    console.warn(`[savora] ${message} Le reversement devra être communiqué autrement.`);
+  } else {
+    throw new Error(message);
+  }
 }

@@ -54,6 +54,12 @@ apps/api/uploads/
 apps/desktop/web/
 apps/desktop/release/
 
+# Le serveur embarqué, assemblé par scripts/preparer-serveur-embarque.mjs : plusieurs centaines de
+# mégaoctets de binaires qui se reconstruisent à la demande. Ils n'ont rien à faire dans un dépôt.
+apps/desktop/api/
+apps/desktop/node/
+apps/desktop/postgres/
+
 # Exception à `build/` ci-dessus. `apps/desktop/build/` n'est pas une sortie de construction mais le
 # dossier de ressources d'electron-builder : l'icône de l'installateur y vit, et elle doit être
 # versionnée pour que l'intégration continue la trouve. Sans cette exception, electron-builder ne

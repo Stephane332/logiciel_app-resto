@@ -38,6 +38,16 @@ jobs:
       - name: Construire l'interface et la préparer
         run: npm run build:desktop
 
+      - name: Compiler l'API
+        # esbuild assemble l'API en y recopiant les paquets internes. Sans cela, le serveur embarqué
+        # importerait du TypeScript que Node ne sait pas lire, et ne démarrerait pas.
+        run: npm run build --workspace @savora/api
+
+      - name: Assembler le serveur embarqué
+        # L'API, ses dépendances de production, PostgreSQL et le Node qui l'exécute. C'est ce qui
+        # permet au restaurateur de double-cliquer sur un seul fichier et d'avoir tout.
+        run: node scripts/preparer-serveur-embarque.mjs --plateforme win32
+
       - name: Installer les outils d'empaquetage
         working-directory: apps/desktop
         run: npm install
@@ -50,6 +60,15 @@ jobs:
           # installation interne. Windows affichera un avertissement au premier lancement, ce que
           # le guide d'installation explique.
           CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Peser l'installateur
+        # Le logiciel voyage sur une clé USB ou par WhatsApp, sur des connexions qui ne pardonnent
+        # pas : la taille est une caractéristique du produit, pas un détail technique.
+        shell: bash
+        run: |
+          for fichier in apps/desktop/release/*.exe; do
+            echo "$(du -h "$fichier" | cut -f1)  $(basename "$fichier")" >> "$GITHUB_STEP_SUMMARY"
+          done
 
       - name: Publier l'installateur
         uses: actions/upload-artifact@v4

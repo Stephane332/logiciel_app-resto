@@ -80,8 +80,27 @@ function trouverPrisma(api) {
   return candidats.find((chemin) => fs.existsSync(chemin)) ?? null;
 }
 
-/** Le Node à utiliser : celui d'Electron dans le logiciel installé, celui du système en développement. */
+/**
+ * Le Node qui exécute l'API.
+ *
+ * Trois cas, dans cet ordre de préférence :
+ *
+ *  1. **Le Node embarqué avec le logiciel.** C'est celui du logiciel installé, et le seul dont l'ABI
+ *     correspond aux modules natifs — `argon2` et `sharp` ont été compilés contre lui.
+ *  2. **Electron en mode Node**, en développement. Suffisant pour éprouver le mécanisme, mais l'ABI
+ *     d'Electron n'est pas celle de Node : un module natif peut refuser de se charger.
+ *  3. **Le Node du système**, quand ce module est utilisé hors d'Electron — par le banc d'essai.
+ */
 function commandeNode() {
+  const candidats = [
+    process.env.SAVORA_NODE_BIN,
+    path.join(__dirname, 'node', process.platform === 'win32' ? 'node.exe' : 'node'),
+    path.join(process.resourcesPath ?? '', 'node', process.platform === 'win32' ? 'node.exe' : 'node'),
+  ].filter(Boolean);
+
+  const embarque = candidats.find((chemin) => fs.existsSync(chemin));
+  if (embarque) return { commande: embarque, env: {} };
+
   const estElectron = Boolean(process.versions.electron);
   return {
     commande: process.execPath,
@@ -96,6 +115,9 @@ function environnementDe({ api, racineDonnees, urlBase }) {
     ...process.env,
     ...envNode,
     NODE_ENV: 'production',
+    // Dit à l'API qu'elle tourne chez un restaurant, sur sa caisse : une configuration incomplète de
+    // la plateforme doit l'avertir, pas l'empêcher de démarrer un midi de service.
+    SAVORA_EMBARQUE: '1',
     PORT: String(PORT),
     // Sur tout le réseau : c'est ce qui rend le PC de la caisse joignable par les tablettes.
     HOST: '0.0.0.0',

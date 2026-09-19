@@ -17,10 +17,28 @@
   "build": {
     "appId": "app.savora.pro",
     "productName": "Savora Pro",
-    "directories": { "output": "release", "buildResources": "build" },
-    "files": ["main.cjs", "preload.cjs", "serveur.html", "web/**"],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "serveur.html",
+      "serveur-local.cjs",
+      "base-embarquee.cjs",
+      "api-embarquee.cjs",
+      "web/**"
+    ],
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "build/icone.ico"
     },
     "nsis": {
@@ -30,6 +48,35 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Savora Pro"
     },
-    "linux": { "target": ["AppImage"], "category": "Office" }
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Office"
+    },
+    "extraResources": [
+      {
+        "from": "api",
+        "to": "api",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node",
+        "to": "node",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "postgres",
+        "to": "postgres",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "compression": "normal"
   }
 }
