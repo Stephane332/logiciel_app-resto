@@ -282,6 +282,37 @@ try {
   })).json()).accessToken;
   const refus = await fetch(`${API}/commission/summary`, { headers: { authorization: `Bearer ${jeton}` } });
   v('Le serveur refuse la commission à la cuisine', refus.status === 401 || refus.status === 403, `HTTP ${refus.status}`);
+
+  /*
+   * Et le mur qui compte le plus : un compte **client** ne doit toucher à rien du restaurant.
+   *
+   * L'interface du logiciel refuse déjà un rôle CLIENT à la connexion, mais c'est une politesse : le
+   * jeton, lui, s'obtient depuis l'application cliente et s'utilise avec n'importe quel outil.
+   */
+  const inscription = await fetch(`${API}/auth/register`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'Contrôle Parcours', phone: '70998877', password: MOT_DE_PASSE }),
+  });
+  const jetonClient = inscription.ok
+    ? (await inscription.json()).accessToken
+    : (await (await fetch(`${API}/auth/login`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ phone: '70998877', password: MOT_DE_PASSE }),
+      })).json()).accessToken;
+
+  const interdits = ['orders', 'stats/today', 'commission/summary', 'delivery/mine', 'restaurant/setup'];
+  const codes = [];
+  for (const route of interdits) {
+    const reponse = await fetch(`${API}/${route}`, { headers: { authorization: `Bearer ${jetonClient}` } });
+    codes.push(`${route}:${reponse.status}`);
+  }
+  v(
+    "Un compte client ne touche à aucun écran du restaurant",
+    codes.every((c) => c.endsWith(':401') || c.endsWith(':403')),
+    codes.join('  '),
+  );
 } finally {
   await navigateur.close();
 }
