@@ -1038,6 +1038,44 @@ describe('prix figés à la commande', () => {
   });
 });
 
+describe('origines admises (CORS)', () => {
+  /*
+   * L'APK s'installait, s'ouvrait, et restait vide.
+   *
+   * Servie par le téléphone, l'application a sa propre origine — celle que déclare Capacitor — et
+   * chaque appel d'API devient une requête entre origines. Elle n'était autorisée nulle part :
+   * l'API répondait 200 sans en-tête `Access-Control-Allow-Origin`, et le navigateur embarqué jetait
+   * la réponse. Côté serveur, les journaux ne montraient que des requêtes réussies — c'est ce qui
+   * rend ce défaut si difficile à voir.
+   */
+  it('admet l\'application installée sur un téléphone', async () => {
+    const reponse = await app.inject({
+      method: 'GET',
+      url: api('/menu'),
+      headers: { origin: 'https://app.savora.bf' },
+    });
+    expect(reponse.statusCode).toBe(200);
+    expect(reponse.headers['access-control-allow-origin']).toBe('https://app.savora.bf');
+  });
+
+  it('admet aussi les schémas propres à Capacitor', async () => {
+    for (const origine of ['capacitor://localhost', 'https://localhost']) {
+      const reponse = await app.inject({ method: 'GET', url: api('/menu'), headers: { origin: origine } });
+      expect(reponse.headers['access-control-allow-origin'], origine).toBe(origine);
+    }
+  });
+
+  it('refuse une origine inconnue', async () => {
+    // Sans en-tête en réponse, le navigateur jette le résultat : c'est exactement le refus attendu.
+    const reponse = await app.inject({
+      method: 'GET',
+      url: api('/menu'),
+      headers: { origin: 'https://site-malveillant.example' },
+    });
+    expect(reponse.headers['access-control-allow-origin']).toBeUndefined();
+  });
+});
+
 describe('authentification', () => {
   it('donne la même réponse pour un numéro inconnu et un mot de passe faux', async () => {
     const unknown = await app.inject({

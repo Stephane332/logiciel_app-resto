@@ -9,7 +9,7 @@ import { Prisma } from '@prisma/client';
 import { TransitionError, ForbiddenError, MoneyError, PricingError } from '@savora/shared';
 import { resolve } from 'node:path';
 import { mkdirSync } from 'node:fs';
-import { corsOrigins, env, isProduction, isTest } from './env.js';
+import { env, isProduction, isTest, originAutorisee } from './env.js';
 import { AppError } from './lib/errors.js';
 import { attachAuth } from './lib/guards.js';
 import { registerRoutes } from './routes.js';
@@ -24,7 +24,15 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   await app.register(helmet, { contentSecurityPolicy: false });
-  await app.register(cors, { origin: corsOrigins, credentials: true });
+  /*
+   * Le contrôle passe par une fonction plutôt qu'une liste : l'application installée sur un
+   * téléphone a sa propre origine, et le réseau local doit rester essayable avant l'hébergement.
+   * `originAutorisee` dit précisément qui entre, et pourquoi (voir env.ts).
+   */
+  await app.register(cors, {
+    origin: (origine, rappel) => rappel(null, originAutorisee(origine ?? undefined)),
+    credentials: true,
+  });
 
   // Limitation de débit globale. Les routes sensibles (authentification, création de commande,
   // webhooks) resserrent encore la limite localement.

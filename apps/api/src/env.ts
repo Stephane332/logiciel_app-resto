@@ -15,6 +15,13 @@ const schema = z.object({
   ACCESS_TOKEN_TTL: z.string().default('15m'),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(30),
   CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:5174'),
+  /**
+   * Nom d'hôte déclaré par l'application mobile (`server.hostname` de capacitor.config.ts).
+   *
+   * Il doit correspondre : c'est l'origine que l'APK présente à chaque requête, et une valeur
+   * différente ici suffit à rendre l'application muette sans qu'aucun journal ne l'indique.
+   */
+  MOBILE_HOSTNAME: z.string().default('app.savora.bf'),
   PUBLIC_CLIENT_URL: z.string().default('http://localhost:5173'),
   PAYMENT_PROVIDER: z.enum(['declared', 'sandbox', 'cinetpay', 'ligdicash']).default('declared'),
   PAYMENT_WEBHOOK_SECRET: z.string().default('dev-webhook-secret'),
@@ -53,6 +60,59 @@ export const isTest = env.NODE_ENV === 'test';
 export const corsOrigins = env.CORS_ORIGINS.split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+/**
+ * Origines de l'application installée sur un téléphone.
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  Une application installée n'a pas l'origine du serveur. Elle a la sienne.    │
+ * └──────────────────────────────────────────────────────────────────────────────┘
+ *
+ * Sur le web, l'application et son API partagent le domaine : aucune requête ne franchit d'origine,
+ * et le CORS ne se pose pas. Installée en APK, elle est servie par le téléphone lui-même, sous
+ * l'origine que déclare Capacitor — `https://app.savora.bf` par défaut. Chaque appel d'API devient
+ * donc une requête entre origines.
+ *
+ * Elle n'était autorisée nulle part. L'API répondait 200 sans en-tête `Access-Control-Allow-Origin`,
+ * et le navigateur embarqué jetait la réponse : l'APK s'installait, s'ouvrait, et restait vide. Le
+ * défaut est invisible côté serveur — les journaux ne montrent que des requêtes réussies.
+ *
+ * Ces origines sont donc admises en plus des domaines configurés. Elles sont nommées une par une :
+ * on n'ouvre pas le CORS en grand pour faire marcher une application.
+ */
+export const mobileOrigins = [
+  // L'origine déclarée par Capacitor (`server.hostname` dans capacitor.config.ts).
+  `https://${env.MOBILE_HOSTNAME}`,
+  // Les schémas propres à Capacitor et Ionic, selon la version et la plate-forme.
+  'capacitor://localhost',
+  'ionic://localhost',
+  // Android en schéma http, et iOS via WKWebView.
+  'http://localhost',
+  'https://localhost',
+];
+
+/**
+ * Toutes les origines admises.
+ *
+ * En développement, on accepte en plus les adresses du réseau local : c'est depuis un téléphone du
+ * même Wi-Fi qu'on essaie l'application, et refuser cette origine rendrait tout essai impossible
+ * avant l'hébergement. La tolérance s'arrête à la production, où seules les origines nommées
+ * passent.
+ */
+export function originAutorisee(origine: string | undefined): boolean {
+  // Pas d'origine : requête directe (curl, application à application). Le CORS ne la concerne pas.
+  if (!origine) return true;
+  if (corsOrigins.includes(origine) || mobileOrigins.includes(origine)) return true;
+
+  if (!isProduction) {
+    // Plages privées uniquement : 192.168.x.x, 10.x.x.x, 172.16–31.x.x, et la boucle locale.
+    return /^https?:\/\/(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?$/.test(
+      origine,
+    );
+  }
+
+  return false;
+}
 
 if (isProduction && env.JWT_SECRET.startsWith('dev-')) {
   throw new Error('JWT_SECRET de développement détecté en production. Générez-en un vrai.');
