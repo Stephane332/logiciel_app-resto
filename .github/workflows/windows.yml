@@ -14,6 +14,11 @@ jobs:
   windows:
     name: Construire l'installateur
     runs-on: windows-latest
+    # Six heures est la limite par défaut d'un travail GitHub. Une étape qui se bloque sur une
+    # requête réseau les consommerait toutes avant de rendre la main, et l'on ne saurait qu'au bout
+    # de six heures qu'il fallait simplement relancer. Trente minutes couvrent largement une
+    # construction complète : la référence est de douze.
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +51,12 @@ jobs:
       - name: Assembler le serveur embarqué
         # L'API, ses dépendances de production, PostgreSQL et le Node qui l'exécute. C'est ce qui
         # permet au restaurateur de double-cliquer sur un seul fichier et d'avoir tout.
+        #
+        # C'est aussi la seule étape qui télécharge de gros fichiers depuis des serveurs tiers —
+        # donc la seule qui puisse rester suspendue sur une requête sans fin. Elle a été vue tourner
+        # vingt-deux minutes là où huit suffisent d'ordinaire. Une limite propre vaut mieux qu'un
+        # travail qui paraît avancer : on relance, au lieu d'attendre.
+        timeout-minutes: 18
         run: node scripts/preparer-serveur-embarque.mjs --plateforme win32
         env:
           # Le numéro qui reçoit la commission de la plateforme. Il appartient au concepteur, pas au

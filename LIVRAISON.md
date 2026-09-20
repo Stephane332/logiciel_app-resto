@@ -32,11 +32,16 @@ Il faut être connecté à GitHub pour télécharger un artefact.
 
 | Quoi | Où | Taille |
 |---|---|---|
-| **Logiciel Windows** | [construction du 20/09](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35530660202) → artefact `savora-pro-windows` | ~229 Mo |
-| **APK Android** | [construction du 20/09](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35530658962) → artefact `savora-apk` | ~4 Mo |
+| **Logiciel Windows** | [construction du 20/09](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35530993554) → artefact `savora-pro-windows` | ~229 Mo |
+| **APK Android** | [construction du 20/09](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35530991751) → artefact `savora-apk` | 3,9 Mo |
 
-Construits sur le commit `fcf93ff`, celui qui ferme la fuite du suivi public. Les versions
-antérieures la portent encore : ce sont ces deux-là qu'il faut installer.
+Construits sur le commit `15608a7`, celui qui ferme la fuite du suivi public et admet l'application
+publiée en ligne. Les versions antérieures portent encore la fuite : ce sont ces deux-là qu'il faut
+installer.
+
+> **Un artefact GitHub expire au bout de 30 jours.** Celui-ci disparaît le **20 octobre 2026**. Pour
+> une vente, garde une copie du fichier sur une clé ou un disque — ou relance simplement le workflow,
+> qui reconstruit à l'identique.
 
 ### Le logiciel Windows porte tout
 
