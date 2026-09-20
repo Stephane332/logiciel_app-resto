@@ -64,7 +64,12 @@ jobs:
       # publier sur Pages, pas *créer* le site Pages. `enablement: true` échoue donc sur
       # « Resource not accessible by integration », un message qui ne dit rien de ce qu'il faut
       # faire. On pose la question nous-mêmes, pour répondre en clair.
+      #
+      # On la pose **sans couper ici**, et c'est délibéré : un premier jet coupait à cet endroit, si
+      # bien que tant que Pages restait éteint, la construction n'était plus ni faite ni vérifiée.
+      # Un réglage manquant chez l'hébergeur n'a pas à suspendre le contrôle du code.
       - name: Pages est-il activé ?
+        id: etat
         env:
           JETON: ${{ github.token }}
         run: |
@@ -73,32 +78,38 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${{ github.repository }}/pages")
 
-          if [ "$code" = "404" ]; then
-            {
-              echo "## GitHub Pages n'est pas encore activé"
-              echo ""
-              echo "Une seule fois, puis plus jamais :"
-              echo ""
-              echo "1. **Settings** (onglet du dépôt) → **Pages** (colonne de gauche)"
-              echo "2. *Build and deployment* → **Source** → choisir **GitHub Actions**"
-              echo "3. Revenir ici et relancer ce workflow (bouton **Re-run all jobs**)"
-              echo ""
-              echo "L'adresse sera alors **https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/**"
-            } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error::GitHub Pages n'est pas activé. Settings → Pages → Source → GitHub Actions, puis relancer."
-            exit 1
+          if [ "$code" = "200" ]; then
+            echo "actif=true" >> "$GITHUB_OUTPUT"
+            echo "Pages est activé."
+          else
+            echo "actif=false" >> "$GITHUB_OUTPUT"
+            echo "Pages n'est pas activé (HTTP $code) — on construit et on vérifie quand même."
           fi
-          echo "Pages est activé (HTTP $code)."
 
       - name: Préparer Pages
         id: pages
+        if: steps.etat.outputs.actif == 'true'
         uses: actions/configure-pages@v5
+
+      # La base vient de Pages quand il est activé — lui seul sait si un domaine personnalisé est en
+      # service, auquel cas l'application vit à la racine. Sinon on la déduit du nom du dépôt, qui
+      # est exactement ce que Pages servira une fois activé.
+      - name: Choisir la base de construction
+        id: base
+        env:
+          ACTIF: ${{ steps.etat.outputs.actif }}
+          DEPUIS_PAGES: ${{ steps.pages.outputs.base_path }}
+          DEPOT: ${{ github.event.repository.name }}
+        run: |
+          if [ "$ACTIF" = "true" ]; then chemin="${DEPUIS_PAGES}/"; else chemin="/${DEPOT}/"; fi
+          echo "chemin=$chemin" >> "$GITHUB_OUTPUT"
+          echo "Base de construction : $chemin"
 
       - name: Construire l'application
         env:
           # GitHub Pages sert chaque dépôt sous son nom : l'application ne vit pas à la racine du
           # domaine, et tout en découle — scripts, service worker, manifeste, routeur.
-          VITE_BASE: ${{ steps.pages.outputs.base_path }}/
+          VITE_BASE: ${{ steps.base.outputs.chemin }}
           # Aucune API n'est jointe à cette construction : l'application demandera son serveur.
           VITE_ASK_SERVER: '1'
         run: npm run build --workspace @savora/client
@@ -108,7 +119,7 @@ jobs:
         # menant à une page blanche — et le défaut ne se verrait qu'après coup, sur un téléphone.
         shell: bash
         run: |
-          base="${{ steps.pages.outputs.base_path }}/"
+          base="${{ steps.base.outputs.chemin }}"
           echo "Base attendue : $base"
 
           grep -q "\"start_url\":\"$base\"" apps/client/dist/manifest.webmanifest \
@@ -124,16 +135,40 @@ jobs:
 
           echo "Manifeste, scripts et service worker cohérents avec $base" >> "$GITHUB_STEP_SUMMARY"
 
+      # La construction est faite et vérifiée. Reste à publier — et là, il faut que Pages existe.
+      - name: Il manque un réglage pour publier
+        if: steps.etat.outputs.actif != 'true'
+        run: |
+          {
+            echo "## La construction est bonne, mais GitHub Pages n'est pas activé"
+            echo ""
+            echo "Tout a été construit et vérifié ; il ne manque qu'un réglage, une seule fois :"
+            echo ""
+            echo "1. **Settings** (onglet du dépôt) → **Pages** (colonne de gauche)"
+            echo "2. *Build and deployment* → **Source** → choisir **GitHub Actions**"
+            echo "3. Revenir ici et relancer ce workflow (bouton **Re-run all jobs**)"
+            echo ""
+            echo "L'adresse sera alors **https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/**"
+            echo ""
+            echo "_Le jeton d'un workflow ne peut pas créer le site Pages lui-même : ce droit"
+            echo "n'appartient qu'au propriétaire du dépôt._"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::GitHub Pages n'est pas activé. Settings → Pages → Source → GitHub Actions, puis relancer."
+          exit 1
+
       - name: Déposer l'application
+        if: steps.etat.outputs.actif == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: apps/client/dist
 
       - name: Publier
         id: deploiement
+        if: steps.etat.outputs.actif == 'true'
         uses: actions/deploy-pages@v4
 
       - name: Annoncer l'adresse
+        if: steps.etat.outputs.actif == 'true'
         run: |
           {
             echo "## L'application est en ligne"
