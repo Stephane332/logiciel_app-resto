@@ -33,7 +33,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
-import { resolve, join } from 'node:path';
+import { resolve, join, dirname } from 'node:path';
 
 const arguments_ = process.argv.slice(2);
 const option = (nom, defaut) => {
@@ -65,24 +65,39 @@ function etape(texte) {
 }
 
 /**
- * Le nom réel d'un outil selon la plate-forme.
+ * npm, appelé sans passer par `npm.cmd`.
  *
- * Sous Windows, `npm` et `npx` sont des scripts `.cmd` : `spawnSync('npm', …)` ne les trouve pas et
- * renvoie un code `null` — un échec muet qui ne dit pas qu'il s'agit d'un nom de fichier. C'est
- * exactement ainsi que la première construction Windows a échoué, et le message d'origine ne
- * permettait pas de le voir.
+ * Deux échecs de construction Windows ont mené ici, et chacun cachait le suivant.
  *
- * On nomme donc l'exécutable réel plutôt que de passer par un interpréteur de commandes : `shell:
- * true` règlerait aussi le problème, mais en réintroduisant les ennuis de guillemets sur les chemins
- * qui contiennent des espaces — et « C:\Program Files » en contient.
+ * `spawnSync('npm', …)` ne trouve rien sous Windows : le fichier s'appelle `npm.cmd`. Mais le nommer
+ * ne suffit pas non plus — Node refuse désormais de lancer un `.cmd` sans interpréteur, par
+ * protection contre l'injection de commandes :
+ *
+ *     Error: npm.cmd n'a pas pu être lancé : spawnSync npm.cmd EINVAL
+ *
+ * `shell: true` lèverait l'interdit, au prix des ennuis de guillemets sur les chemins à espaces — et
+ * « C:\Program Files » en contient. On contourne donc par la racine : `npm.cmd` n'est qu'un
+ * lanceur autour d'un fichier JavaScript, et ce fichier, Node sait l'exécuter directement. Pas
+ * d'interpréteur, pas de guillemets, pas de différence entre les plates-formes.
  */
-function outil(nom) {
-  if (process.platform !== 'win32') return nom;
-  return ['npm', 'npx'].includes(nom) ? `${nom}.cmd` : nom;
+function npmCli() {
+  const racineNode = dirname(process.execPath);
+  const candidats = [
+    // Windows : npm est installé à côté de node.exe.
+    join(racineNode, 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+    // Unix : node est dans bin/, npm un niveau au-dessus.
+    join(racineNode, '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+    join(racineNode, '..', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+  ];
+  const trouve = candidats.find((chemin) => existsSync(chemin));
+  if (!trouve) {
+    throw new Error(`npm est introuvable à côté de ${process.execPath}.`);
+  }
+  return trouve;
 }
 
 function executer(commande, args, options = {}) {
-  const reel = outil(commande);
+  const reel = commande;
   const resultat = spawnSync(reel, args, { stdio: 'inherit', ...options });
 
   // `error` est renseigné quand le processus n'a pas pu être lancé du tout — nom introuvable, droits
@@ -149,13 +164,24 @@ writeFileSync(
 );
 
 etape('Installation des dépendances du serveur (production uniquement)');
-executer('npm', ['install', '--omit=dev', '--no-audit', '--no-fund'], { cwd: API_CIBLE });
+executer(process.execPath, [npmCli(), 'install', '--omit=dev', '--no-audit', '--no-fund'], {
+  cwd: API_CIBLE,
+});
 
 // Le client Prisma et son moteur de requêtes, pour la plate-forme du runner.
 etape('Génération du client Prisma');
-executer('npx', ['prisma', 'generate', '--schema', join(API_CIBLE, 'prisma', 'schema.prisma')], {
-  cwd: API_CIBLE,
-});
+// Prisma vient d'être installé dans le dossier assemblé : on l'appelle là où il est, plutôt que de
+// passer par `npx`, qui est lui aussi un `.cmd` sous Windows.
+executer(
+  process.execPath,
+  [
+    join(API_CIBLE, 'node_modules', 'prisma', 'build', 'index.js'),
+    'generate',
+    '--schema',
+    join(API_CIBLE, 'prisma', 'schema.prisma'),
+  ],
+  { cwd: API_CIBLE },
+);
 
 /*
  * Élagage.
