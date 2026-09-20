@@ -1,0 +1,116 @@
+name: PWA publique
+
+# Publie l'application cliente sur GitHub Pages — une adresse stable, en HTTPS, gratuite.
+#
+# ┌──────────────────────────────────────────────────────────────────────────────┐
+# │  Une PWA s'héberge gratuitement. Une API, non. Les deux ne se confondent pas. │
+# └──────────────────────────────────────────────────────────────────────────────┘
+#
+# Ce que cette adresse donne, et c'est déjà beaucoup : un lien qu'on envoie, qui s'ouvre sur
+# n'importe quel téléphone, et que Safari comme Chrome savent **installer** sur l'écran d'accueil.
+# C'est la seule voie pour un client sur iPhone, qui n'installe pas d'APK.
+#
+# Ce qu'elle ne donne pas : les plats et les commandes. Ceux-là vivent dans l'API du restaurant, que
+# GitHub Pages ne peut pas faire tourner. L'application déposée ici demande donc l'adresse de son
+# serveur au premier lancement — et une page en HTTPS ne peut appeler qu'une API en HTTPS.
+#
+# Elle devient donc pleinement fonctionnelle dès qu'un restaurant a une adresse sécurisée : un
+# sous-domaine gratuit (DuckDNS) sur son propre PC suffit, et le nom de domaine reste facultatif.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/**', main]
+    paths:
+      - 'apps/client/**'
+      - 'packages/**'
+      - '.github/workflows/pwa.yml'
+
+# Un seul déploiement à la fois : deux publications simultanées laisseraient l'adresse dans un état
+# indéterminé, à moitié ancienne et à moitié nouvelle.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publier:
+    name: Construire et publier
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      # `pages: write` permet aussi d'activer Pages depuis le workflow : aucun réglage à faire à la
+      # main dans les paramètres du dépôt.
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Préparer Pages
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          # Active Pages sur le dépôt si ce n'est pas déjà fait.
+          enablement: true
+
+      - name: Construire l'application
+        env:
+          # GitHub Pages sert chaque dépôt sous son nom : l'application ne vit pas à la racine du
+          # domaine, et tout en découle — scripts, service worker, manifeste, routeur.
+          VITE_BASE: ${{ steps.pages.outputs.base_path }}/
+          # Aucune API n'est jointe à cette construction : l'application demandera son serveur.
+          VITE_ASK_SERVER: '1'
+        run: npm run build --workspace @savora/client
+
+      - name: Vérifier que la construction tient debout
+        # Un déploiement qui publierait un manifeste pointant à côté donnerait une icône installée
+        # menant à une page blanche — et le défaut ne se verrait qu'après coup, sur un téléphone.
+        shell: bash
+        run: |
+          base="${{ steps.pages.outputs.base_path }}/"
+          echo "Base attendue : $base"
+
+          grep -q "\"start_url\":\"$base\"" apps/client/dist/manifest.webmanifest \
+            || { echo "::error::Le manifeste ne démarre pas sur $base"; exit 1; }
+          grep -q "\"scope\":\"$base\"" apps/client/dist/manifest.webmanifest \
+            || { echo "::error::Le périmètre du manifeste n'est pas $base"; exit 1; }
+          grep -q "src=\"$base" apps/client/dist/index.html \
+            || { echo "::error::Les scripts de la page ne pointent pas vers $base"; exit 1; }
+          test -f apps/client/dist/sw.js \
+            || { echo "::error::Aucun service worker : sans lui, pas d'installation"; exit 1; }
+          test -f apps/client/dist/404.html \
+            || { echo "::error::Aucun repli 404.html : un lien partagé tomberait sur l'erreur de GitHub"; exit 1; }
+
+          echo "Manifeste, scripts et service worker cohérents avec $base" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Déposer l'application
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/client/dist
+
+      - name: Publier
+        id: deploiement
+        uses: actions/deploy-pages@v4
+
+      - name: Annoncer l'adresse
+        run: |
+          {
+            echo "## L'application est en ligne"
+            echo ""
+            echo "${{ steps.deploiement.outputs.page_url }}"
+            echo ""
+            echo "Sur iPhone : ouvrir dans **Safari**, bouton Partager, « Sur l'écran d'accueil »."
+            echo "Sur Android : Chrome, menu ⋮, « Installer l'application »."
+          } >> "$GITHUB_STEP_SUMMARY"

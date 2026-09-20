@@ -24,6 +24,7 @@
     "verifier:iphone": "node scripts/verifier-iphone.mjs",
     "verifier:parcours": "node scripts/verifier-parcours.mjs",
     "verifier:logiciel": "node scripts/verifier-logiciel.mjs",
+    "verifier:pages": "node scripts/verifier-pages.mjs",
     "check:sources": "node scripts/check-sources.mjs",
     "test": "npm run check:sources && vitest run",
     "test:watch": "vitest",

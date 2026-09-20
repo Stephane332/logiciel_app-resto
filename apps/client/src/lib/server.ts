@@ -75,11 +75,34 @@ export function normaliser(saisie: string): string {
 }
 
 /**
+ * Construction destinée à un hébergeur de fichiers statiques.
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  Une PWA s'héberge gratuitement en HTTPS. Une API, non.                       │
+ * └──────────────────────────────────────────────────────────────────────────────┘
+ *
+ * GitHub Pages, Vercel, Netlify servent des fichiers — et servent très bien une PWA, avec une
+ * adresse stable et un certificat. Ce qu'ils ne font pas, c'est faire tourner une API et une base de
+ * données. Or une page servie en `https://` ne peut pas appeler une API en `http://` : le navigateur
+ * refuse le contenu mixte.
+ *
+ * Une construction pour ce genre d'hébergeur doit donc **demander l'adresse de son API**, comme
+ * l'APK le fait déjà. C'est la seule différence, et elle ne concerne que ce cas : servie par son
+ * propre serveur, l'application garde son adresse relative et ne demande rien à personne.
+ */
+const HEBERGEMENT_STATIQUE = import.meta.env.VITE_ASK_SERVER === '1';
+
+/**
  * Vrai lorsque l'application ne sait pas à quel serveur s'adresser et doit le demander.
- * Uniquement en natif : sur le web, l'adresse relative fonctionne toujours.
+ *
+ * Deux situations, et deux seulement : l'application installée en APK, qui n'a pas d'origine à
+ * partager, et une construction déposée chez un hébergeur de fichiers statiques. Servie par son
+ * propre serveur — le cas normal — l'adresse relative fonctionne toujours et rien n'est demandé.
  */
 export function serveurManquant(): boolean {
-  return estNatif() && !FIXEE && !lireEnregistre();
+  if (FIXEE) return false;
+  if (lireEnregistre()) return false;
+  return estNatif() || HEBERGEMENT_STATIQUE;
 }
 
 /** Base des appels d'API. */
