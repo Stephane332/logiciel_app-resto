@@ -40,6 +40,24 @@ describe('code USSD', () => {
     }
   });
 
+  it('retire l\'indicatif sur TOUS les modèles, paiement comme transfert', () => {
+    /*
+     * La règle ne vaut pas que pour le code marchand : aucun code du menu opérateur n'accepte le
+     * numéro avec son indicatif — ni le paiement `*144*10*`, ni le transfert `*144*2*1*`, ni Moov.
+     *
+     * Ce contrôle parcourt le catalogue entier plutôt que de nommer trois modèles. Un modèle ajouté
+     * demain sera donc couvert sans que personne n'ait à y penser — et c'est le seul moyen d'éviter
+     * qu'un quatrième code réintroduise un jour l'erreur, sur le chemin de l'argent.
+     */
+    for (const [nom, modele] of Object.entries(USSD_TEMPLATES)) {
+      const code = buildUssdCode({ template: modele, merchantNumber: '+226 66 79 80 31', amount: 250 });
+      expect(code, nom).toContain('66798031');
+      expect(code, `${nom} garde l'indicatif`).not.toContain('22666798031');
+      // Et le montant reste le montant : la substitution se fait par marqueur, jamais par position.
+      expect(code, nom).toContain('250');
+    }
+  });
+
   it('ne confond pas un numéro local commençant par 226 avec un indicatif', () => {
     // Un numéro à huit chiffres reste intact, même s'il commence par les mêmes chiffres que
     // l'indicatif : le retirer produirait un numéro de cinq chiffres et un code muet.
