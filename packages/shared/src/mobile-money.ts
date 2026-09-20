@@ -79,10 +79,41 @@ export class UssdError extends Error {
  * dans les réglages produirait sinon un code USSD invalide, et l'échec serait
  * silencieux — le clavier s'ouvrirait sur un code qui ne fait rien.
  */
+/**
+ * Le numéro tel qu'on le compose ici, sans indicatif.
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  Le menu de l'opérateur attend huit chiffres. Pas onze.                       │
+ * └──────────────────────────────────────────────────────────────────────────────┘
+ *
+ * Le reste du système range les numéros sous leur forme internationale — « +22666798031 » — parce
+ * que c'est la seule qui ne prête pas à confusion en base. Mais un code USSD n'est pas une base de
+ * données : il est composé sur un clavier de téléphone, dans le menu de l'opérateur, qui veut le
+ * numéro local.
+ *
+ * Retirer seulement les espaces produisait donc `*144*10*22666798031*1500#` dès que le numéro
+ * marchand portait son indicatif — et un restaurateur l'écrit volontiers ainsi, surtout si rien ne
+ * lui dit le contraire. Le code s'ouvrait sur le clavier, l'opérateur le refusait, et le client
+ * croyait avoir payé. Un échec silencieux sur le chemin de l'argent.
+ *
+ * On ne valide pas le numéro plus loin que cela : les numéros marchands ne suivent pas toujours les
+ * plages des numéros personnels, et refuser un numéro valide serait pire que de laisser passer un
+ * numéro douteux — le restaurateur verrait son moyen de paiement inutilisable sans savoir pourquoi.
+ */
+function numeroLocal(saisie: string): string {
+  const chiffres = saisie.replace(/\D/g, '');
+  // « 00226… » puis « 226… » : les deux écritures de l'indicatif, dans cet ordre.
+  const sansZeros = chiffres.startsWith('00') ? chiffres.slice(2) : chiffres;
+  if (sansZeros.startsWith('226') && sansZeros.length > 8) {
+    return sansZeros.slice(3);
+  }
+  return sansZeros;
+}
+
 export function buildUssdCode(input: UssdInput): string {
   assertAmount(input.amount, 'montant du paiement');
 
-  const digits = input.merchantNumber.replace(/\D/g, '');
+  const digits = numeroLocal(input.merchantNumber);
   if (digits.length < 8) {
     throw new UssdError('Numéro marchand incomplet : au moins 8 chiffres attendus.');
   }

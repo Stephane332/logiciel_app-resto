@@ -32,8 +32,18 @@ const schema = z.object({
   /// Numéro qui reçoit le reversement de la commission.
   PLATFORM_MOMO_NUMBER: z.string().default(''),
   PLATFORM_MOMO_OPERATOR: z.enum(['ORANGE_MONEY', 'MOOV_MONEY']).default('ORANGE_MONEY'),
-  /// Modèle USSD du transfert. Réglable, parce qu'un code d'opérateur change sans prévenir.
-  PLATFORM_MOMO_USSD: z.string().default('*144*2*1*{NUM}*{MONTANT}#'),
+  /**
+   * Modèle USSD du reversement de la commission.
+   *
+   * Le défaut portait `*144*2*1*…`, le code d'un **transfert** entre particuliers. Or le reversement
+   * se fait sur le numéro marchand de la plateforme, et son code est `*144*10*…` — le même que celui
+   * qu'un client utilise pour payer un restaurant. Les deux codes se ressemblent et n'aboutissent pas
+   * au même endroit : le restaurant aurait composé un transfert là où un paiement marchand était
+   * attendu.
+   *
+   * Réglable, parce qu'un code d'opérateur change sans prévenir.
+   */
+  PLATFORM_MOMO_USSD: z.string().default('*144*10*{NUM}*{MONTANT}#'),
 
   /// Dossier des photos envoyées par le restaurant. Doit être un volume persistant en production :
   /// stocké dans le conteneur, le catalogue photographique disparaîtrait au premier redéploiement.

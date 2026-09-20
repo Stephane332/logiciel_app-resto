@@ -25,6 +25,29 @@ describe('code USSD', () => {
     ).toBe('*144*10*76055792*500#');
   });
 
+  it('retire l\'indicatif du pays, que l\'opérateur ne veut pas', () => {
+    /*
+     * Le reste du système range les numéros sous leur forme internationale. Le menu de l'opérateur,
+     * lui, attend huit chiffres — et un restaurateur écrit volontiers son numéro avec l'indicatif.
+     * Sans ce nettoyage le code devenait `*144*10*22666798031*…#` : il s'ouvrait sur le clavier,
+     * l'opérateur le refusait, et le client croyait avoir payé.
+     */
+    for (const ecriture of ['+22666798031', '226 66 79 80 31', '0022666798031', '66798031']) {
+      expect(
+        buildUssdCode({ template: USSD_TEMPLATES.ORANGE_MONEY, merchantNumber: ecriture, amount: 250 }),
+        ecriture,
+      ).toBe('*144*10*66798031*250#');
+    }
+  });
+
+  it('ne confond pas un numéro local commençant par 226 avec un indicatif', () => {
+    // Un numéro à huit chiffres reste intact, même s'il commence par les mêmes chiffres que
+    // l'indicatif : le retirer produirait un numéro de cinq chiffres et un code muet.
+    expect(
+      buildUssdCode({ template: USSD_TEMPLATES.ORANGE_MONEY, merchantNumber: '22612345', amount: 100 }),
+    ).toBe('*144*10*22612345*100#');
+  });
+
   it('gère le modèle Moov', () => {
     expect(
       buildUssdCode({ template: USSD_TEMPLATES.MOOV_MONEY, merchantNumber: '01020304', amount: 2500 }),

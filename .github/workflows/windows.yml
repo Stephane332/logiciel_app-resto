@@ -47,6 +47,16 @@ jobs:
         # L'API, ses dépendances de production, PostgreSQL et le Node qui l'exécute. C'est ce qui
         # permet au restaurateur de double-cliquer sur un seul fichier et d'avoir tout.
         run: node scripts/preparer-serveur-embarque.mjs --plateforme win32
+        env:
+          # Le numéro qui reçoit la commission de la plateforme. Il appartient au concepteur, pas au
+          # restaurant, et n'a donc rien à faire dans les réglages que le restaurateur voit — ni dans
+          # le dépôt, qui est public. Il entre par une variable du dépôt :
+          # Settings → Secrets and variables → Actions → Variables → PLATFORM_MOMO_NUMBER
+          #
+          # Absent, le logiciel démarre quand même : l'écran Commission dira simplement que le
+          # reversement n'est pas configuré. Une caisse ne doit pas refuser de s'ouvrir pour cela.
+          PLATFORM_MOMO_NUMBER: ${{ vars.PLATFORM_MOMO_NUMBER }}
+          PLATFORM_MOMO_OPERATOR: ${{ vars.PLATFORM_MOMO_OPERATOR || 'ORANGE_MONEY' }}
 
       - name: Installer les outils d'empaquetage
         working-directory: apps/desktop
