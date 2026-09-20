@@ -217,7 +217,7 @@ C'est le meilleur moyen de comprendre le reste.
 ### Et pour tout revérifier d'un coup
 
 ```bash
-npm test                              # 218 tests : règles métier, API, temps réel
+npm test                              # 220 tests : règles métier, API, temps réel
 npm run build --workspace @savora/client
 npm run servir                        # sert la construction, relaie l'API et le temps réel
 npm run verifier:parcours             # rejoue chaque rôle dans un vrai navigateur

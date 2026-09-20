@@ -2,9 +2,9 @@
 
 **Branche :** `claude/gifted-brown-1tc9ma`
 
-**218 tests** · **44 contrôles de parcours** (chaque rôle, vrai navigateur) · **16 contrôles du
+**220 tests** · **44 contrôles de parcours** (chaque rôle, vrai navigateur) · **16 contrôles du
 logiciel Windows**, serveur embarqué compris · **14 contrôles PWA** · **14 contrôles iPhone**
-(moteur de Safari) · **23 contrôles de la mise en ligne** — 329 vérifications, toutes au vert.
+(moteur de Safari) · **23 contrôles de la mise en ligne** — 331 vérifications, toutes au vert.
 
 ---
 
@@ -176,7 +176,7 @@ l'écran d'accueil du client comme n'importe quelle autre application.
 ## Tout revérifier soi-même
 
 ```bash
-npm test                              # 218 tests : règles métier, API, temps réel
+npm test                              # 220 tests : règles métier, API, temps réel
 npm run verifier:pwa                  # 14 contrôles : manifeste, service worker, hors ligne
 npm run verifier:iphone               # 14 contrôles : le parcours dans le moteur de Safari
 npm run verifier:parcours             # 44 contrôles : chaque rôle, dans un vrai navigateur
@@ -275,6 +275,7 @@ Le reste de la liste est dans [`docs/deploiement.md`](docs/deploiement.md).
 | [`docs/cahier-des-charges.md`](docs/cahier-des-charges.md) | Le besoin, corrigé et complété |
 | [`docs/adr/`](docs/adr/) | Les neuf décisions structurantes, et leurs raisons |
 | [`docs/exploitation-restaurant.md`](docs/exploitation-restaurant.md) | Guide de l'équipe, écrit pour elle |
+| [`docs/livraison-a-distance.md`](docs/livraison-a-distance.md) | Comment un client commande de chez lui, sans louer de serveur |
 | [`docs/deploiement.md`](docs/deploiement.md) | Du VPS nu à l'ouverture au public |
 | [`docs/api.md`](docs/api.md) | Routes, permissions, temps réel |
 | [`docs/recette.md`](docs/recette.md) | Chaque critère relié à son test |

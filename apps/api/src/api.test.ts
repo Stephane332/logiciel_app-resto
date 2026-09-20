@@ -1065,12 +1065,39 @@ describe('origines admises (CORS)', () => {
     }
   });
 
+  it('admet l\'application publiée sur un hébergeur de fichiers', async () => {
+    /*
+     * La PWA publique vit sur `github.io`, l'API vit chez le restaurant : chaque appel franchit
+     * une frontière d'origine. Sans cette autorisation, l'application déposée en ligne resterait
+     * vide exactement comme l'APK l'a été — et les journaux du serveur ne montreraient que des
+     * requêtes réussies.
+     */
+    const reponse = await app.inject({
+      method: 'GET',
+      url: api('/menu'),
+      headers: { origin: 'https://exemple.github.io' },
+    });
+    expect(reponse.statusCode).toBe(200);
+    expect(reponse.headers['access-control-allow-origin']).toBe('https://exemple.github.io');
+  });
+
   it('refuse une origine inconnue', async () => {
     // Sans en-tête en réponse, le navigateur jette le résultat : c'est exactement le refus attendu.
     const reponse = await app.inject({
       method: 'GET',
       url: api('/menu'),
       headers: { origin: 'https://site-malveillant.example' },
+    });
+    expect(reponse.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  it('n\'ouvre pas l\'hébergeur en entier : une autre adresse publiée est refusée', async () => {
+    // `PWA_ORIGINS` nomme des origines, il n'ouvre pas un domaine. Un autre compte du même
+    // hébergeur reste un tiers.
+    const reponse = await app.inject({
+      method: 'GET',
+      url: api('/menu'),
+      headers: { origin: 'https://un-autre-compte.github.io' },
     });
     expect(reponse.headers['access-control-allow-origin']).toBeUndefined();
   });

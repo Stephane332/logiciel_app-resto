@@ -19,6 +19,9 @@ export default defineConfig({
       // laissée à un poste de développement rendrait ces tests dépendants de lui.
       PAYMENT_PROVIDER: 'declared',
       PUBLIC_CLIENT_URL: 'http://localhost:5173',
+      // Une origine publiée, pour que le contrôle des origines admises porte sur autre chose
+      // qu'un défaut vide. Elle n'ouvre rien : seule cette adresse exacte passe.
+      PWA_ORIGINS: 'https://exemple.github.io',
     },
   },
 });

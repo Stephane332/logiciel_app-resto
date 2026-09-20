@@ -22,6 +22,27 @@ const schema = z.object({
    * différente ici suffit à rendre l'application muette sans qu'aucun journal ne l'indique.
    */
   MOBILE_HOSTNAME: z.string().default('app.savora.bf'),
+  /**
+   * Origine de l'application cliente publiée sur un hébergeur de fichiers.
+   *
+   * ┌──────────────────────────────────────────────────────────────────────────────┐
+   * │  La PWA publique et l'API du restaurant ne vivent pas au même endroit.        │
+   * └──────────────────────────────────────────────────────────────────────────────┘
+   *
+   * Servie par son propre serveur, l'application partage son origine avec l'API : rien ne franchit
+   * de frontière et le CORS ne se pose pas. Déposée sur GitHub Pages — le seul hébergement gratuit
+   * en HTTPS, donc la seule voie pour un client sur iPhone — elle vit sur `github.io` tandis que
+   * l'API vit chez le restaurant. Chaque appel devient une requête entre origines, et sans cette
+   * autorisation l'API répond 200 **sans** l'en-tête qui va bien : le navigateur jette la réponse,
+   * l'application reste vide, et les journaux du serveur ne montrent que des succès.
+   *
+   * Vide par défaut : tant qu'aucune adresse publique n'est en service, rien n'est ouvert.
+   * Plusieurs origines se séparent par des virgules, comme `CORS_ORIGINS`.
+   *
+   * À savoir avant de la renseigner : sur `github.io`, l'origine est celle du **compte**, pas du
+   * dépôt. L'autoriser autorise donc toutes les pages publiées par ce compte.
+   */
+  PWA_ORIGINS: z.string().default(''),
   PUBLIC_CLIENT_URL: z.string().default('http://localhost:5173'),
   PAYMENT_PROVIDER: z.enum(['declared', 'sandbox', 'cinetpay', 'ligdicash']).default('declared'),
   PAYMENT_WEBHOOK_SECRET: z.string().default('dev-webhook-secret'),
@@ -71,6 +92,11 @@ export const corsOrigins = env.CORS_ORIGINS.split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+/** Origines de l'application publiée sur un hébergeur de fichiers (voir `PWA_ORIGINS`). */
+export const pwaOrigins = env.PWA_ORIGINS.split(',')
+  .map((origine) => origine.trim())
+  .filter(Boolean);
+
 /**
  * Origines de l'application installée sur un téléphone.
  *
@@ -113,6 +139,7 @@ export function originAutorisee(origine: string | undefined): boolean {
   // Pas d'origine : requête directe (curl, application à application). Le CORS ne la concerne pas.
   if (!origine) return true;
   if (corsOrigins.includes(origine) || mobileOrigins.includes(origine)) return true;
+  if (pwaOrigins.includes(origine)) return true;
 
   if (!isProduction) {
     // Plages privées uniquement : 192.168.x.x, 10.x.x.x, 172.16–31.x.x, et la boucle locale.

@@ -140,6 +140,10 @@ Les limites, dites franchement : si le PC ou Internet du restaurant est coupé, 
 distance s'arrêtent — mais **le service sur place continue**, parce que le Wi-Fi local suffit. Et le
 relais dépend d'un tiers.
 
+> **Le détail, avec les commandes exactes et les deux réglages qui produisent une panne silencieuse
+> quand on les oublie : [`livraison-a-distance.md`](livraison-a-distance.md).** Il y a aussi un
+> chemin entièrement gratuit, sans nom de domaine.
+
 ---
 
 ## Le lien public de l'application, gratuit
