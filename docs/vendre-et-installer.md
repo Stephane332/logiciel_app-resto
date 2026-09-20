@@ -63,19 +63,33 @@ dit ce qui se passe. Il ne reste pas blanc.
 > serveur demande une modification du logiciel — elle est prévue et petite (une seule fonction à
 > changer, [ADR 004](adr/)), mais elle n'est pas faite.
 
-### A. Un serveur chez chaque restaurant
+### A. Le PC de la caisse est le serveur  ·  *un seul fichier à installer*
 
-Un vieux PC ou un mini-serveur dans l'arrière-boutique. Le logiciel de caisse et les tablettes s'y
-connectent par le Wi-Fi du restaurant.
+Tu installes `Savora Pro` sur l'ordinateur de la caisse. **L'installateur porte tout** : la base de
+données, le serveur, et le moteur qui le fait tourner. Il n'y a rien d'autre à installer sur ce PC.
+
+Au premier lancement, le logiciel pose une seule question — **le rôle de cet ordinateur** :
+
+- *« C'est la caisse principale du restaurant »* → le restaurateur saisit le nom de son restaurant,
+  son téléphone et son mot de passe. En une trentaine de secondes, le serveur est debout, le
+  restaurant créé, et le logiciel ouvert dessus. **Aucun plat de démonstration, aucun compte public**
+  — son catalogue est vide, et c'est lui qui le remplit.
+- *« C'est un poste secondaire »* → il saisit l'adresse de la caisse principale.
+
+Les tablettes de cuisine et les téléphones du livreur saisissent cette même adresse.
 
 | | |
 |---|---|
-| **Adresse à saisir** | L'IP fixe de ce PC, par exemple `192.168.1.20:4000` |
+| **Adresse à saisir sur les autres appareils** | L'IP du PC de la caisse, par exemple `192.168.1.20:4000` |
 | **Internet** | Pas nécessaire pour le service sur place |
 | **Ce que ça te coûte** | Rien par mois |
 | **Ce que ça coûte au resto** | Le PC, une fois |
 | **Le piège** | Tu ne vois pas la commission. Chaque mise à jour est une visite. Si le PC meurt, le restaurant est à l'arrêt, et c'est toi qu'on appelle. |
-| **Les clients à distance** | Ne peuvent pas commander : le serveur n'est pas sur Internet |
+| **Les clients à distance** | Pas encore : un client chez lui ne peut pas joindre un PC posé sur le Wi-Fi d'un restaurant. Voir « La livraison depuis la maison » plus bas. |
+
+> **Le poids du fichier.** L'installateur pèse plusieurs centaines de mégaoctets : il emporte
+> PostgreSQL. C'est le prix d'un logiciel qui ne demande rien à installer. Par clé USB, aucun
+> problème ; par WhatsApp, prévois du temps.
 
 ### B. Un VPS par restaurant
 
@@ -104,6 +118,30 @@ rien attendre. Passe en **C** au troisième ou quatrième client, quand la factu
 
 ---
 
+## La livraison depuis la maison
+
+C'est la seule chose que le montage « tout chez le restaurant » ne donne pas encore, et il faut
+comprendre pourquoi : **un client chez lui ne peut pas joindre un ordinateur posé sur le Wi-Fi d'un
+restaurant.** C'est une règle des réseaux, pas un réglage.
+
+La redirection de port sur le routeur ne suffit pas non plus : au Burkina, la plupart des
+connexions n'ont pas d'adresse publique — plusieurs abonnés partagent la même, et rien ne peut être
+redirigé vers l'un d'eux en particulier.
+
+La voie qui fonctionne est l'inverse : **le PC du restaurant ouvre lui-même une connexion sortante**
+vers un relais, et ce relais lui donne une adresse en HTTPS. Aucune configuration de routeur, aucune
+adresse publique nécessaire, et cela traverse le partage d'adresse sans difficulté.
+
+Il faut alors, une fois : **ton nom de domaine**. Chaque restaurant reçoit un sous-domaine —
+`chez-awa.tondomaine.bf` — qui arrive sur son PC. Les clients commandent de partout, la PWA
+s'installe sur iPhone, et tu ne paies aucun serveur.
+
+Les limites, dites franchement : si le PC ou Internet du restaurant est coupé, les commandes à
+distance s'arrêtent — mais **le service sur place continue**, parce que le Wi-Fi local suffit. Et le
+relais dépend d'un tiers.
+
+---
+
 ## Ce qu'il faut acheter, une fois
 
 1. **Un nom de domaine.** Ordre de grandeur : 10 à 15 € par an. C'est lui qui permet le HTTPS, donc
@@ -123,14 +161,22 @@ Le certificat HTTPS ne s'achète pas : le déploiement l'obtient et le renouvell
 Les commandes de [`docs/deploiement.md`](deploiement.md). Elles se tapent **dans un terminal
 connecté au VPS** (par SSH), pas sur ton PC.
 
-### Dans l'exe et dans l'APK, chez l'acheteur
+### Dans l'exe, sur le PC de la caisse
 
-Un seul champ, au premier lancement : **l'adresse du serveur.** La même valeur dans les deux.
+Rien à taper comme adresse : tu choisis **« C'est la caisse principale du restaurant »**, puis tu
+saisis le nom du restaurant, le téléphone et le mot de passe du restaurateur. Le logiciel fait le
+reste.
+
+Note l'adresse que le PC affiche ensuite — c'est elle qu'il faut sur tous les autres appareils.
+
+### Dans l'exe des postes secondaires, et dans l'APK
+
+Un seul champ, au premier lancement : **l'adresse du serveur.** La même valeur partout.
 
 | Ton montage | Ce que tu saisis |
 |---|---|
+| Le PC de la caisse est le serveur | `192.168.1.20:4000` (l'IP de ce PC) |
 | VPS avec domaine | `resto-du-client.tondomaine.bf` |
-| PC dans l'arrière-boutique | `192.168.1.20:4000` |
 
 Sans `https://`, sans `/api`, sans barre oblique finale. Le logiciel complète : `https://` pour un nom
 de domaine, `http://` pour une adresse IP locale — parce qu'un PC d'arrière-boutique n'a pas de
