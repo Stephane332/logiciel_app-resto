@@ -11,6 +11,7 @@
  *   node scripts/verifier-pwa.mjs
  */
 import { chromium } from 'playwright';
+import { garantirCatalogue } from './lib/catalogue.mjs';
 
 const URL = 'http://127.0.0.1:4173';
 const API = 'http://127.0.0.1:4000/api/v1';
@@ -18,22 +19,7 @@ const ok = [], ko = [];
 const v = (l, p, d = '') => { (p ? ok : ko).push(l); console.log(`${p ? '  OK  ' : ' ÉCHEC'} ${l}${d ? ` — ${d}` : ''}`); };
 
 // --- De quoi avoir un menu à consulter hors ligne ---
-const token = (await (await fetch(`${API}/auth/login`, {
-  method: 'POST', headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ phone: '+22670000001', password: 'savora2026' }),
-})).json()).accessToken;
-const H = { 'content-type': 'application/json', authorization: `Bearer ${token}` };
-let menu = await (await fetch(`${API}/menu`)).json();
-if (menu.categories.flatMap(c => c.products).length === 0) {
-  const c = await (await fetch(`${API}/menu/categories`, { method: 'POST', headers: H,
-    body: JSON.stringify({ name: 'Burgers', position: 0 }) })).json();
-  for (const [name, price] of [['Double Cheese', 3500], ['Chicken Burger', 2800]]) {
-    await fetch(`${API}/menu/products`, { method: 'POST', headers: H,
-      body: JSON.stringify({ categoryId: c.category.id, name, price, position: 0 }) });
-  }
-  menu = await (await fetch(`${API}/menu`)).json();
-}
-console.log(`Menu : ${menu.categories.flatMap(c => c.products).length} produits\n`);
+console.log(`Menu : ${await garantirCatalogue(API)} produits\n`);
 
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
 const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });

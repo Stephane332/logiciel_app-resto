@@ -24,6 +24,7 @@
  */
 import { chromium } from 'playwright';
 import { existsSync } from 'node:fs';
+import { garantirCatalogue } from './lib/catalogue.mjs';
 
 const API = process.env.API_URL ?? 'http://127.0.0.1:4000/api/v1';
 const CLIENT = process.env.CLIENT_URL ?? 'http://127.0.0.1:4173';
@@ -77,6 +78,14 @@ async function menuLateral(page) {
   if (await barre.count()) return barre.innerText();
   return page.locator('nav').first().innerText();
 }
+
+/*
+ * Un catalogue vide n'est pas un défaut du logiciel : c'est l'état d'une base fraîchement amorcée,
+ * puisque les plats appartiennent au restaurant. Sans cette ligne, la suite échouait sur une
+ * absence de données et ne disait rien du parcours qu'elle prétend vérifier.
+ */
+const nbPlats = await garantirCatalogue(API);
+console.log(`Catalogue : ${nbPlats} plat(s)`);
 
 const executable = chercherNavigateur();
 const navigateur = await chromium.launch(executable ? { executablePath: executable } : {});

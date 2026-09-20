@@ -367,6 +367,21 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
 /**
  * Vue destinée au client. Les données internes — motif de refus détaillé, identité du livreur,
  * charge utile du fournisseur de paiement — n'ont pas à sortir.
+ *
+ * ── Ce que `events: unknown` laissait passer ──
+ *
+ * L'historique était recopié tel quel, avec l'`actorId` de chaque étape : l'identifiant en base de
+ * l'employé qui a accepté la commande, de celui qui l'a préparée. Le suivi est **public** — il
+ * suffit de connaître l'identifiant d'une commande, et celui-ci se trouve dans l'adresse que le
+ * client partage. N'importe qui pouvait donc relever, commande après commande, un identifiant
+ * stable par employé : combien ils sont, qui tient la caisse à quelle heure, qui travaille quel
+ * jour. Rien de tout cela ne regarde le client, et rien de tout cela ne lui sert.
+ *
+ * Le type partagé `CustomerOrder` annonçait pourtant déjà la bonne forme — `{ status, createdAt,
+ * reason }`, sans acteur. Le contrat était juste ; c'est `events: unknown` qui empêchait
+ * TypeScript de constater que le code ne le tenait pas. Les champs sont donc désormais recopiés
+ * un à un, et le type du paramètre les nomme : un champ ajouté en base ne ressortira plus ici par
+ * simple effet de bord.
  */
 function publicOrderView(order: {
   id: string;
@@ -386,7 +401,7 @@ function publicOrderView(order: {
   table?: { number: string } | null;
   deliverySector?: string | null;
   deliveryLandmark?: string | null;
-  events?: unknown;
+  events?: { status: string; reason: string | null; createdAt: Date }[];
   payments?: { method: string; status: string }[];
 }) {
   return {
@@ -408,7 +423,8 @@ function publicOrderView(order: {
     delivery: order.deliverySector
       ? { sector: order.deliverySector, landmark: order.deliveryLandmark }
       : null,
-    events: order.events,
+    // Recopie nommée, jamais l'objet entier : voir la note ci-dessus.
+    events: order.events?.map((e) => ({ status: e.status, reason: e.reason, createdAt: e.createdAt })),
     payment: order.payments?.[0] ? { method: order.payments[0].method, status: order.payments[0].status } : null,
   };
 }

@@ -227,7 +227,8 @@ if (process.getuid && process.getuid() === 0) {
    * d'environnement apprend à ignorer les tests rouges.
    */
   console.log('  PASSÉ  Contrôle du mode « caisse principale » — impossible en root (règle PostgreSQL)');
-  console.log('         Rejouez sous un utilisateur normal : su <utilisateur> -c "node scripts/verifier-logiciel.mjs"');
+  console.log('         Rejouez sous un utilisateur normal. Dans ce conteneur, le compte « postgres » convient :');
+  console.log('         su postgres -s /bin/bash -c "cd $PWD && HOME=/var/lib/postgresql xvfb-run -a node scripts/verifier-logiciel.mjs"');
 } else {
   const sondeServeur = resolve(tmpdir(), `savora-sonde-serveur-${process.pid}.cjs`);
   writeFileSync(

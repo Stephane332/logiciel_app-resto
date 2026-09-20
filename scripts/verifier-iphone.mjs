@@ -17,8 +17,14 @@
  *   node scripts/verifier-iphone.mjs
  */
 import { webkit, devices } from 'playwright';
+import { garantirCatalogue } from './lib/catalogue.mjs';
 
 const CLIENT = process.env.CLIENT_URL ?? 'http://127.0.0.1:4173';
+const API = process.env.API_URL ?? 'http://127.0.0.1:4000/api/v1';
+
+// Le catalogue appartient au restaurant : une base fraîchement amorcée n'en a pas. Sans plat, le
+// parcours d'achat n'a rien à acheter, et l'échec parlerait des données plutôt que de Safari.
+console.log(`Catalogue : ${await garantirCatalogue(API)} plat(s)`);
 
 const reussies = [];
 const echecs = [];

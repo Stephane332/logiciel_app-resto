@@ -58,12 +58,41 @@ jobs:
 
       - run: npm ci
 
+      # ── Le seul geste que ce workflow ne peut pas faire à votre place ────────────────
+      #
+      # Le jeton dont dispose un workflow ne porte jamais le droit d'administrer le dépôt : il peut
+      # publier sur Pages, pas *créer* le site Pages. `enablement: true` échoue donc sur
+      # « Resource not accessible by integration », un message qui ne dit rien de ce qu'il faut
+      # faire. On pose la question nous-mêmes, pour répondre en clair.
+      - name: Pages est-il activé ?
+        env:
+          JETON: ${{ github.token }}
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $JETON" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages")
+
+          if [ "$code" = "404" ]; then
+            {
+              echo "## GitHub Pages n'est pas encore activé"
+              echo ""
+              echo "Une seule fois, puis plus jamais :"
+              echo ""
+              echo "1. **Settings** (onglet du dépôt) → **Pages** (colonne de gauche)"
+              echo "2. *Build and deployment* → **Source** → choisir **GitHub Actions**"
+              echo "3. Revenir ici et relancer ce workflow (bouton **Re-run all jobs**)"
+              echo ""
+              echo "L'adresse sera alors **https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/**"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::GitHub Pages n'est pas activé. Settings → Pages → Source → GitHub Actions, puis relancer."
+            exit 1
+          fi
+          echo "Pages est activé (HTTP $code)."
+
       - name: Préparer Pages
         id: pages
         uses: actions/configure-pages@v5
-        with:
-          # Active Pages sur le dépôt si ce n'est pas déjà fait.
-          enablement: true
 
       - name: Construire l'application
         env:

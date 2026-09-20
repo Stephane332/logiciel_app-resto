@@ -1266,6 +1266,28 @@ describe('commission de la plateforme (ADR 009)', () => {
     expect(response.statusCode, response.body).toBe(200);
     expect(response.body).not.toMatch(/commission/i);
   });
+
+  it('ne révèle à personne quel employé a traité la commande', async () => {
+    /*
+     * Le suivi est public : connaître l'identifiant d'une commande suffit, et cet identifiant est
+     * dans l'adresse que le client partage. L'historique y était recopié tel quel, `actorId`
+     * compris — un identifiant stable par employé. Relevé sur quelques commandes, il dit combien
+     * ils sont, qui tient la caisse et à quelle heure. Le client n'en a aucun usage.
+     */
+    const created = await createPickupOrder();
+    const order = created.json().order;
+    await serveOrder(order.id, await asCashier());
+
+    const response = await app.inject({ method: 'GET', url: api(`/orders/${order.id}/track`) });
+    expect(response.statusCode, response.body).toBe(200);
+
+    const suivi = response.json().order;
+    expect(suivi.events.length, "l'historique doit exister, sinon le test ne prouve rien").toBeGreaterThan(1);
+    for (const etape of suivi.events) {
+      expect(Object.keys(etape).sort()).toEqual(['createdAt', 'reason', 'status']);
+    }
+    expect(response.body).not.toMatch(/actorId|actorRole/);
+  });
 });
 
 // ---------------------------------------------------------------------------
