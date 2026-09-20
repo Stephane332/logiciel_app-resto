@@ -24,22 +24,41 @@ en ligne dit la vérité sur ce qui sort réellement de la cuisine, ou il ne dit
 > exactement, de quoi l'acheteur a besoin, et quelle adresse se tape où. Le reste de ce document
 > suppose que tu l'as lu.
 
-## Les deux fichiers à télécharger, maintenant
+## Les deux fichiers à télécharger
 
-Construits sur le dernier code, le 19 septembre. Il faut être connecté à GitHub pour télécharger un
+Construits le 20 septembre, sur le même code. Il faut être connecté à GitHub pour télécharger un
 artefact.
 
 | Quoi | Où | Taille |
 |---|---|---|
-| **APK Android** | [construction du 19/09](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35447153932) → artefact `savora-apk` | 4 Mo |
-| **Installateur Windows** | [construction du 19/09](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35447150635) → artefact `savora-pro-windows` | 82 Mo |
+| **Logiciel Windows** | [construction du 20/09](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35526359619) → artefact `savora-pro-windows` | 229 Mo |
+| **APK Android** | [construction du 20/09](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35527043783) → artefact `savora-apk` | 4 Mo |
 
-Les deux te demanderont **l'adresse du serveur** au premier lancement, une seule fois. Pour un essai
-immédiat : `npm run demarrer` sur ton ordinateur affiche l'adresse à saisir.
+### Le logiciel Windows porte tout
 
-**L'APK est une version de débogage** — elle s'installe sans certificat, et Android affiche un
-avertissement au premier lancement. Une version signée demande un magasin de clés (secret
-`ANDROID_KEYSTORE_BASE64`) ; le workflow la construit automatiquement dès qu'il existe.
+Copie le fichier chez le restaurant, double-clique. **Rien d'autre n'est à installer** — ni base de
+données, ni moteur, ni outil en ligne de commande : ils voyagent dans l'installateur.
+
+Au premier lancement, une seule question : **le rôle de cet ordinateur.**
+
+- **« C'est la caisse principale du restaurant »** → saisis le nom du restaurant, le téléphone et le
+  mot de passe du restaurateur. En une trentaine de secondes le serveur tourne, le restaurant est
+  créé, et le logiciel s'ouvre dessus. Catalogue vide, aucun compte public : c'est **son** restaurant.
+- **« C'est un poste secondaire »** → saisis l'adresse de la caisse principale.
+
+Note l'adresse que le PC affiche : c'est elle qu'il faut sur les tablettes de cuisine, les téléphones
+de l'équipe et l'APK. Par exemple `192.168.1.20:4000`.
+
+> **Windows affichera un avertissement au premier lancement** — le logiciel n'est pas signé, et un
+> certificat coûte cher. « Informations complémentaires » puis « Exécuter quand même ».
+
+### L'APK
+
+Version de débogage : elle s'installe sans certificat, Android prévient au premier lancement. Elle
+demande l'adresse du serveur une fois, la même que ci-dessus.
+
+Une version signée demande un magasin de clés (secret `ANDROID_KEYSTORE_BASE64`) ; le workflow la
+construit automatiquement dès qu'il existe.
 
 ### La PWA — et les clients sur iPhone
 
