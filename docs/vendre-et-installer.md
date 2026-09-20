@@ -142,14 +142,52 @@ relais dépend d'un tiers.
 
 ---
 
+## Le lien public de l'application, gratuit
+
+L'application cliente — celle que le client ouvre sur son téléphone — est un paquet de fichiers.
+**Des fichiers s'hébergent gratuitement, en HTTPS, sur une adresse stable.** GitHub Pages le fait,
+Netlify et Vercel aussi. Le workflow **PWA publique** y dépose l'application à chaque envoi de code.
+
+Un seul geste, une seule fois, et seul le propriétaire du dépôt peut le faire :
+
+> **Settings** → **Pages** → *Build and deployment* → **Source** → **GitHub Actions**
+
+Le jeton d'un workflow ne porte jamais le droit d'administrer le dépôt : il sait publier sur Pages,
+il ne sait pas créer le site. Aucun script ne peut donc faire ce clic.
+
+L'adresse devient `https://<ton-compte>.github.io/<le-dépôt>/`. C'est un vrai lien HTTPS : il
+s'ouvre sur n'importe quel téléphone, et **Safari sait l'installer sur l'écran d'accueil d'un
+iPhone**. C'est la seule voie pour un client sur iPhone, et elle ne coûte rien.
+
+**Ce que ce lien gratuit ne remplace pas.** Il sert l'application, pas les données. Les plats et les
+commandes vivent dans l'API du restaurant, qu'un hébergeur de fichiers ne fait pas tourner. Et une
+page servie en `https://` ne peut appeler qu'une API en `https://` — le navigateur refuse le
+mélange, sans exception. L'application déposée là demande donc l'adresse du serveur au premier
+lancement, et cette adresse doit être sécurisée.
+
+D'où la distinction à garder en tête quand tu vends :
+
+| | Payant ? | Ce que ça débloque |
+|---|---|---|
+| **Héberger la PWA** | Non | Un lien qu'on envoie, qui s'installe sur iPhone |
+| **Une adresse HTTPS pour le serveur du restaurant** | Non, avec un sous-domaine gratuit type DuckDNS | Les commandes à distance, depuis la maison |
+| **Ton propre nom de domaine** | 10 à 15 € par an | Une adresse à toi, qu'on imprime sur une affiche, et qui ne dépend pas d'un tiers |
+
+---
+
 ## Ce qu'il faut acheter, une fois
 
-1. **Un nom de domaine.** Ordre de grandeur : 10 à 15 € par an. C'est lui qui permet le HTTPS, donc
-   l'installation de l'application sur un iPhone, et une adresse qu'on imprime sur une affiche.
-2. **Un VPS.** 2 Go de mémoire suffisent largement pour un fast-food. Ordre de grandeur 5 à 10 € par
-   mois.
+Rien n'est obligatoire pour commencer : le logiciel tourne sur le PC du restaurant, l'équipe s'y
+connecte par le Wi-Fi, et la PWA s'héberge gratuitement. Ce qui suit achète du confort et de
+l'indépendance, pas le fonctionnement.
 
-Le certificat HTTPS ne s'achète pas : le déploiement l'obtient et le renouvelle tout seul
+1. **Un nom de domaine.** Ordre de grandeur : 10 à 15 € par an. Un sous-domaine gratuit fait le même
+   travail technique ; le domaine payant, lui, t'appartient — on l'imprime sur une affiche, il ne
+   disparaît pas si le service gratuit ferme, et il fait sérieux devant un restaurateur.
+2. **Un VPS.** 2 Go de mémoire suffisent largement pour un fast-food. Ordre de grandeur 5 à 10 € par
+   mois. Inutile si le serveur est le PC du restaurant.
+
+Le certificat HTTPS ne s'achète jamais : le déploiement l'obtient et le renouvelle tout seul
 ([déploiement](deploiement.md)).
 
 ---
