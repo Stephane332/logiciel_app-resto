@@ -4,7 +4,7 @@
 
 **226 tests** · **44 contrôles de parcours** (chaque rôle, vrai navigateur) · **24 contrôles du
 logiciel Windows**, serveur embarqué compris · **14 contrôles PWA** · **14 contrôles iPhone**
-(moteur de Safari) · **23 contrôles de la mise en ligne** — 345 vérifications, toutes au vert.
+(moteur de Safari) · **23 contrôles de la mise en ligne** — 355 vérifications, toutes au vert.
 
 ---
 
@@ -214,6 +214,8 @@ npm run verifier:iphone               # 14 contrôles : le parcours dans le mote
 npm run verifier:parcours             # 44 contrôles : chaque rôle, dans un vrai navigateur
 npm run verifier:logiciel             # 24 contrôles : le logiciel Windows, sa base, ses sauvegardes, son réseau
 npm run verifier:pages                # 23 contrôles : la mise en ligne, dans les deux moteurs
+npm run verifier:apk                  #  4 contrôles : l'APK peut-elle joindre un serveur ?
+npm run verifier:empaquetage          #  6 contrôles : rien ne manquera dans l'installateur
 ```
 
 Les quatre du milieu demandent les serveurs lancés et la construction servie :

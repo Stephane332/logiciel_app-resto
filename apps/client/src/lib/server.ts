@@ -142,7 +142,19 @@ export async function essayerServeur(saisie: string, delaiMs = 6000): Promise<Di
     return { ok: false, raison: 'invalide', message: 'Adresse invalide. Exemple : 192.168.1.12:4000' };
   }
 
-  const pageSecurisee = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  /*
+   * Le refus du contenu mixte ne vaut que dans un navigateur.
+   *
+   * L'application installée affiche elle aussi ses pages sous une origine `https` — c'est ce qui
+   * permet aux liens profonds d'un QR de table de l'ouvrir. Mais elle, contrairement à une page
+   * web, a le droit d'appeler une adresse en clair : l'empaquetage l'y autorise explicitement,
+   * parce que le serveur d'un restaurant est un PC de réseau local sans certificat.
+   *
+   * Sans cette distinction, l'application installée refuserait la seule adresse qu'on puisse lui
+   * donner aujourd'hui — et le refus viendrait de ce contrôle-ci, pas du système.
+   */
+  const pageSecurisee =
+    !estNatif() && typeof window !== 'undefined' && window.location.protocol === 'https:';
   if (pageSecurisee && adresse.startsWith('http://')) {
     return {
       ok: false,

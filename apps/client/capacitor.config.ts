@@ -13,8 +13,26 @@ const config: CapacitorConfig = {
   webDir: 'dist',
 
   android: {
-    // Le contenu vient du paquet, pas d'un serveur distant : l'application démarre même sans réseau.
-    allowMixedContent: false,
+    /*
+     * L'application doit pouvoir parler à un serveur de restaurant.
+     *
+     * ┌──────────────────────────────────────────────────────────────────────────────┐
+     * │  Le serveur d'un restaurant est un PC sur un réseau local. Il n'a pas de TLS. │
+     * └──────────────────────────────────────────────────────────────────────────────┘
+     *
+     * L'APK affiche ses pages sous l'origine « https://app.savora.bf » — nécessaire pour que les
+     * liens profonds d'un QR de table ouvrent l'application plutôt qu'un navigateur. Mais une page
+     * en `https` ne peut pas appeler une adresse en clair, et `allowMixedContent: false` fermait le
+     * verrou explicitement. L'APK ne pouvait donc joindre qu'un serveur en HTTPS — et il n'en
+     * existe aucun tant qu'un restaurant n'a pas de domaine. Installée, ouverte, elle ne pouvait
+     * strictement rien faire.
+     *
+     * Le contenu mixte est donc autorisé. Ce n'est pas une porte ouverte au hasard : les pages
+     * viennent du paquet installé, jamais d'Internet, et la seule adresse appelée est celle que le
+     * restaurateur a saisie lui-même. Le jour où son serveur aura une adresse sécurisée, cette
+     * tolérance ne servira plus à rien — mais elle ne nuira pas davantage.
+     */
+    allowMixedContent: true,
     captureInput: true,
   },
 

@@ -26,6 +26,7 @@
     "verifier:logiciel": "node scripts/verifier-logiciel.mjs",
     "verifier:pages": "node scripts/verifier-pages.mjs",
     "verifier:empaquetage": "node scripts/verifier-empaquetage.mjs",
+    "verifier:apk": "node scripts/verifier-apk.mjs",
     "check:sources": "node scripts/check-sources.mjs",
     "test": "npm run check:sources && vitest run",
     "test:watch": "vitest",

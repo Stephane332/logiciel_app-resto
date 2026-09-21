@@ -68,6 +68,15 @@ jobs:
             echo "APK de diffusion, construit pour : $API_URL"
           fi
 
+      # ── Avant de construire : l'application pourra-t-elle seulement joindre un serveur ? ──
+      #
+      # Rien ne vérifiait l'APK elle-même. Elle se construisait, s'installait, s'ouvrait — et ne
+      # pouvait rien faire : son WebView refusait le contenu mixte et Android bloquait le trafic en
+      # clair, alors que le serveur d'un restaurant est un PC de réseau local sans certificat. Le
+      # défaut ne se voyait que sur un vrai téléphone, sans message ni journal.
+      - name: Vérifier que l'APK pourra joindre un serveur de restaurant
+        run: node scripts/verifier-apk.mjs
+
       - name: Construire l'application web
         # L'APK n'a pas de « même domaine » : l'URL de l'API doit être absolue, sinon l'application
         # installée ne trouvera jamais le serveur.
