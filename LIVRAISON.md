@@ -35,7 +35,7 @@ l'amorçage de démonstration en production.
 |---|---|---|
 | **Application cliente (PWA)** | **https://stephane332.github.io/logiciel_app-resto/** | en ligne |
 | **Logiciel Windows** | [construction 35655454483](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35655454483) → artefact `savora-pro-windows` | 229 Mo |
-| **APK Android** | [dernière construction](https://github.com/Stephane332/logiciel_app-resto/actions/workflows/android.yml) → artefact `savora-apk` | 3,9 Mo |
+| **APK Android** | [construction 35656930724](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35656930724) → artefact `savora-apk` | 3,9 Mo |
 
 Il faut être connecté à GitHub pour télécharger un artefact.
 
