@@ -26,6 +26,9 @@ contextBridge.exposeInMainWorld('savora', {
   /** Installe la base et l'API sur ce PC : il devient la caisse principale du restaurant. */
   installerServeur: (infos) => ipcRenderer.invoke('savora:installer-serveur', infos),
 
+  /** Ouvre la caisse, après que le restaurateur a noté l'adresse à donner à son équipe. */
+  ouvrirLogiciel: () => ipcRenderer.invoke('savora:ouvrir-logiciel'),
+
   /**
    * Suit l'avancement de l'installation.
    *

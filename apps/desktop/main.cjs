@@ -22,6 +22,7 @@
 const { app, BrowserWindow, ipcMain, shell, Menu } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
+const { networkInterfaces } = require('node:os');
 const { demarrer } = require('./serveur-local.cjs');
 const baseEmbarquee = require('./base-embarquee.cjs');
 const apiEmbarquee = require('./api-embarquee.cjs');
@@ -183,6 +184,35 @@ function annoncer(message) {
 }
 
 /**
+ * Les adresses par lesquelles ce PC est joignable depuis le réseau du restaurant.
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  Le logiciel savait son adresse et ne la disait à personne.                   │
+ * └──────────────────────────────────────────────────────────────────────────────┘
+ *
+ * Le restaurateur installait la caisse principale, tout démarrait — et rien ne lui indiquait quoi
+ * saisir sur la tablette de cuisine ou sur le téléphone du livreur. Il fallait ouvrir une invite de
+ * commandes et lancer `ipconfig` : la seule étape de toute l'installation qui demandait de savoir
+ * ce qu'est une adresse IP. C'est exactement là que s'arrête une vente.
+ *
+ * Plusieurs cartes existent souvent — Wi-Fi et Ethernet, parfois une carte virtuelle. On les donne
+ * toutes plutôt que d'en choisir une au hasard : celle qui marche est celle du même réseau que les
+ * téléphones, et seul le restaurateur peut le savoir. Les adresses de liaison locale (169.254.x.x)
+ * sont écartées : elles signalent une carte sans réseau, jamais une adresse joignable.
+ */
+function adressesReseau(port) {
+  const adresses = [];
+  for (const [nom, cartes] of Object.entries(networkInterfaces())) {
+    for (const carte of cartes ?? []) {
+      if (carte.family !== 'IPv4' || carte.internal) continue;
+      if (carte.address.startsWith('169.254.')) continue;
+      adresses.push({ carte: nom, adresse: `${carte.address}:${port}` });
+    }
+  }
+  return adresses;
+}
+
+/**
  * Démarre la base et l'API sur ce poste, puis ouvre l'interface dessus.
  *
  * L'ordre n'est pas négociable et le banc d'essai l'a montré : la base, le schéma, l'amorçage, puis
@@ -224,8 +254,17 @@ async function demarrerServeurDuResto(infos) {
     ecrireReglages({ role: 'serveur', serveur: null });
 
     annoncer(amorce.deja ? 'Serveur prêt.' : 'Restaurant créé. Serveur prêt.');
-    ouvrirLogiciel(apiLocale.origine);
-    return { ok: true };
+
+    /*
+     * On n'ouvre plus le logiciel tout de suite.
+     *
+     * L'écran suivant donne l'adresse à saisir sur les tablettes et les téléphones de l'équipe.
+     * Ouvrir directement la caisse la ferait disparaître avant d'avoir été lue — et le
+     * restaurateur se retrouverait devant `ipconfig`, ou devant rien du tout.
+     *
+     * Aux démarrages suivants, cet écran ne revient pas : la question ne se pose qu'une fois.
+     */
+    return { ok: true, adresses: adressesReseau(apiLocale.port) };
   } catch (erreur) {
     // On redescend proprement : une base laissée en marche empêcherait la prochaine tentative.
     await apiLocale?.arreter().catch(() => {});
@@ -236,6 +275,12 @@ async function demarrerServeurDuResto(infos) {
     return { ok: false, message: erreur.message };
   }
 }
+
+/** Ouvre la caisse, une fois l'adresse notée par le restaurateur. */
+ipcMain.handle('savora:ouvrir-logiciel', () => {
+  if (apiLocale) ouvrirLogiciel(apiLocale.origine);
+  return { ok: Boolean(apiLocale) };
+});
 
 ipcMain.handle('savora:serveur', () => lireServeur());
 
@@ -261,7 +306,19 @@ ipcMain.handle('savora:installer-serveur', async (_evenement, infos) => {
 });
 
 /** Permet de rebrancher le logiciel sur un autre serveur sans réinstaller. */
+/**
+ * Repartir de la première question.
+ *
+ * Les réglages sont effacés, pas seulement l'écran : sans cela, le prochain démarrage repartirait
+ * sur l'ancienne adresse et le rôle enregistré, et le retour en arrière ne durerait que le temps
+ * d'une fenêtre.
+ *
+ * Les **données** ne sont pas touchées — ni la base, ni les photos. Un restaurateur qui corrige
+ * l'adresse de sa caisse ne doit pas y perdre ses commandes, et choisir de nouveau « caisse
+ * principale » retrouve le restaurant existant : l'amorçage constate qu'il est déjà configuré.
+ */
 ipcMain.handle('savora:changer-serveur', () => {
+  ecrireReglages({ role: null, serveur: null });
   fenetre.loadFile(path.join(__dirname, 'serveur.html'));
 });
 

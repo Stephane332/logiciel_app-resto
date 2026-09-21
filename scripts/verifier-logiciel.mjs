@@ -257,8 +257,45 @@ app.on('ready', () => {
         poser('mdp-admin', \${JSON.stringify(process.env.SAVORA_DEMO_PASSWORD || 'MonMotDePasse2026')});
         document.getElementById('valider-serveur').click(); return true; })()\`);
 
-      // Base, schéma, amorçage, serveur : une trentaine de secondes sur une machine modeste.
-      await attendre(35000);
+      /*
+       * On attend l'écran, pas un nombre de secondes.
+       *
+       * Base, schéma, amorçage, serveur : une trentaine de secondes sur une machine modeste, mais
+       * la durée varie du simple au double. Un délai fixe lisait l'écran précédent et déclarait
+       * l'absence d'un écran qui apparaissait un instant plus tard — un faux échec, et le pire
+       * genre, celui qui apprend à se méfier des contrôles rouges.
+       */
+      const vuAdresse = await (async () => {
+        for (let essai = 0; essai < 90; essai += 1) {
+          const visible = await f.webContents
+            .executeJavaScript(
+              "(document.getElementById('etape-adresse') || {}).dataset.visible === 'oui'",
+            )
+            .catch(() => false);
+          if (visible) return true;
+          await attendre(1000);
+        }
+        return false;
+      })();
+      dire('ecranAdresseVu', vuAdresse);
+
+      /*
+       * L'écran des adresses, avant l'ouverture du logiciel.
+       *
+       * Il n'existait pas : le logiciel connaissait son adresse et ne la disait à personne, si
+       * bien qu'il fallait ipconfig pour connecter la première tablette. On vérifie donc qu'il
+       * l'annonce, et qu'il annonce quelque chose qui ressemble à une adresse joignable — un
+       * écran qui dirait « aucune adresse » serait pire que pas d'écran du tout.
+       */
+      const ecranAdresse = await lire(f);
+      dire('ecranAdresse', ecranAdresse.slice(0, 160));
+      dire('adresseProposee', (ecranAdresse.match(/\\b\\d{1,3}(?:\\.\\d{1,3}){3}:\\d+/) || [''])[0]);
+
+      // Le logiciel ne s'ouvre qu'une fois l'adresse notée : c'est tout l'intérêt de l'écran.
+      await f.webContents.executeJavaScript(
+        "(() => { const b = document.getElementById('ouvrir-logiciel'); if (b) b.click(); return Boolean(b); })()",
+      );
+      await attendre(3000);
       dire('origine', f.webContents.getURL());
       // Laisser l'interface se peindre : lue trop tôt, executeJavaScript échoue en pleine navigation.
       await attendre(2500);
@@ -308,6 +345,9 @@ require(${JSON.stringify(resolve(BUREAU, 'main.cjs'))});
     for (const ligne of lignes) {
       const trouve = ligne.match(/^SONDE (\w+) (.*)$/);
       if (trouve) {
+        // `--detail` montre ce que la sonde a réellement relevé. Sans lui, un contrôle rouge ne dit
+        // que « ça n'a pas marché » — et l'on repart deviner ce que l'écran affichait.
+        if (process.argv.includes('--detail')) console.log(`   ⋯ ${trouve[1]} = ${trouve[2].slice(0, 200)}`);
         try {
           sortiesServeur.set(trouve[1], JSON.parse(trouve[2]));
         } catch {
@@ -353,6 +393,12 @@ require(${JSON.stringify(resolve(BUREAU, 'main.cjs'))});
   v('Le formulaire du restaurant s\'affiche', /Le restaurant/i.test(ecranFormulaire), ecranFormulaire.slice(0, 70));
 
   const origineServeur = String(sortiesServeur.get('origine') ?? '');
+  const ecranAdresse = String(sortiesServeur.get('ecranAdresse') ?? '');
+  const adresseProposee = String(sortiesServeur.get('adresseProposee') ?? '');
+  v("Le logiciel annonce l'adresse à donner à l'équipe", /Notez cette adresse/i.test(ecranAdresse),
+    ecranAdresse.slice(0, 60));
+  v("L'adresse annoncée ressemble à une adresse joignable", /^\d{1,3}(?:\.\d{1,3}){3}:\d+$/.test(adresseProposee),
+    adresseProposee || 'aucune');
   v('Le logiciel s\'ouvre sur le serveur qu\'il porte', origineServeur.startsWith('http://127.0.0.1:'), origineServeur);
   const ecranFinal = String(sortiesServeur.get('ecranFinal') ?? '');
   v('L\'interface du restaurant est chargée', /Espace Restaurant|Tableau de bord/i.test(ecranFinal), ecranFinal.slice(0, 70));

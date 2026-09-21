@@ -61,16 +61,95 @@ export function enregistrerServeur(saisie: string): boolean {
  *
  * On écrit « monresto.bf », pas « https://monresto.bf ». Refuser la saisie sur un détail de
  * protocole serait un mauvais accueil pour la seule chose que l'application demande jamais.
+ *
+ * ── Le protocole ne se devine pas au hasard ──
+ *
+ * Tout ce qui n'était pas préfixé partait en `https://`. Une adresse de réseau local —
+ * « 192.168.1.12:4000 », l'exemple affiché juste sous le champ — devenait donc
+ * « https://192.168.1.12:4000 », vers un serveur qui n'a aucun certificat et n'écoute pas en TLS.
+ * Tous les appels échouaient, et l'application s'affichait vide. C'est le défaut qu'a rencontré la
+ * première personne qui a essayé.
+ *
+ * Une adresse IP, ou un nom sans point — « caisse », « serveur-cuisine » — désigne une machine du
+ * réseau local : elle part en `http://`. Un vrai nom de domaine part en `https://`. C'est la même
+ * règle que celle du logiciel Windows, et elle doit l'être : deux règles divergentes sur le même
+ * geste finiraient par se contredire.
  */
+function protocolePour(hote: string): 'http:' | 'https:' {
+  const sansPort = hote.split(':')[0] ?? '';
+  const estIPv4 = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(sansPort);
+  const sansPoint = !sansPort.includes('.');
+  return estIPv4 || sansPoint ? 'http:' : 'https:';
+}
+
 export function normaliser(saisie: string): string {
   const texte = (saisie ?? '').trim();
   if (!texte) return '';
-  const complet = /^https?:\/\//i.test(texte) ? texte : `https://${texte}`;
+  const complet = /^https?:\/\//i.test(texte) ? texte : `${protocolePour(texte)}//${texte}`;
   try {
     const url = new URL(complet);
     return url.hostname ? `${url.protocol}//${url.host}` : '';
   } catch {
     return '';
+  }
+}
+
+/** Ce qu'on peut dire d'une adresse avant de l'enregistrer. */
+export type Diagnostic =
+  | { ok: true; adresse: string }
+  | { ok: false; raison: 'invalide' | 'contenu-mixte' | 'injoignable'; message: string };
+
+/**
+ * Essaie l'adresse avant de l'enregistrer.
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  Une adresse fausse acceptée en silence donne une application vide.           │
+ * └──────────────────────────────────────────────────────────────────────────────┘
+ *
+ * L'adresse était retenue sans être essayée : l'application se rechargeait, chaque appel échouait,
+ * et l'écran restait blanc — sans message, et sans moyen de revenir en arrière puisque l'écran de
+ * saisie ne réapparaissait plus. Le pire enchaînement possible pour la seule question que
+ * l'application pose.
+ *
+ * Deux refus, et le premier ne se découvre pas tout seul : **une page servie en `https://` ne peut
+ * pas appeler une adresse en clair.** Le navigateur bloque, sans message visible et sans réglage.
+ * C'est le cas de l'application déposée chez un hébergeur gratuit à qui l'on donnerait l'adresse
+ * locale du restaurant : il faut le dire, parce que rien d'autre ne le dira.
+ */
+export async function essayerServeur(saisie: string, delaiMs = 6000): Promise<Diagnostic> {
+  const adresse = normaliser(saisie);
+  if (!adresse) {
+    return { ok: false, raison: 'invalide', message: 'Adresse invalide. Exemple : 192.168.1.12:4000' };
+  }
+
+  const pageSecurisee = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  if (pageSecurisee && adresse.startsWith('http://')) {
+    return {
+      ok: false,
+      raison: 'contenu-mixte',
+      message:
+        "Cette page est servie en « https », et un navigateur lui interdit d'appeler une adresse " +
+        'en clair. Une adresse de réseau local ne peut donc pas marcher ici : il faut ouvrir ' +
+        "l'application depuis le réseau du restaurant, ou donner une adresse « https » du serveur.",
+    };
+  }
+
+  const arret = new AbortController();
+  const minuteur = setTimeout(() => arret.abort(), delaiMs);
+  try {
+    const reponse = await fetch(`${adresse}/api/v1/menu`, { signal: arret.signal });
+    if (!reponse.ok) throw new Error(String(reponse.status));
+    return { ok: true, adresse };
+  } catch {
+    return {
+      ok: false,
+      raison: 'injoignable',
+      message:
+        "Aucun serveur Savora ne répond à cette adresse. Vérifiez qu'elle est exacte, que " +
+        "l'ordinateur de la caisse est allumé, et que ce téléphone est sur le même réseau que lui.",
+    };
+  } finally {
+    clearTimeout(minuteur);
   }
 }
 

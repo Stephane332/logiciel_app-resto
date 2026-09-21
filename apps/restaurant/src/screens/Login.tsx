@@ -84,7 +84,41 @@ export function Login() {
         <button type="submit" className="btn btn--primary btn--lg btn--block" disabled={login.isPending}>
           {login.isPending ? 'Connexion…' : 'Se connecter'}
         </button>
+
+        <ChangerDeServeur />
       </form>
     </div>
+  );
+}
+
+/**
+ * Le retour en arrière, quand le logiciel vise le mauvais serveur.
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  Une adresse enregistrée une fois l'était pour toujours.                      │
+ * └──────────────────────────────────────────────────────────────────────────────┘
+ *
+ * Les réglages vivent à côté des données, et un désinstalleur n'y touche pas — c'est ce qui
+ * protège la base du restaurant lors d'une mise à jour. Mais il n'existait aucun moyen de revenir
+ * sur l'adresse : réinstaller une version plus récente repartait sur l'ancienne, et un PC de caisse
+ * qui change d'adresse sur le réseau laissait toute l'équipe devant un écran qui ne répond plus.
+ * Le canal existait déjà côté application Windows ; rien ne l'appelait jamais.
+ *
+ * Le lien n'apparaît que dans l'application installée — sur le web, la question n'a pas de sens :
+ * l'interface et son serveur partagent le domaine.
+ */
+function ChangerDeServeur() {
+  const pont = (window as { savora?: { changerServeur?: () => void } }).savora;
+  if (!pont?.changerServeur) return null;
+
+  return (
+    <button
+      type="button"
+      className="btn btn--ghost btn--block"
+      style={{ marginTop: 'var(--space-2)' }}
+      onClick={() => pont.changerServeur?.()}
+    >
+      Ce n'est pas le bon serveur — changer l'adresse
+    </button>
   );
 }

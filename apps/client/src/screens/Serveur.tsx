@@ -11,15 +11,35 @@
  */
 import { useState } from 'react';
 import { SavoraMark } from '../components/Icons';
-import { enregistrerServeur } from '../lib/server';
+import { enregistrerServeur, essayerServeur } from '../lib/server';
 
 export function Serveur() {
   const [adresse, setAdresse] = useState('');
   const [erreur, setErreur] = useState<string | null>(null);
+  const [essai, setEssai] = useState(false);
 
-  function valider() {
-    if (!enregistrerServeur(adresse)) {
-      setErreur('Adresse invalide. Exemple : 192.168.1.12:4000');
+  /*
+   * On essaie l'adresse avant de la retenir.
+   *
+   * Elle était enregistrée telle quelle : l'application se rechargeait, chaque appel échouait, et
+   * l'écran restait blanc — sans message, et sans retour possible puisque cet écran ne réapparaît
+   * plus une fois une adresse enregistrée. Six secondes d'attente valent mieux qu'une application
+   * morte que personne ne sait réparer.
+   */
+  async function valider() {
+    if (essai) return;
+    setEssai(true);
+    setErreur(null);
+
+    const verdict = await essayerServeur(adresse);
+    if (!verdict.ok) {
+      setErreur(verdict.message);
+      setEssai(false);
+      return;
+    }
+    if (!enregistrerServeur(verdict.adresse)) {
+      setErreur("L'adresse n'a pas pu être enregistrée. La navigation privée empêche-t-elle le stockage ?");
+      setEssai(false);
       return;
     }
     // Rechargement plutôt que navigation : toute l'application lit l'adresse au démarrage, et la
@@ -68,8 +88,9 @@ export function Serveur() {
               setErreur(null);
             }}
             onKeyDown={(event) => {
-              if (event.key === 'Enter') valider();
+              if (event.key === 'Enter') void valider();
             }}
+            disabled={essai}
             placeholder="192.168.1.12:4000"
             autoComplete="off"
             autoCapitalize="none"
@@ -85,8 +106,13 @@ export function Serveur() {
           )}
         </div>
 
-        <button type="button" className="btn btn--primary btn--block" onClick={valider}>
-          Se connecter
+        <button
+          type="button"
+          className="btn btn--primary btn--block"
+          onClick={() => void valider()}
+          disabled={essai}
+        >
+          {essai ? 'Vérification…' : 'Se connecter'}
         </button>
       </main>
     </div>

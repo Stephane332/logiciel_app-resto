@@ -166,6 +166,30 @@
         <button class="retour" id="retour-1">← Revenir au choix</button>
       </section>
 
+      <!--
+        Étape 3 — l'adresse à donner à l'équipe.
+
+        Le logiciel connaissait son adresse et ne la disait à personne : il fallait ouvrir une
+        invite de commandes et lancer `ipconfig`, la seule étape de toute l'installation qui
+        demandait de savoir ce qu'est une adresse IP. C'est exactement là que s'arrête une vente.
+      -->
+      <section class="etape" id="etape-adresse">
+        <div>
+          <h1>Notez cette adresse</h1>
+          <p style="margin-top: 8px">
+            C'est elle qu'il faut saisir sur les tablettes de cuisine, les téléphones de l'équipe et
+            les postes secondaires. Elle ne change pas tant que cet ordinateur garde la même place
+            sur le réseau.
+          </p>
+        </div>
+
+        <div id="liste-adresses" style="display: flex; flex-direction: column; gap: 10px"></div>
+
+        <span class="indice" id="indice-adresse"></span>
+
+        <button id="ouvrir-logiciel">J'ai noté — ouvrir le logiciel</button>
+      </section>
+
       <!-- Étape 2b — poste secondaire : l'adresse de la caisse principale. -->
       <section class="etape" id="etape-client">
         <div>
@@ -193,6 +217,7 @@
         role: document.getElementById('etape-role'),
         serveur: document.getElementById('etape-serveur'),
         client: document.getElementById('etape-client'),
+        adresse: document.getElementById('etape-adresse'),
       };
 
       function montrer(nom) {
@@ -265,8 +290,50 @@
           echouer(resultat.message);
           boutonServeur.disabled = false;
           boutonServeur.textContent = 'Installer et démarrer';
+          return;
         }
+        afficherAdresses(resultat.adresses ?? []);
       }
+
+      // ── L'adresse à donner à l'équipe ──
+      function afficherAdresses(adresses) {
+        const liste = document.getElementById('liste-adresses');
+        const indiceAdresse = document.getElementById('indice-adresse');
+        liste.innerHTML = '';
+
+        if (adresses.length === 0) {
+          indiceAdresse.textContent =
+            "Cet ordinateur n'est raccordé à aucun réseau pour l'instant. Branchez-le au Wi-Fi du " +
+            'restaurant, puis relancez le logiciel : l\'adresse apparaîtra ici.';
+          indiceAdresse.className = 'erreur';
+        } else {
+          for (const { carte, adresse } of adresses) {
+            const ligne = document.createElement('div');
+            ligne.style.cssText =
+              'display:flex;align-items:center;justify-content:space-between;gap:12px;' +
+              'padding:14px 16px;border:2px solid #e6ddd0;border-radius:12px;background:#fff';
+            const valeur = document.createElement('strong');
+            valeur.textContent = adresse;
+            valeur.style.cssText = 'font-size:20px;letter-spacing:0.5px;user-select:all';
+            const nom = document.createElement('span');
+            nom.textContent = carte;
+            nom.style.cssText = 'font-size:13px;opacity:0.6';
+            ligne.append(valeur, nom);
+            liste.append(ligne);
+          }
+          // Plusieurs cartes réseau, c'est le cas courant : Wi-Fi et Ethernet, parfois une carte
+          // virtuelle. On ne devine pas laquelle est la bonne — seul le restaurateur sait sur quel
+          // réseau sont ses téléphones.
+          indiceAdresse.textContent =
+            adresses.length > 1
+              ? 'Plusieurs réseaux : essayez la première, et la suivante si elle ne répond pas.'
+              : 'Saisissez-la telle quelle, sans « https:// ».';
+          indiceAdresse.className = 'indice';
+        }
+        montrer('adresse');
+      }
+
+      document.getElementById('ouvrir-logiciel').onclick = () => window.savora.ouvrirLogiciel();
 
       function echouer(message) {
         indiceServeur.textContent = message;
