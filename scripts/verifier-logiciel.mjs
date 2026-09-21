@@ -315,6 +315,27 @@ app.on('ready', () => {
       );
       dire('produits', menu);
 
+      /*
+       * La sauvegarde, sur le disque, après le premier démarrage.
+       *
+       * Tout vit sur cette machine : commandes, menu, photos, comptes. Le guide décrivait des
+       * sauvegardes pour un serveur loué — le produit vendu est cet ordinateur-ci, sans
+       * administrateur et sans surveillance. On vérifie donc qu'un fichier existe réellement, et
+       * qu'il n'est pas vide : un fichier de zéro octet passerait pour une sauvegarde.
+       */
+      const fsSonde = require('node:fs');
+      const pathSonde = require('node:path');
+      const dossierS = pathSonde.join(app.getPath('documents'), 'Savora', 'sauvegardes');
+      const copies = fsSonde.existsSync(dossierS)
+        ? fsSonde.readdirSync(dossierS).filter((n) => n.endsWith('.dump'))
+        : [];
+      dire('sauvegardes', copies.length);
+      dire(
+        'tailleSauvegarde',
+        copies.length ? fsSonde.statSync(pathSonde.join(dossierS, copies[0])).size : 0,
+      );
+      dire('lisezMoi', fsSonde.existsSync(pathSonde.join(dossierS, 'LISEZ-MOI.txt')));
+
       // Le compte de démonstration public ne doit pas exister.
       const demo = await f.webContents.executeJavaScript(
         "fetch('/api/v1/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({phone:'70000001',password:'savora2026'})}).then(r=>r.status).catch(()=>0)",
@@ -410,6 +431,13 @@ require(${JSON.stringify(resolve(BUREAU, 'main.cjs'))});
   v('Aucun produit de démonstration', sortiesServeur.get('produits') === 0, String(sortiesServeur.get('produits')));
   // Un mot de passe publié dans le dépôt n'ouvre pas la caisse d'un vrai restaurant.
   v('Le compte de démonstration public est refusé', sortiesServeur.get('demo') === 401, `HTTP ${sortiesServeur.get('demo')}`);
+
+  // Tout vit sur cette machine. Une sauvegarde absente, ou vide, est une perte totale en attente.
+  v('Les données du restaurant sont sauvegardées', Number(sortiesServeur.get('sauvegardes') ?? 0) > 0,
+    `${sortiesServeur.get('sauvegardes') ?? 0} copie(s)`);
+  v('La sauvegarde contient quelque chose', Number(sortiesServeur.get('tailleSauvegarde') ?? 0) > 1000,
+    `${Math.round(Number(sortiesServeur.get('tailleSauvegarde') ?? 0) / 1024)} Ko`);
+  v('Le dossier explique quoi en faire', sortiesServeur.get('lisezMoi') === true);
 }
 
 console.log(`\n═════ ${reussies.length} passées, ${echecs.length} en échec ═════`);

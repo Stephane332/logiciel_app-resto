@@ -2,9 +2,9 @@
 
 **Branche :** `claude/gifted-brown-1tc9ma`
 
-**226 tests** · **44 contrôles de parcours** (chaque rôle, vrai navigateur) · **18 contrôles du
+**226 tests** · **44 contrôles de parcours** (chaque rôle, vrai navigateur) · **21 contrôles du
 logiciel Windows**, serveur embarqué compris · **14 contrôles PWA** · **14 contrôles iPhone**
-(moteur de Safari) · **23 contrôles de la mise en ligne** — 339 vérifications, toutes au vert.
+(moteur de Safari) · **23 contrôles de la mise en ligne** — 342 vérifications, toutes au vert.
 
 ---
 
@@ -188,7 +188,7 @@ npm test                              # 226 tests : règles métier, API, temps 
 npm run verifier:pwa                  # 14 contrôles : manifeste, service worker, hors ligne
 npm run verifier:iphone               # 14 contrôles : le parcours dans le moteur de Safari
 npm run verifier:parcours             # 44 contrôles : chaque rôle, dans un vrai navigateur
-npm run verifier:logiciel             # 18 contrôles : le logiciel Windows et sa base embarquée
+npm run verifier:logiciel             # 21 contrôles : le logiciel Windows, sa base et ses sauvegardes
 npm run verifier:pages                # 23 contrôles : la mise en ligne, dans les deux moteurs
 ```
 

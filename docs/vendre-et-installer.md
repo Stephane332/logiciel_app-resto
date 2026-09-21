@@ -183,6 +183,32 @@ D'où la distinction à garder en tête quand tu vends :
 
 ---
 
+## Les données, et ce qui les protège
+
+Tout vit sur le PC du restaurant : les commandes, le menu, les photos, les comptes de l'équipe, les
+écritures de commission. C'est ce qui rend le montage simple et indépendant — et c'est aussi ce qui
+le rend fragile si personne n'y pense.
+
+**Le logiciel sauvegarde tout seul.** Une copie par jour, au démarrage, dans :
+
+```
+Documents\Savora\sauvegardes
+```
+
+Les quatorze dernières sont conservées ; les plus anciennes s'effacent. Un fichier texte à côté
+explique quoi en faire. L'adresse du dossier est affichée à l'installation, sur le même écran que
+l'adresse réseau.
+
+> **Dis-le au restaurateur, et insiste :** ces copies sont sur **le même disque**. Elles le
+> protègent d'une base abîmée ou d'une fausse manœuvre — pas d'un disque mort, d'un vol ou d'un
+> incendie. **Une clé USB, une fois par semaine**, et le dossier copié dessus. C'est une minute, et
+> c'est la différence entre un incident et la fin d'un commerce.
+
+Vends-le comme tel : ce n'est pas une contrainte, c'est la seule chose qui garantit qu'un an de
+chiffre d'affaires ne disparaît pas avec un disque dur.
+
+---
+
 ## Ce qu'il faut acheter, une fois
 
 Rien n'est obligatoire pour commencer : le logiciel tourne sur le PC du restaurant, l'équipe s'y

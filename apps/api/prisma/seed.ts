@@ -18,7 +18,52 @@ const prisma = new PrismaClient();
 
 const DEMO_PASSWORD = 'savora2026';
 
+/**
+ * Ce script ne doit jamais s'exécuter sur une vraie installation.
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  Il crée cinq comptes dont le mot de passe est écrit dans un dépôt public.    │
+ * └──────────────────────────────────────────────────────────────────────────────┘
+ *
+ * Le guide de déploiement demandait de le lancer sur le serveur de production, avec un
+ * avertissement en prose : « changez immédiatement ces mots de passe ». Un avertissement en prose
+ * ne protège personne — il se lit une fois, se remet à plus tard, et le restaurant tourne des mois
+ * avec cinq comptes dont le mot de passe se trouve sur Internet. N'importe qui pouvant joindre le
+ * serveur ouvre alors la caisse, lit le chiffre d'affaires et annule des commandes.
+ *
+ * Pour créer un vrai restaurant, il existe `premier-demarrage.ts` : un seul compte, un mot de passe
+ * choisi, rien de public. C'est lui qu'emploie le logiciel Windows, et c'est lui que le guide
+ * indique désormais.
+ *
+ * Le refus se force — `SAVORA_AMORCAGE_DEMO=1` — parce qu'il faut bien pouvoir monter une
+ * démonstration sur une machine de production le temps d'un rendez-vous. Mais alors on l'a voulu,
+ * on l'a écrit, et cela se relit dans l'historique des commandes.
+ */
+function refuserEnProduction() {
+  if (process.env.NODE_ENV !== 'production') return;
+  if (process.env.SAVORA_AMORCAGE_DEMO === '1') {
+    console.warn('\n  ⚠  Amorçage de démonstration forcé en production : mots de passe publics.\n');
+    return;
+  }
+  console.error(
+    [
+      '',
+      "  ⚠  Refus : ce jeu de démarrage crée des comptes dont le mot de passe est public.",
+      '',
+      '     Pour créer un vrai restaurant :',
+      '       SAVORA_RESTO_NOM="Chez Awa" \\',
+      '       SAVORA_ADMIN_TEL="70112233" \\',
+      '       SAVORA_ADMIN_MDP="…" node dist/premier-demarrage.js',
+      '',
+      '     Pour une démonstration assumée : SAVORA_AMORCAGE_DEMO=1',
+      '',
+    ].join('\n'),
+  );
+  process.exit(1);
+}
+
 async function main() {
+  refuserEnProduction();
   console.log('Amorçage de la base Savora…\n');
 
   const restaurant = await prisma.restaurant.upsert({

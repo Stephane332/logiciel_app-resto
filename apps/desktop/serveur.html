@@ -187,6 +187,24 @@
 
         <span class="indice" id="indice-adresse"></span>
 
+        <div
+          id="bloc-sauvegardes"
+          style="
+            margin-top: 6px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            background: #fff6e8;
+            border: 1px solid #f0d9b5;
+          "
+        >
+          <strong style="display: block; margin-bottom: 4px">Vos données sont sauvegardées ici</strong>
+          <span id="chemin-sauvegardes" style="font-size: 13px; user-select: all; word-break: break-all"></span>
+          <p style="margin-top: 8px; font-size: 13px; opacity: 0.75">
+            Une copie par jour, automatique. Elle est sur ce même disque : copiez ce dossier sur une
+            clé USB une fois par semaine, sinon une panne de disque emporterait tout.
+          </p>
+        </div>
+
         <button id="ouvrir-logiciel">J'ai noté — ouvrir le logiciel</button>
       </section>
 
@@ -292,14 +310,22 @@
           boutonServeur.textContent = 'Installer et démarrer';
           return;
         }
-        afficherAdresses(resultat.adresses ?? []);
+        afficherAdresses(resultat.adresses ?? [], resultat.sauvegardes ?? '');
       }
 
       // ── L'adresse à donner à l'équipe ──
-      function afficherAdresses(adresses) {
+      function afficherAdresses(adresses, cheminSauvegardes) {
         const liste = document.getElementById('liste-adresses');
         const indiceAdresse = document.getElementById('indice-adresse');
         liste.innerHTML = '';
+
+        // Le dossier des sauvegardes : dit une fois, au moment où l'on installe, là où on le lira.
+        const bloc = document.getElementById('bloc-sauvegardes');
+        if (cheminSauvegardes) {
+          document.getElementById('chemin-sauvegardes').textContent = cheminSauvegardes;
+        } else {
+          bloc.style.display = 'none';
+        }
 
         if (adresses.length === 0) {
           indiceAdresse.textContent =

@@ -26,6 +26,7 @@ const { networkInterfaces } = require('node:os');
 const { demarrer } = require('./serveur-local.cjs');
 const baseEmbarquee = require('./base-embarquee.cjs');
 const apiEmbarquee = require('./api-embarquee.cjs');
+const { sauvegarder } = require('./sauvegarde.cjs');
 
 /** Réglages, à côté des données de l'application : ils survivent à une mise à jour. */
 const configFile = path.join(app.getPath('userData'), 'serveur.json');
@@ -178,6 +179,17 @@ function creerFenetre() {
   else fenetre.loadFile(path.join(__dirname, 'serveur.html'));
 }
 
+/**
+ * Où les sauvegardes sont déposées.
+ *
+ * Dans les **Documents**, pas dans un répertoire d'application : c'est là que quelqu'un pense à
+ * regarder, et là qu'il saura copier le dossier sur une clé USB. Une sauvegarde qu'on ne retrouve
+ * pas le jour de la panne n'a jamais existé.
+ */
+function dossierDesSauvegardes() {
+  return path.join(app.getPath('documents'), 'Savora', 'sauvegardes');
+}
+
 /** Ce que le restaurateur voit pendant que son serveur démarre. */
 function annoncer(message) {
   fenetre?.webContents.send('savora:avancement', message);
@@ -253,6 +265,32 @@ async function demarrerServeurDuResto(infos) {
     // pas laisser le poste marqué « caisse principale » avec un serveur qui ne monte pas.
     ecrireReglages({ role: 'serveur', serveur: null });
 
+    /*
+     * La sauvegarde, avant d'annoncer que tout est prêt.
+     *
+     * Elle tourne à chaque démarrage, au plus une fois par jour, et ne peut pas empêcher le
+     * service : un échec est signalé et noté, jamais bloquant. Une caisse qui refuserait de
+     * s'ouvrir un midi parce qu'une copie a raté serait un remède pire que le mal.
+     *
+     * Elle est faite **après** le démarrage du serveur : à ce moment la base est debout et le
+     * schéma est à jour, donc la copie est cohérente.
+     */
+    try {
+      const bilan = sauvegarder({
+        dossierSauvegardes: dossierDesSauvegardes(),
+        binaires: baseEmbarquee.trouverBinaires(),
+        urlBase: baseLocale.url,
+        dossierPhotos: path.join(donnees, 'photos'),
+        journal: annoncer,
+      });
+      if (!bilan.fait && bilan.raison === 'echec') {
+        console.error('[savora] sauvegarde impossible :', bilan.detail);
+        annoncer('Sauvegarde impossible — le service continue.');
+      }
+    } catch (erreur) {
+      console.error('[savora] sauvegarde impossible :', erreur.message);
+    }
+
     annoncer(amorce.deja ? 'Serveur prêt.' : 'Restaurant créé. Serveur prêt.');
 
     /*
@@ -264,7 +302,7 @@ async function demarrerServeurDuResto(infos) {
      *
      * Aux démarrages suivants, cet écran ne revient pas : la question ne se pose qu'une fois.
      */
-    return { ok: true, adresses: adressesReseau(apiLocale.port) };
+    return { ok: true, adresses: adressesReseau(apiLocale.port), sauvegardes: dossierDesSauvegardes() };
   } catch (erreur) {
     // On redescend proprement : une base laissée en marche empêcherait la prochaine tentative.
     await apiLocale?.arreter().catch(() => {});

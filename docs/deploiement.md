@@ -55,11 +55,21 @@ docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod \
   exec api npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
 
 docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod \
-  exec api npx tsx apps/api/prisma/seed.ts
+  exec -e SAVORA_RESTO_NOM="Chez Awa" \
+       -e SAVORA_ADMIN_TEL="70112233" \
+       -e SAVORA_ADMIN_MDP="le-mot-de-passe-du-restaurateur" \
+       api node apps/api/dist/premier-demarrage.js
 ```
 
-> **Changez immédiatement le mot de passe des comptes créés par l'amorçage.** Ils sont publics : ils
-> figurent dans le code source du dépôt.
+Un seul restaurant, un seul compte administrateur, et le mot de passe que vous avez choisi. C'est le
+même programme que celui du logiciel Windows : une installation, un restaurant, rien de public.
+
+> **Le jeu de démarrage de développement — `prisma/seed.ts` — refuse désormais de s'exécuter en
+> production.** Il créait cinq comptes dont le mot de passe est écrit dans un dépôt public, avec
+> pour seule protection un avertissement en prose. Un avertissement en prose ne protège personne :
+> il se lit une fois, se remet à plus tard, et le restaurant tourne des mois avec des comptes dont
+> le mot de passe se trouve sur Internet. Pour une démonstration assumée, `SAVORA_AMORCAGE_DEMO=1`
+> lève le refus — et laisse une trace de ce qu'on a voulu.
 
 Aucune des briques n'est exposée sur l'hôte : seul Caddy écoute sur 80 et 443, et atteint les autres
 par le réseau interne de Compose. Les certificats vivent dans un volume — sans lui, chaque
