@@ -22,12 +22,8 @@
       "buildResources": "build"
     },
     "files": [
-      "main.cjs",
-      "preload.cjs",
+      "*.cjs",
       "serveur.html",
-      "serveur-local.cjs",
-      "base-embarquee.cjs",
-      "api-embarquee.cjs",
       "web/**"
     ],
     "win": {

@@ -45,6 +45,26 @@ function lireEnregistre(): string {
   }
 }
 
+/**
+ * Oublie l'adresse enregistrée, pour que l'application la redemande.
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  Une adresse fausse enregistrée une fois l'était pour toujours.               │
+ * └──────────────────────────────────────────────────────────────────────────────┘
+ *
+ * L'écran de saisie ne s'affiche que si **aucune** adresse n'est retenue. Une adresse enregistrée
+ * avant que la vérification n'existe — ou un serveur qui a changé d'adresse depuis — laissait donc
+ * l'application charger dans le vide, indéfiniment, sans jamais reproposer la question. Un écran
+ * blanc dont on ne sort pas, et qu'aucun rechargement ne répare.
+ */
+export function oublierServeur(): void {
+  try {
+    localStorage.removeItem(CLE);
+  } catch {
+    // Stockage refusé : il n'y avait rien à oublier.
+  }
+}
+
 export function enregistrerServeur(saisie: string): boolean {
   const adresse = normaliser(saisie);
   if (!adresse) return false;
@@ -182,6 +202,33 @@ export function serveurManquant(): boolean {
   if (FIXEE) return false;
   if (lireEnregistre()) return false;
   return estNatif() || HEBERGEMENT_STATIQUE;
+}
+
+/**
+ * Le serveur enregistré répond-il encore ?
+ *
+ * Renvoie `null` quand la question ne se pose pas — application servie par son propre serveur, ou
+ * adresse figée à la construction. Sinon, `true` ou `false` après un essai réel.
+ *
+ * C'est ce qui permet de reproposer la question au lieu d'afficher le vide : une adresse saisie
+ * avant que la vérification n'existe, un PC de caisse qui a changé d'adresse sur le réseau, un
+ * serveur éteint — trois cas ordinaires qui laissaient l'application morte sans recours.
+ */
+export async function serveurEnregistreRepond(delaiMs = 6000): Promise<boolean | null> {
+  if (FIXEE) return null;
+  const enregistre = lireEnregistre();
+  if (!enregistre) return null;
+
+  const arret = new AbortController();
+  const minuteur = setTimeout(() => arret.abort(), delaiMs);
+  try {
+    const reponse = await fetch(`${enregistre}/api/v1/menu`, { signal: arret.signal });
+    return reponse.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(minuteur);
+  }
 }
 
 /** Base des appels d'API. */

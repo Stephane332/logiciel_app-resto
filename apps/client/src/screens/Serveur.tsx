@@ -11,9 +11,16 @@
  */
 import { useState } from 'react';
 import { SavoraMark } from '../components/Icons';
-import { enregistrerServeur, essayerServeur } from '../lib/server';
+import { enregistrerServeur, essayerServeur, oublierServeur } from '../lib/server';
 
-export function Serveur() {
+/**
+ * `injoignable` : une adresse était bien enregistrée, mais le serveur ne répond plus.
+ *
+ * Le dire change tout pour la personne devant l'écran. Sans cela, revoir cette question après des
+ * semaines d'usage laisse croire que l'application a tout perdu — alors qu'il suffit le plus
+ * souvent d'allumer l'ordinateur de la caisse.
+ */
+export function Serveur({ injoignable = false }: { injoignable?: boolean }) {
   const [adresse, setAdresse] = useState('');
   const [erreur, setErreur] = useState<string | null>(null);
   const [essai, setEssai] = useState(false);
@@ -30,6 +37,10 @@ export function Serveur() {
     if (essai) return;
     setEssai(true);
     setErreur(null);
+
+    // L'ancienne adresse part avant d'en essayer une neuve : sans cela, un échec laisserait en
+    // mémoire celle qui ne marche pas, et l'application repartirait dessus au rechargement.
+    oublierServeur();
 
     const verdict = await essayerServeur(adresse);
     if (!verdict.ok) {
@@ -68,10 +79,12 @@ export function Serveur() {
 
         <div>
           <h1 className="title" style={{ fontSize: 'var(--text-xl)' }}>
-            À quelle adresse se trouve le restaurant&nbsp;?
+            {injoignable ? 'Le restaurant ne répond plus' : 'À quelle adresse se trouve le restaurant\u00A0?'}
           </h1>
           <p className="subtitle" style={{ marginTop: 'var(--space-2)' }}>
-            Vous ne la saisirez qu'une fois. L'application s'en souviendra.
+            {injoignable
+              ? "L'ordinateur de la caisse est peut-être éteint, ou son adresse a changé. Vérifiez qu'il est allumé, puis confirmez son adresse ci-dessous."
+              : "Vous ne la saisirez qu'une fois. L'application s'en souviendra."}
           </p>
         </div>
 

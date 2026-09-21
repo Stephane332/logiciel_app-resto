@@ -73,6 +73,15 @@ jobs:
         working-directory: apps/desktop
         run: npm install
 
+      # ── Avant d'empaqueter : tout ce que le logiciel charge est-il dedans ? ──
+      #
+      # La liste des fichiers embarqués s'écrit à la main. Un module ajouté au logiciel et oublié
+      # dans cette liste produit un installateur dont le point d'entrée réclame un fichier absent :
+      # le logiciel ne démarre pas du tout — chez le client, après 229 Mo de téléchargement, et sans
+      # que rien ne l'ait signalé ici. C'est arrivé une fois ; une seconde serait impardonnable.
+      - name: Vérifier que rien ne manquera dans l'installateur
+        run: node scripts/verifier-empaquetage.mjs
+
       - name: Construire l'installateur
         working-directory: apps/desktop
         run: npm run build:win
