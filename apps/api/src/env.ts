@@ -43,6 +43,24 @@ const schema = z.object({
    * dépôt. L'autoriser autorise donc toutes les pages publiées par ce compte.
    */
   PWA_ORIGINS: z.string().default(''),
+  /**
+   * Dossier de l'interface du restaurant, quand le serveur doit la servir lui-même.
+   *
+   * ┌──────────────────────────────────────────────────────────────────────────────┐
+   * │  Une tablette de cuisine n'a pas d'autre porte d'entrée que ce serveur.       │
+   * └──────────────────────────────────────────────────────────────────────────────┘
+   *
+   * Sur un VPS, Caddy sert les interfaces et relaie l'API : ce réglage reste vide. Chez un
+   * restaurant, le serveur **est** le PC de la caisse, et l'interface qu'il porte n'était servie
+   * que sur sa propre boucle locale — visible dans la fenêtre du logiciel, et nulle part ailleurs.
+   * Une tablette qui ouvrait l'adresse annoncée recevait une erreur JSON, alors que l'écran
+   * d'installation promet que la cuisine et les téléphones de l'équipe s'y connecteront.
+   *
+   * Renseigné, le serveur sert cette interface à la racine. Tout tient alors sur une seule adresse
+   * et une seule origine : pas de CORS à régler, pas de contenu mixte, et une seule chose à saisir
+   * sur chaque appareil de l'équipe.
+   */
+  INTERFACE_DIR: z.string().default(''),
   PUBLIC_CLIENT_URL: z.string().default('http://localhost:5173'),
   PAYMENT_PROVIDER: z.enum(['declared', 'sandbox', 'cinetpay', 'ligdicash']).default('declared'),
   PAYMENT_WEBHOOK_SECRET: z.string().default('dev-webhook-secret'),

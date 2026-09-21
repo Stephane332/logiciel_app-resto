@@ -7,8 +7,8 @@ import fastifyStatic from '@fastify/static';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
 import { TransitionError, ForbiddenError, MoneyError, PricingError } from '@savora/shared';
-import { resolve } from 'node:path';
-import { mkdirSync } from 'node:fs';
+import { resolve, join } from 'node:path';
+import { mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { env, isProduction, isTest, originAutorisee } from './env.js';
 import { AppError } from './lib/errors.js';
 import { attachAuth } from './lib/guards.js';
@@ -142,11 +142,54 @@ export async function buildApp(): Promise<FastifyInstance> {
     });
   });
 
-  app.setNotFoundHandler((request, reply) =>
-    reply.status(404).send({
+  /*
+   * L'interface du restaurant, servie par le serveur lui-même.
+   *
+   * ┌──────────────────────────────────────────────────────────────────────────────┐
+   * │  La tablette de cuisine n'a pas d'autre porte d'entrée que celle-ci.          │
+   * └──────────────────────────────────────────────────────────────────────────────┘
+   *
+   * Sur un VPS, Caddy s'en charge et `INTERFACE_DIR` reste vide. Chez un restaurant, le serveur est
+   * le PC de la caisse : l'interface qu'il porte n'était servie que sur sa propre boucle locale,
+   * donc visible dans la fenêtre du logiciel et nulle part ailleurs. Une tablette qui ouvrait
+   * l'adresse annoncée à l'installation recevait `{"error":{"code":"NOT_FOUND"}}` — alors que cet
+   * écran promet que la cuisine et les téléphones de l'équipe s'y connecteront.
+   *
+   * Tout tient désormais sur une seule adresse : l'interface à la racine, l'API sous `/api`. Même
+   * origine, donc aucun CORS à régler et aucun contenu mixte possible ; et une seule chose à saisir
+   * sur chaque appareil de l'équipe.
+   */
+  const interfaceDir = env.INTERFACE_DIR ? resolve(env.INTERFACE_DIR) : '';
+  const interfaceServie = Boolean(interfaceDir) && existsSync(join(interfaceDir, 'index.html'));
+  if (interfaceServie) {
+    await app.register(fastifyStatic, {
+      root: interfaceDir,
+      prefix: '/',
+      // Un second greffon statique ne redécore pas la réponse : la première inscription l'a fait.
+      decorateReply: false,
+      index: ['index.html'],
+    });
+  }
+
+  app.setNotFoundHandler((request, reply) => {
+    /*
+     * Repli de l'application à page unique.
+     *
+     * « /cuisine » n'est pas un fichier : c'est une adresse que le routeur résout dans le
+     * navigateur. Sans ce repli, ouvrir ou recharger une page autre que l'accueil renverrait
+     * l'erreur JSON de l'API — une tablette de cuisine rechargée en plein service afficherait du
+     * texte technique au lieu de sa file de commandes.
+     *
+     * Jamais pour `/api` : une route d'API inconnue doit rester une erreur d'API, sans quoi
+     * l'application recevrait du HTML là où elle attend du JSON et échouerait sans rien dire.
+     */
+    if (interfaceServie && request.method === 'GET' && !request.url.startsWith('/api')) {
+      return reply.type('text/html').send(readFileSync(join(interfaceDir, 'index.html')));
+    }
+    return reply.status(404).send({
       error: { code: 'NOT_FOUND', message: `Route inconnue : ${request.method} ${request.url}` },
-    }),
-  );
+    });
+  });
 
   await registerRoutes(app);
 

@@ -126,6 +126,14 @@ function environnementDe({ api, racineDonnees, urlBase }) {
     // Les photos des plats vivent avec les données, jamais dans le dossier d'installation : une mise
     // à jour du logiciel ne doit pas emporter le travail de photographie du restaurant.
     UPLOAD_DIR: path.join(racineDonnees, 'photos'),
+    /*
+     * L'interface du restaurant, servie par ce serveur à tout le réseau.
+     *
+     * Sans cela, elle n'existait que dans la fenêtre du logiciel : une tablette de cuisine ou le
+     * téléphone d'un livreur qui ouvrait l'adresse annoncée recevait une erreur JSON. L'écran
+     * d'installation promet pourtant qu'ils s'y connecteront — c'est désormais vrai.
+     */
+    INTERFACE_DIR: path.join(__dirname, 'web'),
   };
 }
 

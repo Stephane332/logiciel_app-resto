@@ -233,6 +233,12 @@ if (process.getuid && process.getuid() === 0) {
   const sondeServeur = resolve(tmpdir(), `savora-sonde-serveur-${process.pid}.cjs`);
   writeFileSync(
     sondeServeur,
+    /*
+     * ⚠ Ce bloc est une chaîne de gabarit : **aucune apostrophe inversée à l'intérieur**, pas même
+     *   dans un commentaire, et aucun `${…}` qui ne soit voulu. Une seule apostrophe inversée ferme
+     *   la chaîne et casse tout le script avec une erreur de syntaxe qui ne désigne pas la ligne
+     *   fautive. C'est arrivé deux fois.
+     */
     `const { app, BrowserWindow } = require('electron');
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
 const lire = (f) => f.webContents.executeJavaScript("document.body.innerText.split(String.fromCharCode(10)).filter(Boolean).join(' | ')").catch((e) => 'ERREUR ' + e.message);
@@ -290,6 +296,27 @@ app.on('ready', () => {
       const ecranAdresse = await lire(f);
       dire('ecranAdresse', ecranAdresse.slice(0, 160));
       dire('adresseProposee', (ecranAdresse.match(/\\b\\d{1,3}(?:\\.\\d{1,3}){3}:\\d+/) || [''])[0]);
+
+      /*
+       * L'adresse annoncée ouvre-t-elle vraiment le logiciel ?
+       *
+       * C'est la question qui décide de tout : le serveur ne servait son interface que sur sa
+       * propre boucle locale, donc une tablette de cuisine qui ouvrait l'adresse affichée recevait
+       * une erreur JSON « NOT_FOUND ». L'écran promet pourtant que la cuisine et les téléphones
+       * de l'équipe s'y connecteront. On vérifie donc l'adresse **telle qu'elle est affichée**, pas
+       * une variante commode.
+       */
+      const adresseAffichee = (ecranAdresse.match(/\\b\\d{1,3}(?:\\.\\d{1,3}){3}:\\d+/) || [''])[0];
+      if (adresseAffichee) {
+        const vue = await f.webContents.executeJavaScript(
+          "fetch('http://" + adresseAffichee + "/').then(async r => ({ statut: r.status, html: (await r.text()).slice(0, 60) })).catch(e => ({ erreur: String(e) }))",
+        );
+        dire('interfaceReseau', vue);
+        const api = await f.webContents.executeJavaScript(
+          "fetch('http://" + adresseAffichee + "/api/v1/menu').then(r => r.status).catch(() => 0)",
+        );
+        dire('apiReseau', api);
+      }
 
       // Le logiciel ne s'ouvre qu'une fois l'adresse notée : c'est tout l'intérêt de l'écran.
       await f.webContents.executeJavaScript(
@@ -438,6 +465,16 @@ require(${JSON.stringify(resolve(BUREAU, 'main.cjs'))});
   v('La sauvegarde contient quelque chose', Number(sortiesServeur.get('tailleSauvegarde') ?? 0) > 1000,
     `${Math.round(Number(sortiesServeur.get('tailleSauvegarde') ?? 0) / 1024)} Ko`);
   v('Le dossier explique quoi en faire', sortiesServeur.get('lisezMoi') === true);
+
+  /*
+   * L'adresse donnée à l'équipe doit ouvrir le logiciel, pas une erreur technique.
+   * C'est la seule chose qu'un chef de cuisine tapera jamais.
+   */
+  const vueReseau = sortiesServeur.get('interfaceReseau') ?? {};
+  v("L'adresse annoncée ouvre le logiciel depuis le réseau", vueReseau.statut === 200 && /<!doctype html/i.test(vueReseau.html ?? ''),
+    vueReseau.erreur ?? `HTTP ${vueReseau.statut} — ${(vueReseau.html ?? '').slice(0, 30)}`);
+  v("L'API répond sur la même adresse", sortiesServeur.get('apiReseau') === 200,
+    `HTTP ${sortiesServeur.get('apiReseau')}`);
 }
 
 console.log(`\n═════ ${reussies.length} passées, ${echecs.length} en échec ═════`);
