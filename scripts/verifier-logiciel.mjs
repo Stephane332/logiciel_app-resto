@@ -316,6 +316,13 @@ app.on('ready', () => {
           "fetch('http://" + adresseAffichee + "/api/v1/menu').then(r => r.status).catch(() => 0)",
         );
         dire('apiReseau', api);
+
+        // Le livreur pose le logiciel sur son écran d'accueil plutôt que de retaper une adresse IP
+        // entre deux livraisons. Sans manifeste servi, ce geste n'existe pas.
+        const installable = await f.webContents.executeJavaScript(
+          "fetch('http://" + adresseAffichee + "/manifest.webmanifest').then(async r => ({ statut: r.status, nom: (await r.json()).short_name })).catch(e => ({ erreur: String(e) }))",
+        );
+        dire('installable', installable);
       }
 
       // Le logiciel ne s'ouvre qu'une fois l'adresse notée : c'est tout l'intérêt de l'écran.
@@ -475,6 +482,10 @@ require(${JSON.stringify(resolve(BUREAU, 'main.cjs'))});
     vueReseau.erreur ?? `HTTP ${vueReseau.statut} — ${(vueReseau.html ?? '').slice(0, 30)}`);
   v("L'API répond sur la même adresse", sortiesServeur.get('apiReseau') === 200,
     `HTTP ${sortiesServeur.get('apiReseau')}`);
+
+  const install = sortiesServeur.get('installable') ?? {};
+  v("Le logiciel se pose sur l'écran d'accueil d'un téléphone", install.statut === 200 && Boolean(install.nom),
+    install.erreur ?? `HTTP ${install.statut} — ${install.nom ?? 'sans nom'}`);
 }
 
 console.log(`\n═════ ${reussies.length} passées, ${echecs.length} en échec ═════`);

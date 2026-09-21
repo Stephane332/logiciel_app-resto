@@ -183,6 +183,37 @@ D'où la distinction à garder en tête quand tu vends :
 
 ---
 
+## Qui installe quoi — la question qu'on te posera en premier
+
+Un seul logiciel, une seule adresse. **Ce que chacun voit dépend de son compte, pas de ce qu'il a
+installé.**
+
+| Qui | Sur quoi | Ce qu'il installe | Ce qu'il voit |
+|---|---|---|---|
+| **La caisse** | le PC du restaurant | l'exe — c'est lui le serveur | tout : caisse, commandes, menu, statistiques |
+| **La cuisine** | une tablette | **rien** — l'adresse du PC dans le navigateur | la file des commandes, et rien d'autre |
+| **Le livreur** | son propre téléphone | **rien** — la même adresse | « Ma tournée », et rien d'autre |
+| **Le client** | son téléphone | l'APK, ou le lien public | le menu et ses commandes |
+
+L'équipe tape donc **une seule chose**, celle que le PC affiche à l'installation :
+
+```
+192.168.1.12:4000
+```
+
+Puis chacun se connecte avec son numéro et son mot de passe. Le livreur n'a accès ni à la caisse, ni
+aux statistiques, ni au chiffre d'affaires — c'est vérifié à chaque livraison du logiciel, rôle par
+rôle.
+
+**Pour ne pas retaper l'adresse chaque jour :** une fois la page ouverte, Safari → Partager → « Sur
+l'écran d'accueil », ou Chrome → menu → « Ajouter à l'écran d'accueil ». Le logiciel devient une
+icône, et s'ouvre en plein écran. C'est ce qui change tout pour un livreur qui a les mains prises.
+
+> **L'APK n'est pas pour l'équipe.** C'est l'application des clients qui commandent. Donner l'APK à
+> un livreur ne lui ouvrira jamais sa tournée.
+
+---
+
 ## Les données, et ce qui les protège
 
 Tout vit sur le PC du restaurant : les commandes, le menu, les photos, les comptes de l'équipe, les

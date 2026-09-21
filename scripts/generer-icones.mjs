@@ -76,6 +76,27 @@ console.log('\nLogiciel restaurant et Windows :');
 copyFileSync(resolve('packages/ui/assets/mark.svg'), resolve('apps/restaurant/public/favicon.svg'));
 console.log('  apps/restaurant/public/favicon.svg');
 
+/*
+ * Les icônes du logiciel sur un téléphone.
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  Le livreur travaille avec son téléphone, pas avec une barre d'adresse.       │
+ * └──────────────────────────────────────────────────────────────────────────────┘
+ *
+ * Le logiciel n'était installable nulle part : la cuisine et le livreur devaient retaper une
+ * adresse IP à chaque service. Sur un téléphone, en courant, entre deux livraisons — personne ne
+ * le fera deux jours de suite. Avec ces icônes et un manifeste, l'adresse se pose une fois sur
+ * l'écran d'accueil et s'ouvre ensuite d'un doigt, en plein écran, sans barre d'adresse où partir
+ * ailleurs.
+ */
+for (const taille of [192, 512]) {
+  await sharp(resolve('packages/ui/assets/mark.svg'), { density: 400 })
+    .resize(taille, taille)
+    .png()
+    .toFile(resolve('apps/restaurant/public', `icone-${taille}.png`));
+  console.log(`  apps/restaurant/public/icone-${taille}.png`);
+}
+
 /**
  * Icône de l'installateur et de la fenêtre Windows, au format ICO.
  *

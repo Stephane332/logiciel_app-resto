@@ -8,6 +8,28 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>Savora — Espace Restaurant</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!--
+      Le logiciel, posé sur l'écran d'accueil d'un téléphone.
+
+      La cuisine et le livreur travaillent sur un téléphone ou une tablette, pas devant une barre
+      d'adresse : sans ces quelques lignes, il fallait retaper « 192.168.1.12:4000 » à chaque
+      service. Personne ne le fait deux jours de suite.
+
+      Avec elles, on pose l'adresse une fois — Safari : Partager, « Sur l'écran d'accueil » ;
+      Chrome : menu, « Ajouter à l'écran d'accueil » — et le logiciel s'ouvre ensuite d'un doigt,
+      en plein écran, sans barre d'adresse où un employé pourrait partir ailleurs en plein service.
+
+      Sur le réseau du restaurant tout est en clair, et Chrome réserve son « Installer » aux
+      adresses sécurisées : on obtient un raccourci plutôt qu'une installation complète. Safari,
+      lui, ouvre bien en plein écran. Dans les deux cas l'adresse n'est plus à taper, et c'est ce
+      qui compte pour quelqu'un qui a les mains prises.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Savora Pro" />
+    <link rel="apple-touch-icon" href="/icone-192.png" />
   </head>
   <body>
     <div id="root"></div>
