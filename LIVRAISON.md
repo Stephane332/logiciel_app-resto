@@ -26,22 +26,46 @@ en ligne dit la vérité sur ce qui sort réellement de la cuisine, ou il ne dit
 > exactement, de quoi l'acheteur a besoin, et quelle adresse se tape où. Le reste de ce document
 > suppose que tu l'as lu.
 
-## Les deux fichiers à télécharger
+## Les trois livrables
 
-Il faut être connecté à GitHub pour télécharger un artefact.
+Tous construits sur le commit `f3851e6` — celui qui ajoute la sauvegarde automatique et ferme
+l'amorçage de démonstration en production.
 
 | Quoi | Où | Taille |
 |---|---|---|
-| **Logiciel Windows** | [construction du 20/09](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35531484401) → artefact `savora-pro-windows` | 229 Mo |
-| **APK Android** | [construction du 20/09](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35530991751) → artefact `savora-apk` | 3,9 Mo |
+| **Application cliente (PWA)** | **https://stephane332.github.io/logiciel_app-resto/** | en ligne |
+| **Logiciel Windows** | [construction 35655454483](https://github.com/Stephane332/logiciel_app-resto/actions/runs/35655454483) → artefact `savora-pro-windows` | 229 Mo |
+| **APK Android** | [dernière construction](https://github.com/Stephane332/logiciel_app-resto/actions/workflows/android.yml) → artefact `savora-apk` | 3,9 Mo |
 
-Construits sur le code qui ferme la fuite du suivi public et admet l'application
-publiée en ligne. Les versions antérieures portent encore la fuite : ce sont ces deux-là qu'il faut
-installer.
+Il faut être connecté à GitHub pour télécharger un artefact.
 
-> **Un artefact GitHub expire au bout de 30 jours.** Ces deux-là disparaissent le **20 octobre 2026**.
-> Pour une vente, garde une copie du fichier sur une clé ou un disque — ou relance simplement le
-> workflow, qui reconstruit à l'identique.
+> **Un artefact GitHub expire au bout de 30 jours.** Pour une vente, garde une copie du fichier sur
+> une clé ou un disque — ou relance le workflow, qui reconstruit à l'identique.
+
+### Le lien PWA, en une phrase
+
+C'est le lien qu'on envoie sur WhatsApp et qu'on met sur une affiche. Il s'ouvre partout, et Safari
+comme Chrome savent l'installer sur l'écran d'accueil — **la seule voie pour un client sur iPhone**.
+Il sert l'application, pas les données : au premier lancement il demande l'adresse du serveur du
+restaurant, et cette adresse doit être en `https://` (voir [la livraison à
+distance](docs/livraison-a-distance.md)).
+
+### Les données sont sauvegardées toutes seules
+
+Tout vit sur le PC du restaurant : commandes, menu, photos, comptes, commission. Le logiciel en fait
+une copie par jour, au démarrage, base **et** photos, dans :
+
+```
+Documents\Savora\sauvegardes
+```
+
+Les quatorze dernières sont conservées. L'adresse du dossier s'affiche à l'installation, sur le même
+écran que l'adresse réseau, avec un fichier texte qui explique quoi en faire.
+
+> **À dire au restaurateur, et à répéter :** ces copies sont sur **le même disque**. Elles le
+> protègent d'une base abîmée ou d'une fausse manœuvre — pas d'un disque mort, d'un vol ou d'un
+> incendie. Une clé USB une fois par semaine, le dossier copié dessus. C'est une minute, et c'est la
+> différence entre un incident et la fin d'un commerce.
 
 ### Le logiciel Windows porte tout
 
