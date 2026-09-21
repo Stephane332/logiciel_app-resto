@@ -64,7 +64,12 @@ export async function buildApp(): Promise<FastifyInstance> {
     immutable: true,
     index: false,
     // Les images sont servies à la PWA depuis une autre origine en développement.
-    setHeaders: (res) => res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'),
+    //
+    // `setHeaders` reçoit la réponse **Fastify** depuis la version 10 du greffon, là où elle
+    // recevait la réponse brute de Node. `res.setHeader` n'existe donc plus ici : c'est `header`.
+    // Le compilateur l'a dit tout de suite ; sans typage, l'en-tête aurait disparu en silence et
+    // les photos auraient cessé de s'afficher hors du domaine de l'API.
+    setHeaders: (reponse) => reponse.header('Cross-Origin-Resource-Policy', 'cross-origin'),
   });
 
   app.addHook('onRequest', attachAuth);

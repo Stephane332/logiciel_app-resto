@@ -82,8 +82,11 @@ domaine. Le workflow **PWA publique** y dépose l'application à chaque envoi de
 
 **Un seul geste, une seule fois — et il n'appartient qu'au propriétaire du dépôt :**
 
-> **Settings** → **Pages** (colonne de gauche) → *Build and deployment* → **Source** →
-> choisir **GitHub Actions**.
+> **[Ouvrir le réglage →](https://github.com/Stephane332/logiciel_app-resto/settings/pages)**
+> puis *Build and deployment* → **Source** → **GitHub Actions**.
+>
+> Ensuite **[relancer la publication →](https://github.com/Stephane332/logiciel_app-resto/actions/workflows/pwa.yml)**
+> (bouton **Run workflow**).
 
 Le jeton dont dispose un workflow ne porte jamais le droit d'administrer le dépôt : il sait publier
 sur Pages, il ne sait pas *créer* le site. Aucun script ne peut donc faire ce clic à ta place. Une
