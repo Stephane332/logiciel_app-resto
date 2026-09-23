@@ -323,6 +323,25 @@ app.on('ready', () => {
           "fetch('http://" + adresseAffichee + "/manifest.webmanifest').then(async r => ({ statut: r.status, nom: (await r.json()).short_name })).catch(e => ({ erreur: String(e) }))",
         );
         dire('installable', installable);
+
+        /*
+         * L'application des clients, sur la même adresse.
+         *
+         * C'est la seule porte d'entrée d'un client à iPhone assis dans la salle : aucun APK ne
+         * s'installe sur iOS, et le lien public est en https, donc incapable d'appeler ce PC. On
+         * vérifie que c'est bien l'application des clients qui répond là — servir l'écran de
+         * connexion du personnel à quelqu'un qui voulait un burger serait pire que rien.
+         */
+        const cote = await f.webContents.executeJavaScript(
+          // Pas d'expression régulière ici : imbriquée dans une chaîne, dans un gabarit, elle a
+          // cassé la sonde entière. Deux découpages simples disent la même chose sans piège.
+          "fetch('http://" + adresseAffichee + "/commander/').then(async r => { const t = await r.text(); const a = t.split('<title>')[1] || ''; return { statut: r.status, titre: a.split('<')[0] }; }).catch(e => ({ erreur: String(e) }))",
+        );
+        dire('appClient', cote);
+        const manifesteClient = await f.webContents.executeJavaScript(
+          "fetch('http://" + adresseAffichee + "/commander/manifest.webmanifest').then(async r => ({ statut: r.status, depart: (await r.json()).start_url })).catch(e => ({ erreur: String(e) }))",
+        );
+        dire('manifesteClient', manifesteClient);
       }
 
       // Le logiciel ne s'ouvre qu'une fois l'adresse notée : c'est tout l'intérêt de l'écran.
@@ -486,6 +505,15 @@ require(${JSON.stringify(resolve(BUREAU, 'main.cjs'))});
   const install = sortiesServeur.get('installable') ?? {};
   v("Le logiciel se pose sur l'écran d'accueil d'un téléphone", install.statut === 200 && Boolean(install.nom),
     install.erreur ?? `HTTP ${install.statut} — ${install.nom ?? 'sans nom'}`);
+
+  // Un client à iPhone, dans la salle, n'a pas d'autre porte : ni APK sur iOS, ni lien public
+  // capable d'appeler ce PC.
+  const appClient = sortiesServeur.get('appClient') ?? {};
+  v("Les clients peuvent commander depuis la salle", appClient.statut === 200 && /Commander/i.test(appClient.titre ?? ''),
+    appClient.erreur ?? `HTTP ${appClient.statut} — ${appClient.titre ?? 'sans titre'}`);
+  const mc = sortiesServeur.get('manifesteClient') ?? {};
+  v("L'application des clients s'installe aussi", mc.statut === 200 && mc.depart === '/commander/',
+    mc.erreur ?? `HTTP ${mc.statut} — départ ${mc.depart ?? '?'}`);
 }
 
 console.log(`\n═════ ${reussies.length} passées, ${echecs.length} en échec ═════`);

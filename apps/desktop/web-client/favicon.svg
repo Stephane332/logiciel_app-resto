@@ -1,0 +1,15 @@
+<!--
+  Marque Savora.
+
+  Une cuillère dont le manche trace le « S ». Un burger aurait dit « ce logiciel sert des
+  burgers » — or il servira aussi des wraps, du riz gras et du bissap, et il se vendra à d'autres
+  restaurants. La cuillère dit la table sans rien dire du menu.
+
+  En aplats, sans dégradé : elle doit rester lisible à seize pixels.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="16" fill="#14342A"/>
+  <ellipse cx="32" cy="22" rx="10.5" ry="12.5" fill="#D95C14"/>
+  <ellipse cx="32" cy="21" rx="6" ry="7.5" fill="#FBF8F3" fill-opacity="0.22"/>
+  <path d="M32 34c0 6-7 6-7 11s7 5 7 10" stroke="#D95C14" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+</svg>

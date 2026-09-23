@@ -171,7 +171,33 @@ export async function buildApp(): Promise<FastifyInstance> {
     });
   }
 
+  /*
+   * L'application des clients, sous « /commander ».
+   *
+   * Le restaurant garde la racine : c'est son équipe qui tape l'adresse, une fois, et l'installe.
+   * Les clients arrivent par un QR de table, qui porte le chemin complet — ils n'ont rien à retenir.
+   */
+  const clientDir = env.CLIENT_DIR ? resolve(env.CLIENT_DIR) : '';
+  const clientServi = Boolean(clientDir) && existsSync(join(clientDir, 'index.html'));
+  if (clientServi) {
+    await app.register(fastifyStatic, {
+      root: clientDir,
+      prefix: '/commander/',
+      decorateReply: false,
+      index: ['index.html'],
+    });
+  }
+
   app.setNotFoundHandler((request, reply) => {
+    /*
+     * Repli de l'application des clients, avant celui du restaurant : « /commander/menu » lui
+     * appartient, et servir la page du personnel à sa place afficherait un écran de connexion à
+     * quelqu'un qui voulait un burger.
+     */
+    if (clientServi && request.method === 'GET' && request.url.startsWith('/commander')) {
+      return reply.type('text/html').send(readFileSync(join(clientDir, 'index.html')));
+    }
+
     /*
      * Repli de l'application à page unique.
      *

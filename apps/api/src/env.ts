@@ -61,6 +61,22 @@ const schema = z.object({
    * sur chaque appareil de l'équipe.
    */
   INTERFACE_DIR: z.string().default(''),
+  /**
+   * Dossier de l'application des clients, quand le serveur du restaurant la porte aussi.
+   *
+   * ┌──────────────────────────────────────────────────────────────────────────────┐
+   * │  Un client à iPhone, assis dans la salle, n'avait rien à ouvrir.              │
+   * └──────────────────────────────────────────────────────────────────────────────┘
+   *
+   * L'APK couvre Android. Le lien public couvre ceux qui commandent de chez eux — mais servi en
+   * `https`, il ne peut pas appeler le PC du restaurant, qui est en clair. Restait un trou
+   * exactement au milieu : le client présent dans le restaurant, et surtout sur iPhone, où aucun
+   * APK ne s'installe.
+   *
+   * Servie ici sous « /commander », elle partage l'adresse et l'origine du reste : ni CORS, ni
+   * contenu mixte, et un QR de table qui mène droit au menu.
+   */
+  CLIENT_DIR: z.string().default(''),
   PUBLIC_CLIENT_URL: z.string().default('http://localhost:5173'),
   PAYMENT_PROVIDER: z.enum(['declared', 'sandbox', 'cinetpay', 'ligdicash']).default('declared'),
   PAYMENT_WEBHOOK_SECRET: z.string().default('dev-webhook-secret'),

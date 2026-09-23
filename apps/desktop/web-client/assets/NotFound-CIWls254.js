@@ -1,0 +1,1 @@
+import{j as t,p as e,_ as n}from"./index-CYlexaXi.js";import{L as o}from"./react-h3uvBz3y.js";function s(){return t.jsx(e,{icon:t.jsx(n,{size:28}),title:"Page introuvable",description:"Ce lien ne mène nulle part. Le menu, lui, est toujours là.",action:t.jsx(o,{to:"/",className:"btn btn--primary",children:"Retour à l'accueil"})})}export{s as NotFound};

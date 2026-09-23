@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#fbf8f3" />
+    <meta name="description" content="Commandez chez votre fast-food : livraison, retrait ou sur place. Suivez votre commande en temps réel." />
+
+    <title>Savora — Commander</title>
+
+    <link rel="icon" type="image/svg+xml" href="/commander/favicon.svg" />
+    <link rel="apple-touch-icon" href="/commander/apple-touch-icon.png" />
+
+    <!--
+      Installation sur iPhone.
+
+      Un iPhone n'installe pas d'APK : la PWA est la seule voie, par Safari → Partager → « Sur
+      l'écran d'accueil ». Ces trois balises décident de ce qu'il en fait, et l'une d'elles était
+      fausse.
+
+      « black-translucent » fait passer la page sous la barre d'état et en écrit le contenu — heure,
+      réseau, batterie — en blanc. C'était juste du temps où l'interface était vert nuit ; sur le
+      papier clair, l'heure devenait blanche sur crème, donc invisible. « default » rend la barre à
+      sa couleur de fond et son texte sombre.
+    -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- Sans ce titre, iOS écrit le titre de la page entier sous l'icône, et le tronque. -->
+    <meta name="apple-mobile-web-app-title" content="Savora" />
+
+    <!-- Aperçu riche : un lien de menu partagé sur WhatsApp, Facebook ou TikTok doit montrer
+         quelque chose d'appétissant, pas une URL nue. C'est le canal d'acquisition n° 1. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Commandez en ligne" />
+    <meta property="og:description" content="Livraison, retrait ou sur place. Votre commande prête quand vous arrivez." />
+    <meta property="og:image" content="/icon-512.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Police chargée sans bloquer l'affichage : sur une connexion lente, le texte doit apparaître
+         immédiatement dans la police système plutôt que d'attendre. -->
+    <script type="module" crossorigin src="/commander/assets/index-CYlexaXi.js"></script>
+    <link rel="modulepreload" crossorigin href="/commander/assets/react-h3uvBz3y.js">
+    <link rel="stylesheet" crossorigin href="/commander/assets/index-DrfdJ_6z.css">
+  <link rel="manifest" href="/commander/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/commander/registerSW.js"></script></head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="padding: 24px; color: #1a1510; font-family: system-ui, sans-serif">
+        Cette application a besoin de JavaScript pour fonctionner. Activez-le dans votre navigateur,
+        ou appelez directement le restaurant pour commander.
+      </div>
+    </noscript>
+  </body>
+</html>

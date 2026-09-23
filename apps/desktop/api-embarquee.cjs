@@ -134,6 +134,13 @@ function environnementDe({ api, racineDonnees, urlBase }) {
      * d'installation promet pourtant qu'ils s'y connecteront — c'est désormais vrai.
      */
     INTERFACE_DIR: path.join(__dirname, 'web'),
+    /*
+     * L'application des clients, sous « /commander » sur la même adresse.
+     *
+     * C'est la seule porte d'entrée d'un client à iPhone assis dans la salle : aucun APK ne
+     * s'installe sur iOS, et le lien public est en `https`, donc incapable d'appeler ce PC.
+     */
+    CLIENT_DIR: path.join(__dirname, 'web-client'),
   };
 }
 

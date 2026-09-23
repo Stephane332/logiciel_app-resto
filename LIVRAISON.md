@@ -2,9 +2,9 @@
 
 **Branche :** `claude/gifted-brown-1tc9ma`
 
-**226 tests** · **44 contrôles de parcours** (chaque rôle, vrai navigateur) · **24 contrôles du
+**226 tests** · **44 contrôles de parcours** (chaque rôle, vrai navigateur) · **26 contrôles du
 logiciel Windows**, serveur embarqué compris · **14 contrôles PWA** · **14 contrôles iPhone**
-(moteur de Safari) · **23 contrôles de la mise en ligne** — 355 vérifications, toutes au vert.
+(moteur de Safari) · **23 contrôles de la mise en ligne** — 357 vérifications, toutes au vert.
 
 ---
 

@@ -1,0 +1,1 @@
+import{v as t,w as d}from"./index-CYlexaXi.js";const i=20,c=t()(d(o=>({orders:[],remember:r=>o(e=>({orders:[r,...e.orders.filter(s=>s.id!==r.id)].slice(0,i)})),forget:r=>o(e=>({orders:e.orders.filter(s=>s.id!==r)}))}),{name:"savora.recent-orders"}));export{c as u};

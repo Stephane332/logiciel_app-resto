@@ -193,7 +193,8 @@ installé.**
 | **La caisse** | le PC du restaurant | l'exe — c'est lui le serveur | tout : caisse, commandes, menu, statistiques |
 | **La cuisine** | une tablette | **rien** — l'adresse du PC dans le navigateur | la file des commandes, et rien d'autre |
 | **Le livreur** | son propre téléphone | **rien** — la même adresse | « Ma tournée », et rien d'autre |
-| **Le client** | son téléphone | l'APK, ou le lien public | le menu et ses commandes |
+| **Le client, dans la salle** | son téléphone | **rien** — `…:4000/commander` | le menu et ses commandes |
+| **Le client, de chez lui** | son téléphone | l'APK, ou le lien public | le menu et ses commandes |
 
 L'équipe tape donc **une seule chose**, celle que le PC affiche à l'installation :
 
@@ -211,6 +212,28 @@ icône, et s'ouvre en plein écran. C'est ce qui change tout pour un livreur qui
 
 > **L'APK n'est pas pour l'équipe.** C'est l'application des clients qui commandent. Donner l'APK à
 > un livreur ne lui ouvrira jamais sa tournée.
+
+### Le client sur place, et l'iPhone
+
+Un iPhone n'installe pas d'APK, et le lien public est servi en `https` : il ne peut donc pas appeler
+le PC du restaurant, qui est en clair. Sans autre porte, un client à iPhone assis dans la salle
+n'aurait rien à ouvrir — et c'est une part importante de la clientèle.
+
+Le serveur du restaurant porte donc aussi l'application des clients :
+
+```
+192.168.1.12:4000/commander
+```
+
+Même adresse, même origine, tout en clair sur le réseau du restaurant. C'est **ce chemin** qu'on
+encode dans les QR de table : le client scanne, le menu s'ouvre, il n'a rien à taper ni à installer.
+Et s'il le souhaite, il pose l'icône sur son écran d'accueil comme n'importe quelle application.
+
+| Le client est… | Il ouvre | Installable ? |
+|---|---|---|
+| dans le restaurant, sur Android | l'APK ou `…:4000/commander` | oui |
+| dans le restaurant, sur iPhone | `…:4000/commander` | oui, via Safari |
+| chez lui | le lien public, une fois le tunnel en place | oui |
 
 ---
 

@@ -24,7 +24,8 @@
     "files": [
       "*.cjs",
       "serveur.html",
-      "web/**"
+      "web/**",
+      "web-client/**"
     ],
     "win": {
       "target": [
