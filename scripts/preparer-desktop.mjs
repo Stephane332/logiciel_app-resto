@@ -6,7 +6,7 @@
  * production, sur le poste d'un restaurant, un vendredi soir.
  */
 import { cp, rm, mkdir } from 'node:fs/promises';
-import { spawnSync } from 'node:child_process';
+import { lancerNpm } from './lib/npm.mjs';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -52,12 +52,14 @@ const sourceClient = resolve('apps/client/dist');
 const cibleClient = resolve('apps/desktop/web-client');
 
 console.log(`\nApplication cliente, construite pour ${CHEMIN_CLIENT} …`);
-const construction = spawnSync('npm', ['run', 'build', '--workspace', '@savora/client'], {
-  stdio: 'inherit',
-  env: { ...process.env, VITE_BASE: CHEMIN_CLIENT },
-});
-if (construction.status !== 0) {
-  console.error("La construction de l'application cliente a échoué.");
+try {
+  // `lancerNpm`, jamais `spawnSync('npm', …)` : sous Windows npm s'appelle npm.cmd et Node refuse
+  // de le lancer. C'est exactement ce qui a fait échouer cet installateur en six millisecondes.
+  lancerNpm(['run', 'build', '--workspace', '@savora/client'], {
+    env: { ...process.env, VITE_BASE: CHEMIN_CLIENT },
+  });
+} catch (erreur) {
+  console.error(`La construction de l'application cliente a échoué : ${erreur.message}`);
   process.exit(1);
 }
 

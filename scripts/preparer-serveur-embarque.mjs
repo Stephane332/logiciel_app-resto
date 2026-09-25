@@ -34,6 +34,7 @@
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, copyFileSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
+import { fichierNpm } from './lib/npm.mjs';
 
 const arguments_ = process.argv.slice(2);
 const option = (nom, defaut) => {
@@ -64,37 +65,6 @@ function etape(texte) {
   console.log(`\n── ${texte}`);
 }
 
-/**
- * npm, appelé sans passer par `npm.cmd`.
- *
- * Deux échecs de construction Windows ont mené ici, et chacun cachait le suivant.
- *
- * `spawnSync('npm', …)` ne trouve rien sous Windows : le fichier s'appelle `npm.cmd`. Mais le nommer
- * ne suffit pas non plus — Node refuse désormais de lancer un `.cmd` sans interpréteur, par
- * protection contre l'injection de commandes :
- *
- *     Error: npm.cmd n'a pas pu être lancé : spawnSync npm.cmd EINVAL
- *
- * `shell: true` lèverait l'interdit, au prix des ennuis de guillemets sur les chemins à espaces — et
- * « C:\Program Files » en contient. On contourne donc par la racine : `npm.cmd` n'est qu'un
- * lanceur autour d'un fichier JavaScript, et ce fichier, Node sait l'exécuter directement. Pas
- * d'interpréteur, pas de guillemets, pas de différence entre les plates-formes.
- */
-function npmCli() {
-  const racineNode = dirname(process.execPath);
-  const candidats = [
-    // Windows : npm est installé à côté de node.exe.
-    join(racineNode, 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-    // Unix : node est dans bin/, npm un niveau au-dessus.
-    join(racineNode, '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-    join(racineNode, '..', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-  ];
-  const trouve = candidats.find((chemin) => existsSync(chemin));
-  if (!trouve) {
-    throw new Error(`npm est introuvable à côté de ${process.execPath}.`);
-  }
-  return trouve;
-}
 
 function executer(commande, args, options = {}) {
   const reel = commande;
@@ -164,7 +134,7 @@ writeFileSync(
 );
 
 etape('Installation des dépendances du serveur (production uniquement)');
-executer(process.execPath, [npmCli(), 'install', '--omit=dev', '--no-audit', '--no-fund'], {
+executer(process.execPath, [fichierNpm(), 'install', '--omit=dev', '--no-audit', '--no-fund'], {
   cwd: API_CIBLE,
 });
 
